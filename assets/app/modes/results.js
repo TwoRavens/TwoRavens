@@ -1,6 +1,7 @@
 import m from 'mithril';
 
 import * as app from "../app";
+import {buildDatasetUrl, workspace} from "../app";
 import * as plots from "../plots";
 
 import * as solverWrapped from '../solvers/wrapped';
@@ -17,7 +18,7 @@ import Icon from "../../common/views/Icon";
 import Popper from '../../common/views/Popper';
 import MenuTabbed from "../../common/views/MenuTabbed";
 
-import {bold, italicize, linkURL, linkURLwithText, preformatted} from "../index";
+import {bold, italicize, preformatted} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
 import ConfusionMatrix from "../views/ConfusionMatrix";
 import Flowchart from "../views/Flowchart";
@@ -29,7 +30,6 @@ import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
-import {buildDatasetUrl, workspace} from "../app";
 
 let getSystemAdapters = problem => {
 
@@ -58,6 +58,7 @@ export let leftpanel = () => {
 
     let solverSystems = getSystemAdapters(selectedProblem);
 
+    // left panel, right tab
     let resultsContent = [
         m('div', {style: {display: 'inline-block', margin: '1em'}},
             m('h4', `${ravenConfig.selectedProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
@@ -75,14 +76,6 @@ export let leftpanel = () => {
                 onclickChild: value => resultsPreferences.dataSplit = value,
                 style: {'margin-left': '1em'}
             }))),
-            // m(Dropdown, {
-            //     id: 'pipelineDropdown',
-            //     items: Object.keys(ravenConfig.problems).filter(key =>
-            //         Object.keys(ravenConfig.problems[key].solutions)
-            //             .reduce((sum, source) => sum + Object.keys(ravenConfig.problems[key].solutions[source]).length, 0)),
-            //     activeItem: ravenConfig.selectedProblem,
-            //     onclickChild: app.setSelectedProblem
-            // })
         ),
         // m('div#modelComparisonOption', {style: {displayx: 'inline-block'}},
         //     m('input#modelComparisonCheck[type=checkbox]', {
@@ -136,7 +129,28 @@ export let leftpanel = () => {
                                 disabled: !!selectedProblem.solverState?.[systemId]?.thinking
                             }, !!selectedProblem.solverState?.[systemId]?.thinking ? 'Solving' : 'Solve'),
                             state: selectedProblem.solverState?.[systemId] && m('',
-                                selectedProblem.solverState[systemId].thinking && common.loaderSmall(systemId),
+                                selectedProblem.solverState[systemId].thinking && [
+                                    common.loaderSmall(systemId),
+                                    m(Button, {
+                                        title: 'end the search',
+                                        class: 'btn-sm',
+                                        onclick: () => {
+                                            // User clicks the 'Stop' button next to a particular solver
+
+                                            // behavioral logging
+                                            let logParams = {
+                                                feature_id: 'RESULTS_STOP_PROBLEM_SEARCH',
+                                                activity_l1: 'MODEL_SELECTION',
+                                                activity_l2: 'PROBLEM_SEARCH_SELECTION'
+                                            };
+                                            app.saveSystemLogEntry(logParams);
+
+                                            // system adapters "adapt" a specific system interface to a common interface
+                                            getSystemAdapters(selectedProblem)[systemId]
+                                                .end(selectedProblem.solverState[systemId].searchId)
+                                        }
+                                    })
+                                ],
                                 m('div[style=font-size:medium;margin-left:1em;display:inline-block]',
                                     selectedProblem.solverState?.[systemId]?.message)
                             ),
@@ -183,21 +197,23 @@ export let leftpanel = () => {
         callback: setLeftTabResults,
         sections: [
             {
-                value: 'Problems',
+                value: 'Searches',
                 contents: [
                     Object.keys(otherSearches).length > 0 && m('h4', 'Within Workspace'),
                     'All searches being conducted for this workspace are listed below. ' +
                     'You may select searches for other problems in the workspace to view their solutions.',
                     m(Table, {
                         data: Object.keys(app.workspace.raven_config.problems)
-                            .filter(problemId => 'd3m' in (app.workspace.raven_config.problems[problemId]?.solverState || {}))
                             .map(problemId => app.workspace.raven_config.problems[problemId])
-                            .map(problem => [
+                            // flatten problems to one entry per active search
+                            .flatMap(problem =>
+                                Object.keys(problem.solverState).map(systemId => [problem, systemId]))
+                            .map(([problem, systemId]) => [
                                 problem.problemId,
                                 problem.targets.join(', '),
-                                problem.solverState.d3m.searchId,
-                                problem.solverState.d3m.thinking ? 'running' : 'stopped',
-                                problem.solverState.d3m.thinking && m(Button, {
+                                problem.solverState[systemId].searchId,
+                                problem.solverState[systemId].thinking ? 'running' : 'stopped',
+                                problem.solverState[systemId].thinking && m(Button, {
                                     title: 'end the search',
                                     class: 'btn-sm',
                                     onclick: () => {
@@ -212,7 +228,9 @@ export let leftpanel = () => {
                                         };
                                         app.saveSystemLogEntry(logParams);
 
-                                        solverD3M.endSearch(problem.solverState.d3m.searchId);
+                                        // system adapters "adapt" a specific system interface to a common interface
+                                        getSystemAdapters(problem)[systemId]
+                                            .end(selectedProblem.solverState[systemId].searchId)
                                     }
                                 }, m(Icon, {name: 'stop'}))
                             ]),

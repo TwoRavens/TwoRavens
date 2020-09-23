@@ -18,7 +18,7 @@ def wrap_pgm_grid_samp():
         problem={
             'targets': ['any_violence'],
             'time': ['year'],
-            'metrics': ['rocAuc', 'accuracy', 'precision', 'recall', 'f1'],
+            'metrics': ['accuracy', 'precision', 'recall', 'f1'],
             'taskKeywords': ['classification', 'binary']
         })
 

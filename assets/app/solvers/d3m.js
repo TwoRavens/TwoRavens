@@ -116,19 +116,22 @@ export let getD3MAdapter = problem => ({
     score: (solutionId, specification) => {
         throw 'Score not implemented for D3M.';
     },
-    stop: stopSearch
+    stop: stopSearch,
+    end: endSearch
 });
 
 let toFileUri = path => path.startsWith("file://") ? path : "file://" + path;
 
 // no new pipelines will be found under searchId
 // pipelines under searchId are also wiped/no longer accessible
-export let endSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', body: {searchId}})
-    .then(handleCompletedSearch(parseInt(searchId)));
+export let endSearch = async searchId => searchId !== undefined &&
+    m.request(D3M_SVC_URL + '/EndSearchSolutions', {method: 'POST', body: {searchId}})
+        .then(handleCompletedSearch(parseInt(searchId)));
 // no new pipelines will be found under searchId
 // discovered pipelines will remain accessible for produce calls
-export let stopSearch = async searchId => searchId !== undefined && m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', body: {searchId}})
-    .then(handleCompletedSearch(parseInt(searchId)));
+export let stopSearch = async searchId => searchId !== undefined &&
+    m.request(D3M_SVC_URL + '/StopSearchSolutions', {method: 'POST', body: {searchId}})
+        .then(handleCompletedSearch(parseInt(searchId)));
 
 let handleCompletedSearch = searchId => response => {
     if (!response.success) {
@@ -883,10 +886,10 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let firstOutput = Object.values(response.response.exposedOutputs)[0];
+    let firstOutput = Object.values(response.response.exposedOutputs)?.[0]?.csvUri;
 
     if (!firstOutput) return;
-    let pointer = firstOutput.csvUri.replace('file://', '');
+    let pointer = firstOutput.replace('file://', '');
 
     let solution = solvedProblem.solutions.d3m[response.pipelineId];
 

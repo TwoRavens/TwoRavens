@@ -289,7 +289,26 @@ export let getSystemAdapterWrapped = systemId => problem => ({
         }
     }),
     stop: searchId => {
-        throw "stop is not implemented for " + systemId
+        // TODO: implement stop search
+        console.log("stop is not implemented for " + systemId);
+        let solvedProblem = Object.values(app.workspace.raven_config.problems)
+            .find(problem => problem?.solverState?.[systemId]?.searchId === String(searchId));
+
+        if (solvedProblem) {
+            solvedProblem.solverState[systemId].thinking = false;
+            solvedProblem.solverState[systemId].message = 'search complete';
+        }
+    },
+    end: searchId => {
+        // TODO: implement end search
+        console.log("end is not implemented for " + systemId);
+        let solvedProblem = Object.values(app.workspace.raven_config.problems)
+            .find(problem => problem?.solverState?.[systemId]?.searchId === String(searchId));
+
+        if (solvedProblem) {
+            solvedProblem.solverState[systemId].thinking = false;
+            solvedProblem.solverState[systemId].message = 'search complete';
+        }
     }
 });
 
