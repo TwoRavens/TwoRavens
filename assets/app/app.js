@@ -25,6 +25,7 @@ import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
 import {search, setDatamartDefaults} from "./datamart/Datamart";
 import {setConstraintMenu} from "./manipulations/manipulate";
 import {SPEC_problem} from './solvers/wrapped';
+import Subpanel from "../common/views/Subpanel";
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -1149,6 +1150,7 @@ let buildEmptyProblem = problemId => ({
         solutionsLimit: undefined
     },
     scoreOptions: {
+        userSpecified: false,
         evaluationMethod: 'kFold',
         folds: 10,
         trainTestRatio: 0.7,
@@ -1792,6 +1794,7 @@ export let showTA2Name = (responseTA2) => {
 /* ----------------------------------------------
   Show the TA2 connection error modal
 ---------------------------------------------- */
+let showTechnicalDetails = false;
 export let showTA2ConnectError = (errorMessage) => {
     setModal(
         m('div', [
@@ -1799,7 +1802,16 @@ export let showTA2ConnectError = (errorMessage) => {
             m('p', {class: 'h5'}, "It may not be available."),
             //  m('p', {class: 'h5'}, "Please try again using the button below."),
             m('hr'),
-            m('p', "Technical details: " + errorMessage),
+            m(Subpanel, {
+                header: "Technical Details",
+                shown: showTechnicalDetails,
+                // the modal keeps a stale copy of the hyperscript it will display, so this updates the stale copy
+                setShown: state => {
+                    console.log("set shown called")
+                    showTechnicalDetails = state;
+                    showTA2ConnectError(errorMessage)
+                }
+            }, errorMessage)
         ]),
         "Error Connecting to the TA2",
         true,

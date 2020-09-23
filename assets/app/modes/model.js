@@ -3,6 +3,7 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
+import {isExploreMode, workspace} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -14,7 +15,6 @@ import Subpanel from "../../common/views/Subpanel";
 import TextField from "../../common/views/TextField";
 import PanelList from "../../common/views/PanelList";
 import Table from "../../common/views/Table";
-import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import ListTags from "../../common/views/ListTags";
 import Panel from "../../common/views/Panel";
 import MenuTabbed from "../../common/views/MenuTabbed";
@@ -29,10 +29,8 @@ import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
 import ButtonLadda from "../views/ButtonLadda";
 import Flowchart from "../views/Flowchart";
 
-import {bold, boldPlain, italicize, preformatted} from "../index";
+import {bold, boldPlain, italicize} from "../index";
 import {setModal} from "../../common/views/Modal";
-import {workspace} from "../app";
-import {isExploreMode} from "../app";
 
 
 export class CanvasModel {
@@ -833,16 +831,17 @@ export let rightpanel = () => {
                     disabled: isLocked
                 }),
 
-                m('label[style=margin:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
-                m(ButtonRadio, {
-                    id: 'advancedModeOption',
-                    attrsAll: {style: {margin: '1em', width: 'calc(100% - 2em)'}},
-                    onclick: !isLocked && (value => app.workspace.raven_config.advancedMode = value === 'True'),
-                    activeSection: app.workspace.raven_config.advancedMode ? 'True' : 'False',
-                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                }),
+                // m('label[style=margin:0.5em]', 'Advanced Options. If enabled, then more problem types, splitting, search and score options may be configured.'),
+                // m(ButtonRadio, {
+                //     id: 'advancedModeOption',
+                //     attrsAll: {style: {margin: '1em', width: 'calc(100% - 2em)'}},
+                //     onclick: !isLocked && (value => app.workspace.raven_config.advancedMode = value === 'True'),
+                //     activeSection: app.workspace.raven_config.advancedMode ? 'True' : 'False',
+                //     sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                // }),
 
-                app.workspace.raven_config.advancedMode && app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
+                // app.workspace.raven_config.advancedMode &&
+                app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
                     id: 'performanceMetrics',
                     items: app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)]
                         .filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
@@ -854,13 +853,15 @@ export let rightpanel = () => {
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
                 }),
-                app.workspace.raven_config.advancedMode && m(ListTags, {
+                // app.workspace.raven_config.advancedMode &&
+                m(ListTags, {
                     readonly: isLocked,
                     tags: selectedProblem.metrics,
                     ondelete: metric => app.remove(selectedProblem.metrics, metric)
                 }),
 
-                app.workspace.raven_config.advancedMode && [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
+                // app.workspace.raven_config.advancedMode &&
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
                     m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
                     m(Dropdown, {
                         id: 'positiveClass',
@@ -872,7 +873,8 @@ export let rightpanel = () => {
                     }),
                 ],
 
-                app.workspace.raven_config.advancedMode && [selectedProblem.metric, ...selectedProblem.metrics].find(metric => metric === 'precisionAtTopK') && [
+                // app.workspace.raven_config.advancedMode &&
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => metric === 'precisionAtTopK') && [
                     m('label', 'K, for Precision at top K'),
                     m(TextField, {
                         id: 'precisionAtTopKTextField',
@@ -883,17 +885,18 @@ export let rightpanel = () => {
                     })
                 ],
 
-                app.workspace.raven_config.advancedMode && m(Subpanel, {
-                    header: 'Split Options',
-                    defaultShown: false,
-                    style: {margin: '1em'}
-                },
-                m('label', 'Prepare in/out-of-sample splits.'),
-                m(ButtonRadio, {
-                    id: 'outOfSampleSplit',
-                    onclick: value => {
-                        if (isLocked) return;
-                        selectedProblem.splitOptions.outOfSampleSplit = value === 'True';
+                // app.workspace.raven_config.advancedMode &&
+                m(Subpanel, {
+                        header: 'Split Options',
+                        defaultShown: false,
+                        style: {margin: '1em'}
+                    },
+                    m('label', 'Prepare in/out-of-sample splits.'),
+                    m(ButtonRadio, {
+                        id: 'outOfSampleSplit',
+                        onclick: value => {
+                            if (isLocked) return;
+                            selectedProblem.splitOptions.outOfSampleSplit = value === 'True';
                     },
                     activeSection: selectedProblem.splitOptions.outOfSampleSplit ? 'True' : 'False',
                     sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
@@ -942,27 +945,28 @@ export let rightpanel = () => {
                         onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
                         style: {'margin-bottom': '1em'}
                     }),
-                    m('label', 'Maximum record count per data split'),
+                        m('label', 'Maximum record count per data split'),
+                        m(TextField, {
+                            id: 'maxRecordCountOption',
+                            disabled: isLocked,
+                            value: selectedProblem.splitOptions.maxRecordCount || '',
+                            oninput: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
+                            onblur: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                            style: {'margin-bottom': '1em'}
+                        }),
+                    ]),
+                // app.workspace.raven_config.advancedMode &&
+                m(Subpanel, {
+                        header: 'Search Options',
+                        defaultShown: false,
+                        style: {margin: '1em'}
+                    },
+                    m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
                     m(TextField, {
-                        id: 'maxRecordCountOption',
+                        id: 'timeBoundOption',
+                        value: selectedProblem.searchOptions.timeBoundSearch || '',
                         disabled: isLocked,
-                        value: selectedProblem.splitOptions.maxRecordCount || '',
-                        oninput: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
-                        onblur: !isLocked && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
-                        style: {'margin-bottom': '1em'}
-                    }),
-                ]),
-                app.workspace.raven_config.advancedMode && m(Subpanel, {
-                    header: 'Search Options',
-                    defaultShown: false,
-                    style: {margin: '1em'}
-                },
-                m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
-                m(TextField, {
-                    id: 'timeBoundOption',
-                    value: selectedProblem.searchOptions.timeBoundSearch || '',
-                    disabled: isLocked,
-                    oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
                     onblur: !isLocked && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
                     style: {'margin-bottom': '1em'}
                 }),
@@ -984,79 +988,88 @@ export let rightpanel = () => {
                     onblur: !isLocked && (value => selectedProblem.searchOptions.priority = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
                     style: {'margin-bottom': '1em'}
                 }),
-                m('label', 'Limit on number of solutions'),
-                m(TextField, {
-                    id: 'solutionsLimitOption',
-                    disabled: isLocked,
-                    value: selectedProblem.searchOptions.solutionsLimit || '',
-                    oninput: !isLocked && (value => selectedProblem.searchOptions.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined),
-                    style: {'margin-bottom': '1em'}
-                })
-                ),
-                app.workspace.raven_config.advancedMode && m(Subpanel, {
-                    header: 'Score Options',
-                    defaultShown: false,
-                    style: {margin: '1em'}
-                },
-                m('label', 'Evaluation Method'),
-                m(Dropdown, {
-                    id: 'evaluationMethodScoreOption',
-                    items: Object.keys(app.d3mEvaluationMethods),
-                    activeItem: selectedProblem.scoreOptions.evaluationMethod,
-                    onclickChild: child => {
-                        selectedProblem.scoreOptions.evaluationMethod = child;
-                        delete selectedProblem.unedited;
-                    },
-                    style: {'margin-bottom': '1em'},
-                    disabled: isLocked
-                }),
-                selectedProblem.scoreOptions.evaluationMethod === 'kFold' && [
-                    m('label[style=margin-top:0.5em]', 'Number of Folds'),
+                    m('label', 'Limit on number of solutions'),
                     m(TextField, {
-                        id: 'foldsScoreOption',
+                        id: 'solutionsLimitOption',
                         disabled: isLocked,
-                        value: selectedProblem.scoreOptions.folds || '',
-                        oninput: !isLocked && (value => selectedProblem.scoreOptions.folds = parseFloat(value.replace(/\D/g, '')) || undefined),
+                        value: selectedProblem.searchOptions.solutionsLimit || '',
+                        oninput: !isLocked && (value => selectedProblem.searchOptions.solutionsLimit = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
+                    })),
+                // app.workspace.raven_config.advancedMode &&
+                m(Subpanel, {
+                        header: 'Score Options',
+                        defaultShown: false,
+                        style: {margin: '1em'},
+                    },
+                    m('label[style=margin-top:0.5em]', 'Custom Scoring Configuration'),
+                    m(ButtonRadio, {
+                        id: 'customScoringConfiguration',
+                        onclick: !isLocked && (value => selectedProblem.scoreOptions.userSpecified = value === 'True'),
+                        activeSection: selectedProblem.scoreOptions.userSpecified ? 'True' : 'False',
+                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
                     }),
-                ],
-                selectedProblem.scoreOptions.evaluationMethod === 'holdOut' && [
-                    m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
-                    m(TextField, {
-                        id: 'ratioScoreOption',
-                        disabled: isLocked,
-                        value: selectedProblem.scoreOptions.trainTestRatio || 0,
-                        onblur: !isLocked && (value => selectedProblem.scoreOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
-                        style: {'margin-bottom': '1em'}
-                    })
-                ],
-                m('label', 'Stratify'),
-                m(ButtonRadio, {
-                    id: 'stratifiedScoreOption',
-                    onclick: value => {
-                        if (isLocked) return;
-                        selectedProblem.scoreOptions.stratified = value === 'True';
-                    },
-                    activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
-                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                }),
-                m('label[style=margin-top:0.5em]', 'Shuffle'),
-                m(ButtonRadio, {
-                    id: 'shuffleScoreOption',
-                    onclick: !isLocked && (value => selectedProblem.scoreOptions.shuffle = value === 'True'),
-                    activeSection: selectedProblem.scoreOptions.shuffle ? 'True' : 'False',
-                    sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                }),
-                selectedProblem.scoreOptions.shuffle && [
-                    m('label[style=margin-top:0.5em]', 'Random seed'),
-                    m(TextField, {
-                        id: 'randomSeedScoreOption',
-                        disabled: isLocked,
-                        value: selectedProblem.scoreOptions.randomSeed || 0,
-                        oninput: !isLocked && (value => selectedProblem.scoreOptions.randomSeed = parseFloat(value.replace(/\D/g, '')) || undefined),
-                        style: {'margin-bottom': '1em'}
-                    })
-                ],
+                    selectedProblem.scoreOptions.userSpecified && [
+                        m('label', 'Evaluation Method'),
+                        m(Dropdown, {
+                            id: 'evaluationMethodScoreOption',
+                            items: Object.keys(app.d3mEvaluationMethods),
+                            activeItem: selectedProblem.scoreOptions.evaluationMethod,
+                            onclickChild: child => {
+                                selectedProblem.scoreOptions.evaluationMethod = child;
+                                delete selectedProblem.unedited;
+                            },
+                            style: {'margin-bottom': '1em'},
+                            disabled: isLocked
+                        }),
+                        selectedProblem.scoreOptions.evaluationMethod === 'kFold' && [
+                            m('label[style=margin-top:0.5em]', 'Number of Folds'),
+                            m(TextField, {
+                                id: 'foldsScoreOption',
+                                disabled: isLocked,
+                                value: selectedProblem.scoreOptions.folds || '',
+                                oninput: !isLocked && (value => selectedProblem.scoreOptions.folds = parseFloat(value.replace(/\D/g, '')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            }),
+                        ],
+                        selectedProblem.scoreOptions.evaluationMethod === 'holdOut' && [
+                            m('label[style=margin-top:0.5em]', 'Train/Test Ratio'),
+                            m(TextField, {
+                                id: 'ratioScoreOption',
+                                disabled: isLocked,
+                                value: selectedProblem.scoreOptions.trainTestRatio || 0,
+                                onblur: !isLocked && (value => selectedProblem.scoreOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
+                                style: {'margin-bottom': '1em'}
+                            })
+                        ],
+                        m('label', 'Stratify'),
+                        m(ButtonRadio, {
+                            id: 'stratifiedScoreOption',
+                            onclick: value => {
+                                if (isLocked) return;
+                                selectedProblem.scoreOptions.stratified = value === 'True';
+                            },
+                            activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        }),
+                        m('label[style=margin-top:0.5em]', 'Shuffle'),
+                        m(ButtonRadio, {
+                            id: 'shuffleScoreOption',
+                            onclick: !isLocked && (value => selectedProblem.scoreOptions.shuffle = value === 'True'),
+                            activeSection: selectedProblem.scoreOptions.shuffle ? 'True' : 'False',
+                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        }),
+                        selectedProblem.scoreOptions.shuffle && [
+                            m('label[style=margin-top:0.5em]', 'Random seed'),
+                            m(TextField, {
+                                id: 'randomSeedScoreOption',
+                                disabled: isLocked,
+                                value: selectedProblem.scoreOptions.randomSeed || 0,
+                                oninput: !isLocked && (value => selectedProblem.scoreOptions.randomSeed = parseFloat(value.replace(/\D/g, '')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            })
+                        ],
+                    ]
                 ),
             )
         ]

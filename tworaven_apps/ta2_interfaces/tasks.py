@@ -270,6 +270,7 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
 def split_dataset(configuration, workspace):
 
     # parse input data
+    print(configuration)
     split_options = configuration.get('split_options', {})
     problem = configuration.get('problem')
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
@@ -415,7 +416,7 @@ def split_dataset(configuration, workspace):
 
     DEFAULT_TRAIN_TEST_RATIO = .7
     train_test_ratio = split_options.get('trainTestRatio', DEFAULT_TRAIN_TEST_RATIO)
-    if not (0 >= train_test_ratio > 1):
+    if not (0 < train_test_ratio <= 1):
         raise ValueError("train-test ratio must be between 0 and 1")
 
     random_seed = split_options.get('randomSeed', 0)
@@ -454,7 +455,7 @@ def split_dataset(configuration, workspace):
         #     dataframe[column].replace('', np.nan, inplace=True)
 
         # drop null values in target variables
-        if 'SEMISUPERVISED' not in problem['task'] and problem['task'] != 'CLUSTERING':
+        if 'SEMISUPERVISED' not in problem['taskType'] and problem['taskType'] != 'CLUSTERING':
             nominals = problem.get('categorical', [])
             for column in [col for col in problem['targets'] if col not in nominals]:
                 dataframe[column].replace('', np.nan, inplace=True)

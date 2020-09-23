@@ -481,6 +481,9 @@ class SearchSolutionsHelper(BasicErrCheck):
 
     def run_score_solution(self, pipeline_id, solution_id):
         """async: Run ScoreSolutionHelper"""
+
+        if ta2_static.KEY_SCORE_SOLUTION_DEFAULT_PARAMS not in self.all_search_params:
+            return
         # ----------------------------------
         # Create the input
         # ----------------------------------
