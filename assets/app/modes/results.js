@@ -1376,6 +1376,19 @@ export let getSolutionAdapter = (problem, solution) => ({
     }
 });
 
+export let getBestSolution = (problem, systemId) => {
+    let solutions = systemId
+        ? Object.values(problem.solutions[systemId])
+        : Object.keys(problem.solutions)
+            .flatMap(systemId => Object.values(problem.solutions[systemId]));
+
+    let adapters = solutions.map(solution => getSolutionAdapter(problem, solution));
+    let direction = reverseSet.includes(resultsPreferences.selectedMetric) ? 1 : -1;
+    return adapters
+        .map(adapter => [adapter, adapter.getScore(resultsPreferences.selectedMetric) * direction])
+        .reduce((best, current) => best[1] > current[1] ? best : current)[0]
+}
+
 let getSolutionTable = (problem, systemId) => {
     let solutions = systemId
         ? Object.values(problem.solutions[systemId])
@@ -1402,7 +1415,10 @@ let getSolutionTable = (problem, systemId) => {
         sortDescending: !reverseSet.includes(resultsPreferences.selectedMetric),
         activeRow: new Set(adapters
             .filter(adapter => (problem.selectedSolutions[adapter.getSystemId()] || '').includes(adapter.getSolutionId()))),
-        onclick: adapter => setSelectedSolution(problem, adapter.getSystemId(), adapter.getSolutionId())
+        onclick: adapter => {
+            problem.userSelectedSolution = true;
+            setSelectedSolution(problem, adapter.getSystemId(), adapter.getSolutionId())
+        }
     })
 };
 

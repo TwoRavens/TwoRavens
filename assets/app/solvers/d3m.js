@@ -7,6 +7,7 @@ import {alertError, alertWarn, debugLog, swandive} from "../app";
 
 import {setModal} from "../../common/views/Modal";
 import Table from "../../common/views/Table";
+import {getBestSolution} from "../modes/results";
 
 export let getSolverSpecification = async problem => {
 
@@ -722,8 +723,11 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     });
 
     // set the selected solution if none have been selected yet
-    let selectedSolutions = results.getSelectedSolutions(solvedProblem);
-    if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, 'd3m', String(response.pipelineId));
+    // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
+    if (!solvedProblem.userSelectedSolution) {
+        let bestSolution = getBestSolution(solvedProblem);
+        results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
+    }
 
     // if the user has not specified a scoring configuration, then use scores from the TA2
     if (!solvedProblem.scoreOptions.userSpecified && response.response.scores?.length > 0) {

@@ -4,6 +4,7 @@ import m from 'mithril';
 import * as app from '../app';
 import * as results from "../modes/results";
 import {alertWarn} from "../app";
+import {getBestSolution, resultsPreferences} from "../modes/results";
 
 export let SOLVER_SVC_URL = '/solver-service/';
 
@@ -345,8 +346,12 @@ export let handleDescribeResponse = response => {
             systemId: data.system
         });
 
-        let selectedSolutions = results.getSelectedSolutions(solvedProblem);
-        if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, data.system, data.model_id);
+        // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
+        // if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, data.system, data.model_id);
+        if (!solvedProblem.userSelectedSolution) {
+            let bestSolution = getBestSolution(solvedProblem);
+            results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
+        }
 
         m.redraw()
     }
