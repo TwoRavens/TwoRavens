@@ -3015,10 +3015,18 @@ export let isProblemValid = problem => {
         alertError('At least one predictor is required.');
         valid = false;
     }
-    if (problem.targets.length === 0) {
-        alertError('At least one target is required.');
-        valid = false;
+    if (problem.task !== "clustering") {
+        if (problem.targets.length === 0) {
+            alertError('At least one target is required.');
+            valid = false;
+        }
+
+        if (problem.targets.length > 1) {
+            alertError("Only one target variable may be specified at a time.");
+            valid = false;
+        }
     }
+    // this triggers the popup
     if (!valid)
         m.redraw();
     return valid;

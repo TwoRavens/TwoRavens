@@ -91,6 +91,7 @@ mkdir -p "$MONGOD_DIR"
 export DISPLAY_DATAMART_UI=True
 
 if ! docker ps -a | grep -q raven-postgres; then
+  echo ">> postgres"
   ttab -G "
     echo -ne '\033]0;postgres\007';
     cd $install_directory;
@@ -102,6 +103,7 @@ if ! docker ps -a | grep -q raven-postgres; then
   wait_for_port 5432
 fi
 
+echo ">> django"
 # rename tab; move into repo; set working env; kill django; kill webpack; run django; close tab;
 ttab -G '
   echo -ne "\033]0;django\007";
@@ -113,6 +115,7 @@ ttab -G '
   fab run_with_ta2;
   exit'
 
+echo ">> celery"
 ttab -G '
   echo -ne "\033]0;celery\007";
   cd '$install_directory';
@@ -125,6 +128,7 @@ ttab -G '
 
 #lsof -ti:8000 | xargs kill -9
 # attempt graceful shutdown of flask to avoid leaking processes from the pool
+echo ">> flask R"
 ttab -G '
   echo -ne "\033]0;flask R\007";
   cd '$install_directory';
@@ -133,6 +137,7 @@ ttab -G '
   fab run_R;
   exit'
 
+echo ">> mongo"
 ttab -G "
   echo -ne '\033]0;mongod\007';
   workon 2ravens;
@@ -140,6 +145,7 @@ ttab -G "
   mongod --dbpath=$MONGOD_DIR;
   exit"
 
+echo ">> redis"
 ttab -G '
   echo -ne "\033]0;redis\007";
   cd '$install_directory';
@@ -160,6 +166,7 @@ if [[ $1 == "none" ]]; then
   docker kill ta2_server || true
   fab choose_config:"$DATA_ID"
 else
+  echo ">> ta2"
   ttab -G "
     echo -ne '\033]0;ta2 $1\007';
     cd $install_directory;

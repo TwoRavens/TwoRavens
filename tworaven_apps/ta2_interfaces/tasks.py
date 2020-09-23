@@ -7,6 +7,7 @@ import uuid
 from random import random
 
 import math
+import numpy as np
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -268,13 +269,16 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
 @celery_app.task()
 def split_dataset(configuration, workspace):
 
+    # parse input data
     split_options = configuration.get('split_options', {})
-
     problem = configuration.get('problem')
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))
     dataset_id = configuration['dataset_id']
 
+    # actual variable names in the data
     all_variables = pd.read_csv(configuration['dataset_path'], nrows=1).columns.tolist()
+    # dataset schema will change because predictors and targets does not span all variables
+    # dataset id needs to be coordinated or else the TA2 will reject eventual produce calls on other datasets
     keep_variables, dataset_schema = rewrite_dataset_schema(
         problem=problem,
         dataset_schema=dataset_schema,
@@ -282,6 +286,7 @@ def split_dataset(configuration, workspace):
         dataset_id=dataset_id,
         update_roles=configuration.get('update_roles'))
 
+    # find the learningData resource, which is by convention the first table
     resource_schema = next(i for i in dataset_schema['dataResources'] if i['resType'] == 'table')
 
     cross_section_date_limits = None
@@ -289,6 +294,7 @@ def split_dataset(configuration, workspace):
     dtypes = {}
 
     # WARNING: dates are assumed to be monotonically increasing
+    #    this is to make it possible to support arbitrarily large datasets
     if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
         time_column = problem['time'][0]
         dtypes[time_column] = str
@@ -301,6 +307,7 @@ def split_dataset(configuration, workspace):
         time_buffer = []
         candidate_frequencies = set()
 
+        # create generator that provides a data chunk on every iteration
         data_file_generator = pd.read_csv(
             configuration['dataset_path'],
             chunksize=10 ** 5,
@@ -322,8 +329,8 @@ def split_dataset(configuration, workspace):
                 if not date:
                     continue
 
-                # infer frequency up to 100 times
-                if infer_count < 1000000:
+                # limit the number of times frequency is inferred
+                if infer_count < 1000:
 
                     buffer_is_empty = len(time_buffer) == 0
                     date_is_newer = len(time_buffer) > 0 and time_buffer[-1] < date
@@ -351,19 +358,20 @@ def split_dataset(configuration, workspace):
             inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
             inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
 
+    # create new directory structure for the data in a role
     def get_dataset_paths(role):
         dest_dir_info = create_destination_directory(workspace, name=role)
         if not dest_dir_info[KEY_SUCCESS]:
             return JsonResponse(get_json_error(dest_dir_info.err_msg))
-
         dest_directory = dest_dir_info[KEY_DATA]
+
+        # copy all files, remove the csv_path (we'll be overwriting it)
         csv_path = path.join(dest_directory, resource_schema['resPath'])
         shutil.rmtree(dest_directory)
         shutil.copytree(workspace.d3m_config.training_data_root, dest_directory)
         os.remove(csv_path)
         role_dataset_schema_path = path.join(dest_directory, 'datasetDoc.json')
 
-        # the datasetID should be unique
         role_dataset_schema = copy.deepcopy(dataset_schema)
 
         with open(role_dataset_schema_path, 'w') as dataset_schema_file:
@@ -375,6 +383,7 @@ def split_dataset(configuration, workspace):
     dataset_schemas = {'all': all_datasetDoc}
     dataset_schema_paths = {'all': all_datasetDoc_path}
     dataset_paths = {'all': all_datasetCsv}
+    # indicates if data was successfully stratified (prone to failure on highly imbalanced data)
     dataset_stratified = {}
 
     if split_options.get('outOfSampleSplit'):
@@ -404,17 +413,19 @@ def split_dataset(configuration, workspace):
             'test': split_options.get('stratified')
         }
 
-    DEFAULT_RATIO = .7
-    train_test_ratio = split_options.get('trainTestRatio', DEFAULT_RATIO)
+    DEFAULT_TRAIN_TEST_RATIO = .7
+    train_test_ratio = split_options.get('trainTestRatio', DEFAULT_TRAIN_TEST_RATIO)
     if not (0 >= train_test_ratio > 1):
-        train_test_ratio = DEFAULT_RATIO
+        raise ValueError("train-test ratio must be between 0 and 1")
 
     random_seed = split_options.get('randomSeed', 0)
 
+    # traverse the entire file for a row count. Informs the sampling ratios when chunking
     with open(configuration['dataset_path'], 'r') as infile:
-        header_line = next(infile)
+        _header_line = next(infile)
         row_count = sum(1 for _ in infile)
 
+    # write out blank csv files for each split
     for split_name in ['train', 'test', 'all']:
         pd.DataFrame(data=[], columns=keep_variables).to_csv(dataset_paths[split_name], index=False)
 
@@ -438,13 +449,18 @@ def split_dataset(configuration, workspace):
 
         # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
         # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
-        # perhaps in a future version of d3m, the dataset loader could use pandas extension types instead of objects
         # nominals = problem.get('categorical', [])
-        # for column in [col for col in dataframe.columns.values if col not in nominals]:
+        # for column in [col for col in problem['targets'] if col not in nominals]:
         #     dataframe[column].replace('', np.nan, inplace=True)
-        #
-        # dataframe.dropna(inplace=True)
-        # dataframe.reset_index(drop=True, inplace=True)
+
+        # drop null values in target variables
+        if 'SEMISUPERVISED' not in problem['task'] and problem['task'] != 'CLUSTERING':
+            nominals = problem.get('categorical', [])
+            for column in [col for col in problem['targets'] if col not in nominals]:
+                dataframe[column].replace('', np.nan, inplace=True)
+
+            dataframe.dropna(inplace=True, subset=problem['targets'])
+            dataframe.reset_index(drop=True, inplace=True)
 
         # max count of each split ['all', 'test', 'train']
         max_count = int(split_options.get('maxRecordCount', 5e4))
