@@ -1742,20 +1742,8 @@ export async function load({awaitPreprocess} = {}) {
      * 3. Start the user session
      * rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
      */
-    let responseTA2 = await m.request(D3M_SVC_URL + '/Hello', {});
-    console.groupCollapsed('3. Start user session Hello');
-    console.log(JSON.stringify(responseTA2));
-    console.groupEnd();
-    if (responseTA2) {
+    sayHelloTA2();
 
-        if (responseTA2.success !== true) {
-            console.log('fyi: TA2 not ready at startup.')
-            //showTA2ConnectError(responseTA2.message);
-            return;
-        } else {
-            showTA2Name(responseTA2);
-        }
-    }
     // hopscotch tutorial
     if (tutorial_mode) {
         console.log('Starting Hopscotch Tour');
@@ -1776,6 +1764,26 @@ export function del(arr, idx, obj) {
     idx > -1 && arr.splice(idx, 1);
 }
 
+/* ----------------------------------------------
+   Say Hello to the D3M TA2
+   rpc rpc Hello (HelloRequest) returns (HelloResponse) {}
+---------------------------------------------- */
+export let sayHelloTA2 = async() => {
+
+    let responseTA2 = await m.request(D3M_SVC_URL + '/Hello', {});
+    console.groupCollapsed('3. Start user session Hello');
+    console.log(JSON.stringify(responseTA2));
+    console.groupEnd();
+    if (responseTA2) {
+        if (responseTA2.success !== true) {
+            console.log('fyi: TA2 not ready at startup.')
+            //showTA2ConnectError(responseTA2.message);
+            return;
+        } else {
+            showTA2Name(responseTA2);
+        }
+    }
+}
 
 /* ----------------------------------------------
    Format and show the TA2 name info panel

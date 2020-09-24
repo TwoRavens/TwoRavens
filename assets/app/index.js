@@ -301,6 +301,7 @@ class Body {
                         id: 'btnAPIInfoWindow',
                         class: `btn-sm ${app.isAPIInfoWindowOpen ? 'active' : ''}`,
                         onclick: _ => {
+                            app.sayHelloTA2();
                             app.setAPIInfoWindowOpen(true);
                             m.redraw();
                         },
