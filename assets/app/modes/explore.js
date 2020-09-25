@@ -537,19 +537,24 @@ let fillVegaSchema = (schema, data, flip) => {
         data.vars[1] = temp;
     }
 
+    data.varsRenamed = data.vars.map(variable => variable
+        .replace(".", "\\.")
+        .replace("[", "\\[")
+        .replace("]", "\\]"))
+
     if (data["vars"].length > 1) {
-        stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        stringified = stringified.replace(/tworavensY/g, data.varsRenamed[1]);
     }
     if (data["vars"].length > 2) {
-        stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
+        stringified = stringified.replace(/tworavensZ/g, data.varsRenamed[2]);
     }
     if (data["vars"].length > 1) {
-        stringified = stringified.replace(/tworavensY/g, data.vars[1]);
+        stringified = stringified.replace(/tworavensY/g, data.varsRenamed[1]);
     }
     if (data["vars"].length > 2) {
-        stringified = stringified.replace(/tworavensZ/g, data.vars[2]);
+        stringified = stringified.replace(/tworavensZ/g, data.varsRenamed[2]);
     }
-    stringified = stringified.replace(/tworavensX/g, data.vars[0]);
+    stringified = stringified.replace(/tworavensX/g, data.varsRenamed[0]);
     stringified = stringified.replace(/"tworavensFilter"/g, null);
     stringified = stringified.replace("url", "values");
     stringified = stringified.replace('"tworavensData"', data.plotdata[0]);
