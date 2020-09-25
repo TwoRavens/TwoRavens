@@ -7,22 +7,26 @@ import {alertError, alertWarn, debugLog, swandive} from "../app";
 
 import {setModal} from "../../common/views/Modal";
 import Table from "../../common/views/Table";
-import {getBestSolution} from "../modes/results";
+import {findProblem, getBestSolution} from "../modes/results";
+import {resetPeek} from "../app.js";
 
 export let getSolverSpecification = async problem => {
 
     await results.prepareResultsDatasets(problem, 'd3m');
 
-    let datasetSchemaPaths = problem.useManipulations ? problem.datasetSchemaPathsManipulated : problem.datasetSchemaPaths;
-    let datasetSchemas = Object.assign({}, problem.datasetSchemas, problem.useManipulations ? problem.datasetSchemasManipulated : {});
+    let datasetSchemaPaths = problem.results.datasetSchemaPaths;
+    let datasetSchemas = problem.results.datasetSchemas;
 
-    if (!['classification', 'regression', 'forecasting'].includes(problem.task))
+    if (!['classification', 'regression', 'forecasting'].includes(problem.task) || problem.semiSupervised)
         problem.splitOptions.outOfSampleSplit = false;
 
+    let trainDatasetSchema = datasetSchemas[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']
+    let trainDatasetSchemaPath = datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']
+
     let allParams = {
-        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, datasetSchemas.all, datasetSchemaPaths.all),
-        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(datasetSchemaPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']),
-        scoreSolutionDefaultParams: GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
+        searchSolutionParams: GRPC_SearchSolutionsRequest(problem, trainDatasetSchema, trainDatasetSchemaPath),
+        fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(trainDatasetSchemaPath),
+        scoreSolutionDefaultParams: problem.scoreOptions.userSpecified && GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
         produceSolutionDefaultParams: Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
             .reduce((produces, dataSplit) => Object.assign(produces, {
                 [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
@@ -37,12 +41,12 @@ export let getD3MAdapter = problem => ({
         if (!IS_D3M_DOMAIN) return;
 
         // return if current problem is already being solved
-        if ('d3m' in problem.solverState) return;
+        if ('d3m' in problem.results.solverState) return;
         if (!app.isProblemValid(problem)) return;
         problem.system = 'solved';
         console.log("solving:", problem);
 
-        problem.solverState.d3m = {thinking: true};
+        problem.results.solverState.d3m = {thinking: true};
 
         // --------------------------------------
         // check that TA2 is accessible
@@ -52,8 +56,8 @@ export let getD3MAdapter = problem => ({
             if (responseTA2.success !== true) {
               console.log('fyi: TA2 not ready when trying to solve.')
               app.showTA2ConnectError(responseTA2.message);
-              problem.solverState.d3m = {thinking: false};
-              delete problem.solverState['d3m'];
+              problem.results.solverState.d3m = {thinking: false};
+              delete problem.results.solverState['d3m'];
               return;
             } else{
               app.showTA2Name(responseTA2);
@@ -79,8 +83,8 @@ export let getD3MAdapter = problem => ({
 
         if (!res || !res.success) {
             handleENDGetSearchSolutionsResults();
-            problem.solverState.d3m.thinking = false;
-            problem.solverState.d3m.message = 'Search failed.';
+            problem.results.solverState.d3m.thinking = false;
+            problem.results.solverState.d3m.message = 'Search failed.';
             console.error(res.message);
             m.redraw();
             return;
@@ -90,11 +94,12 @@ export let getD3MAdapter = problem => ({
         results.resultsPreferences.selectedMetric = problem.metric;
 
         // route streamed responses with this searchId to this problem
-        problem.solverState.d3m.searchId = res.data.searchId;
-        problem.solverState.d3m.message = 'searching for solutions';
-        problem.selectedSolutions.d3m = problem.selectedSolutions.d3m || [];
-        problem.solutions.d3m = problem.solutions.d3m || {};
+        problem.results.solverState.d3m.searchId = res.data.searchId;
+        problem.results.solverState.d3m.message = 'searching for solutions';
+        problem.results.selectedSolutions.d3m = problem.results.selectedSolutions.d3m || [];
+        problem.results.solutions.d3m = problem.results.solutions.d3m || {};
         m.redraw();
+        resetPeek();
     },
     search: () => {
         throw 'Search not implemented for D3M.';
@@ -107,10 +112,10 @@ export let getD3MAdapter = problem => ({
         body: {
             produce_solution_request: {
                 ...GRPC_ProduceSolutionRequest(specification.input.metadata_uri),
-                fittedSolutionId: problem.solutions.d3m[solutionId].fittedSolutionId,
+                fittedSolutionId: problem.results.solutions.d3m[solutionId].fittedSolutionId,
             },
             pipeline_id: parseInt(solutionId) || 0,
-            search_id: problem.solverState.d3m.searchId,
+            search_id: problem.results.solverState.d3m.searchId,
             produce_dataset_name: specification.input.name
         }
     }),
@@ -145,14 +150,10 @@ let handleCompletedSearch = searchId => response => {
         m.redraw();
         return;
     }
-    let solvedProblem = Object.values(app.workspace.raven_config.problems)
-        .find(problem => problem?.solverState?.d3m?.searchId === String(searchId));
-
-    if (solvedProblem) {
-        solvedProblem.solverState.d3m.thinking = false;
-        solvedProblem.solverState.d3m.message = 'search complete';
-    }
-
+    let solvedProblem = findProblem(String(searchId));
+    if (!solvedProblem) return
+    solvedProblem.results.solverState.d3m.thinking = false;
+    solvedProblem.results.solverState.d3m.message = 'search complete';
     m.redraw()
 };
 
@@ -162,8 +163,8 @@ let handleCompletedSearch = searchId => response => {
  * Note: not all problems have a d3mSearchId
  */
 export let endAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
-    .filter(problem => 'searchId' in ((problem.solverState || {}).d3m || {}))
-    .map(problemId => app.workspace.raven_config.problems[problemId].solverState.d3m.searchId)
+    .filter(problem => 'searchId' in (problem.results.solverState?.d3m || {}))
+    .map(problemId => app.workspace.raven_config.problems[problemId].results.solverState.d3m.searchId)
     .forEach(searchId => searchId && endSearch(parseInt(searchId)));
 
 /*
@@ -172,8 +173,8 @@ export let endAllSearches = async () => Object.keys(app.workspace.raven_config.p
  *  Note: not all problems have a d3mSearchId
  */
 export let stopAllSearches = async () => Object.keys(app.workspace.raven_config.problems)
-    .filter(problem => 'searchId' in ((problem.solverState || {}).d3m || {}))
-    .map(problemId => app.workspace.raven_config.problems[problemId].solverState.d3m.searchId)
+    .filter(problem => 'searchId' in (problem.results.solverState?.d3m || {}))
+    .map(problemId => app.workspace.raven_config.problems[problemId].results.solverState.d3m.searchId)
     .forEach(searchId => searchId && stopSearch(parseInt(searchId)));
 
 // ------------------------------------------
@@ -656,7 +657,6 @@ export function GRPC_ProduceSolutionRequest(datasetDocUrl){
   This DOES NOT include the solutionId
 */
 export function GRPC_ScoreSolutionRequest(problem, datasetDocUrl) {
-    if (!problem.scoreOptions.userSpecified) {return}
     return {
         inputs: [{dataset_uri: 'file://' + datasetDocUrl}],
         performanceMetrics: [problem.metric, ...problem.metrics].map(metric => ({metric: app.d3mMetrics[metric]})),
@@ -693,14 +693,11 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
-    let solvedProblemId = Object.keys(problems)
-        .filter(problemId => ((problems[problemId].solverState || {}).d3m || {}).searchId)
-        .find(problemId => problems[problemId].solverState.d3m.searchId === response.stored_request.search_id);
-    let solvedProblem = problems[solvedProblemId];
+    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
+        console.log("other search found")
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
         if (results.otherSearches[response.stored_request.search_id].running === undefined)
             results.otherSearches[response.stored_request.search_id].running = true;
@@ -714,7 +711,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     if (response.is_error) return;
 
     // save the problem
-    Object.assign(solvedProblem.solutions.d3m, {
+    Object.assign(solvedProblem.results.solutions.d3m, {
         [response.pipelineId]: {
             solutionId: String(response.pipelineId),
             systemId: 'd3m',
@@ -724,9 +721,11 @@ export async function handleGetSearchSolutionResultsResponse(response) {
 
     // set the selected solution if none have been selected yet
     // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
-    if (!solvedProblem.userSelectedSolution) {
+    if (!solvedProblem.results.userSelectedSolution) {
         let bestSolution = getBestSolution(solvedProblem);
-        results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
+        if (bestSolution) {
+            results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
+        }
     }
 
     // if the user has not specified a scoring configuration, then use scores from the TA2
@@ -737,7 +736,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         });
 
         // save scores
-        let solution = solvedProblem.solutions.d3m[response.pipelineId];
+        let solution = solvedProblem.results.solutions.d3m[response.pipelineId];
         solution.scores = solution.scores || [];
         solution.scores.push(...response.response.scores[0].scores);
     }
@@ -755,10 +754,7 @@ export async function handleDescribeSolutionResponse(response) {
         return;
     }
 
-    let problems = app.workspace?.raven_config?.problems ?? {};
-    let solvedProblemId = Object.keys(problems)
-        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.searchId);
-    let solvedProblem = problems[solvedProblemId];
+    let solvedProblem = findProblem({system: 'd3m', search_id: response.searchId})
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
@@ -776,13 +772,15 @@ export async function handleDescribeSolutionResponse(response) {
     debugLog('---- handleDescribeSolutionResponse -----');
     debugLog(JSON.stringify(response));
 
-    let solution = solvedProblem.solutions.d3m[response.pipelineId];
+    let solution = solvedProblem.results.solutions.d3m[response.pipelineId];
+    if (!solution) {return}
 
     // the pipeline template is the only useful information
     solution.pipeline = response.pipeline;
     solution.name = solution.pipeline !== undefined
         ? solution.pipeline.steps
-            .filter(step => ['regression', 'classification'].includes(step.primitive.primitive.pythonPath.split('.')[2]))
+            .filter(step => ['regression', 'classification', 'semisupervised_classification', 'semisupervised_regression']
+                .includes(step.primitive.primitive.pythonPath.split('.')[2]))
             .map(step => step.primitive.primitive.pythonPath.replace(new RegExp('d3m\\.primitives\\.(regression|classification|semisupervised_classification|semisupervised_regression)\\.'), ''))
             .join()
         : '';
@@ -801,10 +799,7 @@ export async function handleGetFitSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = app.workspace?.raven_config?.problems ?? {};
-    let solvedProblemId = Object.keys(problems)
-        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
-    let solvedProblem = problems[solvedProblemId];
+    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -821,7 +816,10 @@ export async function handleGetFitSolutionResultsResponse(response) {
     if (!response.is_finished) return;
     if (response.is_error) return;
 
-    solvedProblem.solutions.d3m[response.pipelineId].fittedSolutionId = response.response.fittedSolutionId;
+    let solution = solvedProblem.results.solutions.d3m?.[response.pipelineId];
+    if (!solution) {return}
+
+    solution.fittedSolutionId = response.response.fittedSolutionId;
     m.redraw();
 }
 
@@ -836,10 +834,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = app.workspace?.raven_config?.problems ?? {};
-    let solvedProblemId = Object.keys(problems)
-        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
-    let solvedProblem = problems[solvedProblemId];
+    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -860,7 +855,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
     response.response.scores.forEach(scoreSchema => scoreSchema.value = scoreSchema.value.raw.double);
 
     // save scores
-    let solution = solvedProblem.solutions.d3m[response.pipelineId];
+    let solution = solvedProblem.results.solutions.d3m[response.pipelineId];
     solution.scores = solution.scores || [];
     solution.scores.push(...response.response.scores);
     m.redraw();
@@ -877,10 +872,7 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let problems = app.workspace?.raven_config?.problems ?? {};
-    let solvedProblemId = Object.keys(problems)
-        .find(problemId => problems[problemId]?.solverState?.d3m?.searchId === response.stored_request.search_id);
-    let solvedProblem = problems[solvedProblemId];
+    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -913,7 +905,8 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     if (!firstOutput) return;
     let pointer = firstOutput.replace('file://', '');
 
-    let solution = solvedProblem.solutions.d3m[response.pipelineId];
+    let solution = solvedProblem.results.solutions.d3m?.[response.pipelineId];
+    if (!solution) {return}
 
     // save produce to solution
     solution.produce = solution.produce || [];
@@ -938,7 +931,7 @@ export async function endSession() {
     app.taskPreferences.isSubmittingPipelines = true;
     let selectedProblem = app.getSelectedProblem();
 
-    let solutions = selectedProblem.solutions;
+    let solutions = selectedProblem.results.solutions;
     if (Object.keys(solutions.d3m).length === 0) {
         alertError("No pipelines exist. Cannot mark problem as complete.");
         return;

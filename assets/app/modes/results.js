@@ -1,7 +1,7 @@
 import m from 'mithril';
 
 import * as app from "../app";
-import {buildDatasetUrl, workspace} from "../app";
+import {alertError, buildDatasetUrl, resetPeek, setDefault, workspace} from "../app";
 import * as plots from "../plots";
 
 import * as solverWrapped from '../solvers/wrapped';
@@ -73,7 +73,10 @@ export let leftpanel = () => {
                     .concat(selectedProblem.splitOptions.outOfSampleSplit ? ['test', 'train'] : [])
                     .concat(Object.values(customDatasets).map(dataset => dataset.name)),
                 activeItem: resultsPreferences.dataSplit,
-                onclickChild: value => resultsPreferences.dataSplit = value,
+                onclickChild: value => {
+                    resetPeek();
+                    resultsPreferences.dataSplit = value
+                },
                 style: {'margin-left': '1em'}
             }))),
         ),
@@ -126,12 +129,12 @@ export let leftpanel = () => {
                             action: m(Button, {
                                 class: 'btn-sm',
                                 onclick: () => solverSystems[systemId].solve(),
-                                disabled: !!selectedProblem.solverState?.[systemId]?.thinking
-                            }, !!selectedProblem.solverState?.[systemId]?.thinking ? 'Solving' : 'Solve'),
-                            state: selectedProblem.solverState?.[systemId] && m('',
+                                disabled: !!selectedProblem.results.solverState?.[systemId]?.thinking
+                            }, !!selectedProblem.results.solverState?.[systemId]?.thinking ? 'Solving' : 'Solve'),
+                            state: selectedProblem.results.solverState?.[systemId] && m('',
                                 m('div[style=font-size:medium;margin-right:1em;display:inline-block]',
-                                    selectedProblem.solverState?.[systemId]?.message),
-                                selectedProblem.solverState[systemId].thinking && [
+                                    selectedProblem.results.solverState?.[systemId]?.message),
+                                selectedProblem.results.solverState[systemId].thinking && [
                                     common.loaderSmall(systemId),
                                     m(Button, {
                                         style: 'margin-left: 1em',
@@ -150,13 +153,13 @@ export let leftpanel = () => {
 
                                             // system adapters "adapt" a specific system interface to a common interface
                                             getSystemAdapters(selectedProblem)[systemId]
-                                                .end(selectedProblem.solverState[systemId].searchId)
+                                                .end(selectedProblem.results.solverState[systemId].searchId)
                                         }
                                     }, m(Icon, {name: 'stop'}))
                                 ]
                             ),
                         })),
-                        headers: ['solver', 'action', 'state'],
+                        // headers: ['solver', 'action', 'state'],
                         tableTags: m('colgroup',
                             m('col', {span: 1, width: '15em'}),
                             m('col', {span: 1, width: '3em'}),
@@ -207,15 +210,16 @@ export let leftpanel = () => {
                         data: Object.keys(app.workspace.raven_config.problems)
 
                             .map(problemId => app.workspace.raven_config.problems[problemId])
+                            .filter(problem => problem.results)
                             // flatten problems to one entry per active search
                             .flatMap(problem =>
-                                Object.keys(problem.solverState || {}).map(systemId => [problem, systemId]))
+                                Object.keys(problem.results.solverState || {}).map(systemId => [problem, systemId]))
                             .map(([problem, systemId]) => [
                                 problem.problemId,
                                 problem.targets.join(', '),
-                                problem.solverState[systemId].searchId,
-                                problem.solverState[systemId].thinking ? 'running' : 'stopped',
-                                problem.solverState[systemId].thinking && m(Button, {
+                                problem.results.solverState[systemId].searchId,
+                                problem.results.solverState[systemId].thinking ? 'running' : 'stopped',
+                                problem.results.solverState[systemId].thinking && m(Button, {
                                     title: 'end the search',
                                     class: 'btn-sm',
                                     onclick: () => {
@@ -232,11 +236,11 @@ export let leftpanel = () => {
 
                                         // system adapters "adapt" a specific system interface to a common interface
                                         getSystemAdapters(problem)[systemId]
-                                            .end(selectedProblem.solverState[systemId].searchId)
+                                            .end(selectedProblem.results.solverState[systemId].searchId)
                                     }
                                 }, m(Icon, {name: 'stop'}))
                             ]),
-                        headers: ['Name', 'Targets', 'Search ID', 'State', 'Stop'],
+                        headers: ['problem', 'targets', 'search ID', 'state', 'stop'],
                         activeRow: app.workspace.raven_config.selectedProblem,
                         onclick: app.setSelectedProblem
                     }),
@@ -819,7 +823,7 @@ export class CanvasSolutions {
                 activeSection: resultsPreferences.interpretationMode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    problem.datasetPaths.partials && {
+                    problem.results.datasetPaths.partials && {
                         value: 'Partials',
                         title: 'model prediction as predictor varies over its domain'
                     },
@@ -942,7 +946,7 @@ export class CanvasSolutions {
                         return;
                     }
 
-                    if (resultsPreferences.upload.name in problem.datasetPaths) {
+                    if (resultsPreferences.upload.name in problem.results.datasetPaths) {
                         app.alertError(`Data split ${resultsPreferences.upload.name} already exists. Please choose another name.`);
                         return;
                     }
@@ -1059,11 +1063,12 @@ export class CanvasSolutions {
                     // ['Status', firstSolution.status],
                     // ['Created', new Date(firstSolution.created).toUTCString()]
                 ] : [
-                    // ['Model Zip', m(Button, {
-                    //     onclick: () => {
-                    //         solverWrapped.downloadModel(firstSolution.model_pointer)
-                    //     }
-                    // }, 'Download')]
+                    firstSolution.systemId === 'TwoRavens' && ['All Hyperparameters', firstSolution.all_parameters],
+                    ['Model Zip', m(Button, {
+                        onclick: () => {
+                            solverWrapped.downloadModel(firstSolution)
+                        }
+                    }, 'Download')]
                 ]),
                 style: {background: 'white'}
             }),
@@ -1301,7 +1306,7 @@ export let getSolutionAdapter = (problem, solution) => ({
             .find(produce =>
                 produce.input.name === dataSplit &&
                 produce.configuration.predict_type === predict_type);
-        return produce && produce.data_pointer;
+        return produce?.data_pointer;
     },
     getFittedVsActuals: target => {
         let adapter = getSolutionAdapter(problem, solution);
@@ -1378,22 +1383,26 @@ export let getSolutionAdapter = (problem, solution) => ({
 
 export let getBestSolution = (problem, systemId) => {
     let solutions = systemId
-        ? Object.values(problem.solutions[systemId])
-        : Object.keys(problem.solutions)
-            .flatMap(systemId => Object.values(problem.solutions[systemId]));
+        ? Object.values(problem.results.solutions[systemId])
+        : Object.keys(problem.results.solutions)
+            .flatMap(systemId => Object.values(problem.results.solutions[systemId]));
 
     let adapters = solutions.map(solution => getSolutionAdapter(problem, solution));
-    let direction = reverseSet.includes(resultsPreferences.selectedMetric) ? 1 : -1;
-    return adapters
+    let direction = reverseSet.includes(resultsPreferences.selectedMetric) ? -1 : 1;
+    let scorings = adapters
         .map(adapter => [adapter, adapter.getScore(resultsPreferences.selectedMetric) * direction])
-        .reduce((best, current) => best[1] > current[1] ? best : current)[0]
+        .filter(([_, score]) => !isNaN(score))
+
+    if (scorings.length === 0) return
+    return scorings.reduce((best, current) => best[1] > current[1] ? best : current)[0]
 }
 
 let getSolutionTable = (problem, systemId) => {
-    let solutions = systemId
-        ? Object.values(problem.solutions[systemId])
-        : Object.keys(problem.solutions)
-            .flatMap(systemId => Object.values(problem.solutions[systemId]));
+    let solutions = problem.results.solutions || {};
+    solutions = systemId
+        ? Object.values(solutions[systemId])
+        : Object.keys(solutions)
+            .flatMap(systemId => Object.values(solutions[systemId]));
 
     let adapters = solutions.map(solution => getSolutionAdapter(problem, solution));
 
@@ -1414,9 +1423,9 @@ let getSolutionTable = (problem, systemId) => {
         setSortHeader: header => resultsPreferences.selectedMetric = header,
         sortDescending: !reverseSet.includes(resultsPreferences.selectedMetric),
         activeRow: new Set(adapters
-            .filter(adapter => (problem.selectedSolutions[adapter.getSystemId()] || '').includes(adapter.getSolutionId()))),
+            .filter(adapter => (problem.results.selectedSolutions[adapter.getSystemId()] || '').includes(adapter.getSolutionId()))),
         onclick: adapter => {
-            problem.userSelectedSolution = true;
+            problem.results.userSelectedSolution = true;
             setSelectedSolution(problem, adapter.getSystemId(), adapter.getSolutionId())
         }
     })
@@ -1511,7 +1520,7 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
     };
 
     if (!problem) return;
-    if (!(systemId in problem.selectedSolutions)) problem.selectedSolutions[systemId] = [];
+    if (!(systemId in problem.results.selectedSolutions)) problem.results.selectedSolutions[systemId] = [];
 
     // TODO: find a better place for this/code pattern. Unsetting this here is ugly
     resultsData.interpretationICEFitted = {};
@@ -1519,17 +1528,17 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
 
     if (modelComparison) {
 
-        problem.selectedSolutions[systemId].includes(solutionId)
-            ? app.remove(problem.selectedSolutions[systemId], solutionId)
-            : problem.selectedSolutions[systemId].push(solutionId);
+        problem.results.selectedSolutions[systemId].includes(solutionId)
+            ? app.remove(problem.results.selectedSolutions[systemId], solutionId)
+            : problem.results.selectedSolutions[systemId].push(solutionId);
 
         // set behavioral logging
         logParams.feature_id = 'RESULTS_COMPARE_SOLUTIONS';
         logParams.activity_l2 = 'MODEL_COMPARISON';
     } else {
-        problem.selectedSolutions = Object.keys(problem.selectedSolutions)
+        problem.results.selectedSolutions = Object.keys(problem.results.selectedSolutions)
             .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {});
-        problem.selectedSolutions[systemId] = [solutionId];
+        problem.results.selectedSolutions[systemId] = [solutionId];
 
         // set behavioral logging
         logParams.feature_id = 'RESULTS_SELECT_SOLUTION';
@@ -1538,14 +1547,14 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
         // ------------------------------------------------
         // Logging, include score, rank, and solutionId
         // ------------------------------------------------
-        let chosenSolution = problem.solutions[systemId][solutionId];
+        let chosenSolution = problem.results.solutions[systemId][solutionId];
         if (chosenSolution) {
             let adapter = getSolutionAdapter(problem, chosenSolution);
             let score = adapter.getScore(problem.metric);
             if (score !== undefined) {
                 logParams.other = {
                     solutionId: chosenSolution.solutionId,
-                    rank: getProblemRank(problem.solutions[systemId], solutionId),
+                    rank: getProblemRank(problem.results.solutions[systemId], solutionId),
                     performance: score,
                     metric: resultsPreferences.selectedMetric,
                 };
@@ -1581,24 +1590,24 @@ export let getSolutions = (problem, source) => {
     if (!problem) return [];
 
     if (source) {
-        if (!(source in problem.solutions)) problem.solutions[source] = [];
-        Object.values(problem.solutions[source]);
+        if (!(source in problem.results.solutions)) problem.results.solutions[source] = [];
+        Object.values(problem.results.solutions[source]);
     }
 
-    return Object.values(problem.solutions)
+    return Object.values(problem.results.solutions)
         .flatMap(source => Object.values(source))
 };
 
 export let getSelectedSolutions = (problem, systemId) => {
-    if (!problem) return [];
+    if (!problem?.results?.selectedSolutions) return [];
 
-    if (!systemId) return Object.keys(problem.selectedSolutions)
-        .flatMap(systemId => problem.selectedSolutions[systemId]
-            .map(id => problem.solutions[systemId][id])).filter(_ => _);
+    if (!systemId) return Object.keys(problem.results.selectedSolutions)
+        .flatMap(systemId => problem.results.selectedSolutions[systemId]
+            .map(id => problem.results.solutions[systemId][id])).filter(_ => _);
 
-    problem.selectedSolutions[systemId] = problem.selectedSolutions[systemId] || [];
-    return problem.selectedSolutions[systemId]
-        .map(id => problem.solutions[systemId][id]).filter(_ => _)
+    problem.results.selectedSolutions[systemId] = problem.results.selectedSolutions[systemId] || [];
+    return problem.results.selectedSolutions[systemId]
+        .map(id => problem.results.solutions[systemId][id]).filter(_ => _)
 };
 
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
@@ -2032,7 +2041,7 @@ export let loadDataSample = async (problem, split) => {
     try {
         response = await app.getData({
             method: 'aggregate',
-            datafile: problem.datasetPaths[split],
+            datafile: problem.results.datasetPaths[split],
             collection_name: `${app.workspace.d3m_config.name}_${problem.problemId}_${split}`,
             reload: true,
             query: JSON.stringify(compiled)
@@ -2297,8 +2306,8 @@ export let loadInterpretationICEFittedData = async (problem, adapter, predictor)
     // load dependencies, which can clear loading state if problem, etc. changed
     await loadSolutionData(problem, adapter);
 
-    let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
-    let dataPointerIndex = problem.datasetIndexPartialsPaths['ICE_synthetic_' + predictor];
+    let dataPointerPredictors = problem.results.datasetPaths['ICE_synthetic_' + predictor];
+    let dataPointerIndex = problem.results.datasetIndexPartialsPaths['ICE_synthetic_' + predictor];
     let dataPointerFitted = adapter.getDataPointer('ICE_synthetic_' + predictor);
 
     // don't load if data is not available
@@ -2464,8 +2473,8 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     if (mode === 'PDP/ICE') {
         let responses = {};
         await Promise.all(Object.keys(dataPointers).map(async predictor => {
-            let dataPointerPredictors = problem.datasetPaths['ICE_synthetic_' + predictor];
-            let dataPointerIndex = problem.datasetIndexPartialsPaths['ICE_synthetic_' + predictor];
+            let dataPointerPredictors = problem.results.datasetPaths['ICE_synthetic_' + predictor];
+            let dataPointerIndex = problem.results.datasetIndexPartialsPaths['ICE_synthetic_' + predictor];
             if (!dataPointerPredictors) return;
             try {
                 responses[predictor] = await m.request(D3M_SVC_URL + `/retrieve-output-ICE-data`, {
@@ -2592,7 +2601,7 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         response = await m.request(`image-utils/markup-image`, {
             method: 'POST',
             body: {
-                file_path: problem.datasetSchemaPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
+                file_path: problem.results.datasetSchemaPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
                 borders: Object.keys(fittedPoints).reduce((borders, solutionName) => Object.assign({
                     [resultsData.boundaryImageColormap[solutionName].replace('#', '')]: fittedPoints[solutionName]
                 }), {})
@@ -2664,29 +2673,35 @@ export let getSummaryData = problem => ({
         })
 });
 
+export let findProblem = data => {
+    if (data.search_id === undefined) return;
+    return Object.values(app.workspace?.raven_config?.problems || {})
+        .find(problem => String(problem?.results?.solverState?.[data.system]?.searchId) === String(data.search_id));
+};
+
 export let prepareResultsDatasets = async (problem, solverId) => {
     // set d3m dataset id to unique value if not defined
-    problem.d3mDatasetId = problem.d3mDatasetId || workspace.datasetDoc.about.datasetID + '_' + app.generateID(String(Math.random()));
+    problem.results.d3mDatasetId = problem.results.d3mDatasetId
+        || workspace.datasetDoc.about.datasetID + '_' + Math.abs(app.generateID(String(Math.random())));
 
-    problem.datasetSchemas = problem.datasetSchemas || {
-        all: app.workspace.datasetDoc
-    };
-    problem.datasetSchemaPaths = problem.datasetSchemaPaths || {
-        all: app.workspace.d3m_config.dataset_schema
-    };
-    problem.datasetPaths = problem.datasetPaths || {
-        all: app.workspace.datasetPath
-    };
 
-    problem.datasetSchemaPathsManipulated = problem.datasetSchemaPathsManipulated || {};
-    problem.datasetSchemasManipulated = problem.datasetSchemasManipulated || {};
-    problem.datasetPathsManipulated = problem.datasetPathsManipulated || {};
+    setDefault(problem.results.solverState, solverId, {});
+    problem.results.solverState[solverId].message = 'applying manipulations to data';
+    m.redraw();
+    try {
+        if (!app.materializeManipulationsPromise[problem.problemId])
+            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem);
+        await app.materializeManipulationsPromise[problem.problemId];
+    } catch (err) {
+        alertError(`Applying data manipulations failed: ${err}`);
+        throw err
+    }
 
-    problem.selectedSolutions[solverId] = problem.selectedSolutions[solverId] || [];
-    app.setRecursive(problem, [['solverState', {}], [solverId, {}], ['thinking', true]]);
+    problem.results.selectedSolutions[solverId] = problem.results.selectedSolutions[solverId] || [];
+    app.setRecursive(problem, [['results', {}], ['solverState', {}], [solverId, {}], ['thinking', true]]);
 
     if (['classification', 'regression'].includes(problem.task)) {
-        problem.solverState[solverId].message = 'preparing partials data';
+        problem.results.solverState[solverId].message = 'preparing partials data';
         m.redraw();
         try {
             if (!app.materializePartialsPromise[problem.problemId])
@@ -2698,7 +2713,7 @@ export let prepareResultsDatasets = async (problem, solverId) => {
         }
 
         // add ICE datasets to to datasetSchemaPaths and datasetPaths
-        problem.solverState[solverId].message = 'preparing ICE data';
+        problem.results.solverState[solverId].message = 'preparing ICE data';
         m.redraw();
         try {
             if (!app.materializeICEPromise[problem.problemId])
@@ -2710,7 +2725,7 @@ export let prepareResultsDatasets = async (problem, solverId) => {
         }
     }
 
-    problem.solverState[solverId].message = 'preparing train/test splits';
+    problem.results.solverState[solverId].message = 'preparing train/test splits';
     m.redraw();
     try {
         if (!app.materializeTrainTestPromise[problem.problemId])
@@ -2721,39 +2736,14 @@ export let prepareResultsDatasets = async (problem, solverId) => {
         console.log('Materializing train/test splits failed. Continuing without splitting.')
     }
 
-    problem.solverState[solverId].message = 'applying manipulations to data';
+    problem.results.solverState[solverId].message = 'initiating the search for solutions';
     m.redraw();
-    try {
-        if (!app.materializeManipulationsPromise[problem.problemId])
-            app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(
-                problem,
-                ['all', ...(problem.splitOptions.outOfSampleSplit ? ['train', 'test'] : [])]);
-        await app.materializeManipulationsPromise[problem.problemId];
-
-        // bring in the partials and ice datasets
-        problem.datasetPathsManipulated = Object.assign(
-            {}, problem.datasetPaths, problem.datasetPathsManipulated)
-
-    } catch (err) {
-        console.error(err);
-        let shouldContinue = confirm('Applying data manipulations failed. Would you like to continue without data manipulations?');
-        if (!shouldContinue) {
-            delete problem.solverState[solverId].thinking;
-            m.redraw();
-            return;
-        }
-        // console.log('Materializing manipulations failed. Continuing without manipulations.')
-    }
-
-    problem.solverState[solverId].message = 'initiating the search for solutions';
-    m.redraw();
-
 };
 
 export let uploadForModelRun = async (file, name, problem) => {
 
     let body = new FormData();
-    body.append('metadata', JSON.stringify({dataset_doc_id: problem.d3mDatasetId, name}));
+    body.append('metadata', JSON.stringify({dataset_doc_id: problem.results.d3mDatasetId, name}));
     body.append('files', file);
 
     // initial upload
@@ -2779,8 +2769,9 @@ export let uploadForModelRun = async (file, name, problem) => {
         `${workspace.d3m_config.name}_${customDataset.name}`,
         customDataset.datasetDoc);
 
-    problem.datasetPaths[customDataset.name] = manipulatedInfo.data_path;
-    problem.datasetSchemaPaths[customDataset.name] = manipulatedInfo.metadata_path;
+    problem.results.datasetSchemas[customDataset.name] = customDataset.datasetDoc;
+    problem.results.datasetPaths[customDataset.name] = manipulatedInfo.data_path;
+    problem.results.datasetSchemaPaths[customDataset.name] = manipulatedInfo.metadata_path;
 
     return {customDataset, manipulatedInfo};
 }
@@ -2795,8 +2786,7 @@ export let produceOnSolution = async (customDataset, manipulatedInfo, problem, s
         {
             'train': {
                 'name': 'train',
-                "resource_uri": 'file://' +
-                    (problem.datasetPathsManipulated?.train ?? problem.datasetPaths.train)
+                "resource_uri": 'file://' + problem.results.datasetPaths.train
             },
             'input': {
                 'name': customDataset.name,

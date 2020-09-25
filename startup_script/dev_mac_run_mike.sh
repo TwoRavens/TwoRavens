@@ -83,76 +83,32 @@ wait_for_port() {
 
 #fab clear_d3m_configs
 
-# ensure the mongo db directory exists (and is not in root, because of sip)
-MONGOD_DIR=$HOME/data/db
-mkdir -p "$MONGOD_DIR"
-
 #export FLASK_USE_PRODUCTION_MODE=yes
 export DISPLAY_DATAMART_UI=True
 
 if ! docker ps -a | grep -q raven-postgres; then
   echo ">> postgres"
-  ttab -G "
-    echo -ne '\033]0;postgres\007';
-    cd $install_directory;
-    workon 2ravens;
-    docker kill raven-postgres;
-    fab postgres_run; exit"
+  bash startup_script/dev_mac_restart_mike.sh postgres
 
   # postgres must be ready before django is started
   wait_for_port 5432
 fi
 
-echo ">> django"
-# rename tab; move into repo; set working env; kill django; kill webpack; run django; close tab;
-ttab -G '
-  echo -ne "\033]0;django\007";
-  cd '$install_directory';
-  workon 2ravens;
-  lsof -ti:8080 | xargs kill;
-  ps -ef | grep "webpack" | grep -v grep | awk '"'"'{print $2}'"'"' | xargs kill;
-  export DISPLAY_DATAMART_UI='"$DISPLAY_DATAMART_UI"';
-  fab run_with_ta2;
-  exit'
-
 echo ">> celery"
-ttab -G '
-  echo -ne "\033]0;celery\007";
-  cd '$install_directory';
-  workon 2ravens;
-  pkill -f celery;
-  export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES;
-  export AUTOML_FAST_DEBUG=yes;
-  fab celery_run_with_ta2;
-  exit'
+bash startup_script/dev_mac_restart_mike.sh celery standalone
 
-#lsof -ti:8000 | xargs kill -9
-# attempt graceful shutdown of flask to avoid leaking processes from the pool
+# restart celery first, so that workers will be updated before django loads
+echo ">> django"
+bash startup_script/dev_mac_restart_mike.sh django
+
 echo ">> flask R"
-ttab -G '
-  echo -ne "\033]0;flask R\007";
-  cd '$install_directory';
-  workon 2ravens;
-  [[ $(nc -z localhost 8000; echo $?) -eq 0 ]] && curl localhost:8000/shutdown;
-  fab run_R;
-  exit'
+bash startup_script/dev_mac_restart_mike.sh R
 
 echo ">> mongo"
-ttab -G "
-  echo -ne '\033]0;mongod\007';
-  workon 2ravens;
-  mongo 127.0.0.1/admin --eval 'db.shutdownServer()';
-  mongod --dbpath=$MONGOD_DIR;
-  exit"
+bash startup_script/dev_mac_restart_mike.sh mongo
 
 echo ">> redis"
-ttab -G '
-  echo -ne "\033]0;redis\007";
-  cd '$install_directory';
-  workon 2ravens;
-  redis-cli shutdown;
-  redis-server;
-  exit'
+bash startup_script/dev_mac_restart_mike.sh redis
 
 # wait for mongod to start
 wait_for_port 27017
@@ -167,13 +123,7 @@ if [[ $1 == "none" ]]; then
   fab choose_config:"$DATA_ID"
 else
   echo ">> ta2"
-  ttab -G "
-    echo -ne '\033]0;ta2 $1\007';
-    cd $install_directory;
-    workon 2ravens;
-    docker kill ta2_server;
-    fab run_ta2_$1_choose_config:$DATA_ID;
-    exit"
+  bash startup_script/dev_mac_restart_mike.sh ta2 $1 $DATA_ID
 fi
 
 open -a 'google chrome' http://localhost:8080

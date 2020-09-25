@@ -102,10 +102,10 @@ class Model(object):
                 train_specification=metadata['train_specification'],
                 task=metadata['task'])
 
-        if metadata['system'] == 'two-ravens':
+        if metadata['system'] == 'TwoRavens':
             return ModelTwoRavens(
                 model=BaseModelWrapper.load(model_folder_path, metadata),
-                system='two-ravens',
+                system='TwoRavens',
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
                 model_id=metadata['model_id'],
@@ -682,7 +682,7 @@ class ModelTwoRavens(Model):
         description = self.model.describe() or {}
         # print(description)
         return {
-            "model": self.model.pipeline_specification['model']['strategy'],
+            "model": self.model.pipeline_specification['model']['strategy'].lower(),
             "description": str(self.model.model),
             **description,
             "pipeline_specification": self.model.pipeline_specification,

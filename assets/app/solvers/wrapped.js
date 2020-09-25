@@ -3,15 +3,15 @@ import m from 'mithril';
 
 import * as app from '../app';
 import * as results from "../modes/results";
-import {alertWarn} from "../app";
-import {getBestSolution, resultsPreferences} from "../modes/results";
+import {alertWarn, setDefault} from "../app";
+import {findProblem, getBestSolution} from "../modes/results";
 
 export let SOLVER_SVC_URL = '/solver-service/';
 
 
 export let getSolverSpecification = async (problem, systemId) => {
     await results.prepareResultsDatasets(problem, systemId);
-    if (!problem.solverState[systemId].thinking)
+    if (!problem.results.solverState[systemId].thinking)
         return;
 
     let allParams = {
@@ -32,9 +32,7 @@ export let getSolverSpecification = async (problem, systemId) => {
 let SPEC_search = problem => ({
     "input": {
         // search with 'all' if no out of sample split
-        "resource_uri": 'file://' + (problem.splitOptions.outOfSampleSplit
-            ? ((problem.datasetPathsManipulated || {}).train || problem.datasetPaths.train)
-            : ((problem.datasetPathsManipulated || {}).all || problem.datasetPaths.all))
+        "resource_uri": 'file://' + problem.results.datasetPaths[problem.splitOptions.outOfSampleSplit ? 'train' : 'all']
     },
     'problem': SPEC_problem(problem),
     "timeBoundSearch": (problem.searchOptions.timeBoundSearch || .5) * 60,
@@ -116,7 +114,7 @@ let SPEC_produce = problem => {
     if (problem.task === 'classification') predict_types.push('PROBABILITIES');
 
     let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
-    if (['classification', 'regression'].includes(problem.task) && problem.datasetPaths.partials) dataset_types.push('partials');
+    if (['classification', 'regression'].includes(problem.task) && problem.results.datasetPaths.partials) dataset_types.push('partials');
 
     let produces = [];
 
@@ -125,13 +123,11 @@ let SPEC_produce = problem => {
         produces.push(...dataset_types.flatMap(dataset_type => predict_types.flatMap(predict_type => ({
             'train': {
                 'name': 'train',
-                "resource_uri": 'file://' +
-                    (problem.datasetPathsManipulated?.[train_split] ?? problem.datasetPaths[train_split])
+                "resource_uri": 'file://' + problem.results.datasetPaths?.[train_split]
             },
             'input': {
                 'name': dataset_type,
-                "resource_uri": 'file://' +
-                    (problem.datasetPathsManipulated?.[dataset_type] ?? problem.datasetPaths[dataset_type])
+                "resource_uri": 'file://' + problem.results.datasetPaths?.[dataset_type]
             },
             'configuration': {
                 'predict_type': predict_type
@@ -145,13 +141,11 @@ let SPEC_produce = problem => {
     predict_types.forEach(predict_type => produces.push({
         'train': {
             'name': 'all',
-            'resource_uri': 'file://' +
-                (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
+            'resource_uri': 'file://' + problem.results.datasetPaths?.all
         },
         'input': {
             'name': 'all',
-            'resource_uri': 'file://' +
-                (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
+            'resource_uri': 'file://' + problem.results.datasetPaths?.all
         },
         'configuration': {
             'predict_type': predict_type
@@ -166,12 +160,11 @@ let SPEC_produce = problem => {
         app.getPredictorVariables(problem).forEach(predictor => produces.push({
             'train': {
                 'name': 'all',
-                'resource_uri': 'file://' +
-                    (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
+                'resource_uri': 'file://' + problem.results.datasetPaths?.all
             },
             'input': {
                 'name': 'ICE_synthetic_' + predictor,
-                'resource_uri': 'file://' + problem.datasetPaths['ICE_synthetic_' + predictor]
+                'resource_uri': 'file://' + problem.results.datasetPaths['ICE_synthetic_' + predictor]
             },
             'configuration': {
                 'predict_type': "RAW"
@@ -199,18 +192,15 @@ let SPEC_score = problem => {
         if (!problem.splitOptions.outOfSampleSplit) return;
         spec.train = {
             'name': 'train',
-            'resource_uri': 'file://' +
-                (problem.datasetPathsManipulated?.train ?? problem.datasetPaths.train)
+            'resource_uri': 'file://' + problem.results.datasetPaths?.train
         };
         spec.input = {
             'name': 'test',
-            'resource_uri': 'file://' +
-                (problem.datasetPathsManipulated?.test ?? problem.datasetPaths.test)
+            'resource_uri': 'file://' + problem.results.datasetPaths?.test
         }
     } else spec.input = {
         "name": "all",
-        "resource_uri": 'file://' +
-            (problem.datasetPathsManipulated?.all ?? problem.datasetPaths.all)
+        "resource_uri": 'file://' + problem.results.datasetPaths?.all
     };
 
     return spec;
@@ -249,10 +239,10 @@ export let getSystemAdapterWrapped = (systemId, problem) => ({
                 app.alertWarn(response.message);
                 return;
             }
-            problem.solutions[systemId] = problem.solutions[systemId] || {};
-            problem.solverState[systemId].message = 'searching for solutions';
-            problem.solverState[systemId].searchId = response.data.search_id;
-            problem.selectedSolutions[systemId] = [];
+            problem.results.solutions[systemId] = problem.results.solutions[systemId] || {};
+            problem.results.solverState[systemId].message = 'searching for solutions';
+            problem.results.solverState[systemId].searchId = response.data.search_id;
+            problem.results.selectedSolutions[systemId] = [];
             results.resultsPreferences.selectedMetric = problem.metric;
             m.redraw()
         })
@@ -293,33 +283,25 @@ export let getSystemAdapterWrapped = (systemId, problem) => ({
         // TODO: implement stop search
         console.log("stop is not implemented for " + systemId);
         let solvedProblem = Object.values(app.workspace.raven_config.problems)
-            .find(problem => problem?.solverState?.[systemId]?.searchId === String(searchId));
+            .find(problem => problem?.results?.solverState?.[systemId]?.searchId === String(searchId));
 
         if (solvedProblem) {
-            solvedProblem.solverState[systemId].thinking = false;
-            solvedProblem.solverState[systemId].message = 'search complete';
+            solvedProblem.results.solverState[systemId].thinking = false;
+            solvedProblem.results.solverState[systemId].message = 'search complete';
         }
     },
     end: searchId => {
         // TODO: implement end search
         console.log("end is not implemented for " + systemId);
         let solvedProblem = Object.values(app.workspace.raven_config.problems)
-            .find(problem => problem?.solverState?.[systemId]?.searchId === String(searchId));
+            .find(problem => problem?.results?.solverState?.[systemId]?.searchId === String(searchId));
 
         if (solvedProblem) {
-            solvedProblem.solverState[systemId].thinking = false;
-            solvedProblem.solverState[systemId].message = 'search complete';
+            solvedProblem.results.solverState[systemId].thinking = false;
+            solvedProblem.results.solverState[systemId].message = 'search complete';
         }
     }
 });
-
-let findProblem = data => {
-    let problems = ((app.workspace || {}).raven_config || {}).problems || {};
-    let solvedProblemId = Object.keys(problems)
-        .find(problemId =>
-            ((problems[problemId].solverState || {})[data.system] || {}).searchId === data.search_id);
-    return problems[solvedProblemId];
-};
 
 // TODO: determine why django sometimes fails to provide a model id
 export let handleDescribeResponse = response => {
@@ -336,10 +318,11 @@ export let handleDescribeResponse = response => {
             return;
         }
 
-        app.setDefaultRecursive(solvedProblem.solutions, [
+        app.setDefaultRecursive(solvedProblem.results.solutions, [
             [data.system, {}], [data.model_id, {}]]);
-        Object.assign(solvedProblem.solutions[data.system][data.model_id], {
+        Object.assign(solvedProblem.results.solutions[data.system][data.model_id], {
             name: data.model,
+            all_parameters: data.all_parameters,
             description: data.description,
             solutionId: data.model_id,
             searchId: data.search_id,
@@ -348,9 +331,11 @@ export let handleDescribeResponse = response => {
 
         // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
         // if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, data.system, data.model_id);
-        if (!solvedProblem.userSelectedSolution) {
+        if (!solvedProblem.results.userSelectedSolution) {
             let bestSolution = getBestSolution(solvedProblem);
-            results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
+            if (bestSolution) {
+                results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
+            }
         }
 
         m.redraw()
@@ -366,11 +351,13 @@ export let handleProduceResponse = response => {
     }
 
     if (response.success) {
-        app.setDefaultRecursive(solvedProblem.solutions, [
-            [data.system, {}], [data.model_id, {}], ['produce', []]]);
-        solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
-        solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
-        solvedProblem.solutions[data.system][data.model_id].produce.push(data.produce);
+        app.setDefaultRecursive(solvedProblem.results, [
+            ['solutions', {}], [data.system, {}], [data.model_id, {}], ['produce', []]]);
+        let solution = solvedProblem.results.solutions[data.system][data.model_id];
+        solution.solutionId = data.model_id;
+        solution.systemId = data.system;
+        setDefault(solution, 'produce', []);
+        solution.produce.push(data.produce);
         m.redraw()
     }
 };
@@ -384,11 +371,12 @@ export let handleScoreResponse = response => {
     }
 
     if (response.success) {
-        app.setDefaultRecursive(solvedProblem.solutions, [
-            [data.system, {}], [data.model_id, {}], ['scores', []]]);
-        solvedProblem.solutions[data.system][data.model_id].solutionId = data.model_id;
-        solvedProblem.solutions[data.system][data.model_id].systemId = data.system;
-        solvedProblem.solutions[data.system][data.model_id].scores.push(...data.scores);
+        app.setDefaultRecursive(solvedProblem.results, [
+            ['solutions', {}], [data.system, {}], [data.model_id, {}], ['scores', []]]);
+        let solution = solvedProblem.results.solutions[data.system][data.model_id];
+        solution.solutionId = data.model_id;
+        solution.systemId = data.system;
+        solution.scores.push(...data.scores);
         m.redraw()
     }
 };
@@ -400,12 +388,11 @@ export let handleSolveCompleteResponse = response => {
         console.warn('solve complete arrived for unknown problem', data);
         return;
     }
-    if (!solvedProblem.solverState)
-        return;
+    if (!solvedProblem?.results?.solverState) return;
 
-    solvedProblem.solverState[data.system].thinking = false;
-    solvedProblem.solverState[data.system].message = response.additional_info.message;
-    solvedProblem.solverState[data.system].elapsed_time = response.data.elapsed_time;
+    solvedProblem.results.solverState[data.system].thinking = false;
+    solvedProblem.results.solverState[data.system].message = response.additional_info.message;
+    solvedProblem.results.solverState[data.system].elapsed_time = response.data.elapsed_time;
     m.redraw()
 };
 

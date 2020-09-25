@@ -95,7 +95,7 @@ export default class Body_Dataset {
                             uploadForModelRun(
                                 resultsPreferences.upload.file,
                                 resultsPreferences.upload.name,
-                                problem.d3mDatasetId,
+                                problem.results.d3mDatasetId,
                             ).then(({customDataset, manipulatedInfo}) => {
                                 // clear form, upload was successful
                                 resultsPreferences.upload = {};
