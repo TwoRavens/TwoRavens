@@ -22,7 +22,7 @@ grpcio-tools==1.30.0
 # For long-running GRPC requests
 #
 kombu==4.6.4  # 4.6.5 has a bug...
-celery==4.3.0
+celery==4.3.1
 # redis==2.10.6
 redis==3.2.0
 
