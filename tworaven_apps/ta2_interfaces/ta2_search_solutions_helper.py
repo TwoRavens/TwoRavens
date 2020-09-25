@@ -416,6 +416,12 @@ class SearchSolutionsHelper(BasicErrCheck):
                 StoredResponse.add_stream_success_response(\
                                     stored_response, stored_response)
 
+                # HACK: discard solutions with ranks
+                # solutions with ranks are duplicates of streamed solutions that come after the search is complete... that are ranked
+                stored_response_dict = stored_response.as_dict()
+                all_scores = [score for score_data in stored_response_dict['response']['scores'] for score in score_data['scores']]
+                if any(score['metric']['metric'] == "RANK" for score in all_scores):
+                    continue
                 # -----------------------------------------------
                 # send responses back to WebSocket
                 # ---------------------------------------------
@@ -423,7 +429,7 @@ class SearchSolutionsHelper(BasicErrCheck):
                             ta2_static.GET_SEARCH_SOLUTIONS_RESULTS,
                             'it worked',
                             msg_cnt=msg_cnt,
-                            data=stored_response.as_dict())
+                            data=stored_response_dict)
 
                 print('ws_msg: %s' % ws_msg)
                 #print('ws_msg', ws_msg.as_dict())

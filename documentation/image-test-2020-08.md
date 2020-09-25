@@ -26,7 +26,7 @@ nginx -T
 docker run --rm --name rmain \
   -e DATA_UPLOAD_MAX_MEMORY_SIZE="2097152" \
   -e TA2_D3M_SOLVER_ENABLED="False" \
-  -e TA2_WRAPPED_SOLVERS="['two-ravens']" \
+  -e TA2_WRAPPED_SOLVERS="['tworavens']" \
   tworavens/ravens-main:comfrey-2020-0731
 
 # Log into the image to see the "100M" pass-through

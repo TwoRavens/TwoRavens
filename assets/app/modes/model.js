@@ -3,7 +3,7 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
-import {isExploreMode, workspace} from "../app";
+import {isExploreMode, setVariableSummaryAttr, workspace} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -736,12 +736,6 @@ export let rightpanel = () => {
                                 style: 'margin:1em',
                                 onclick: () => {
                                     let problemCopy = app.getProblemCopy(selectedProblem);
-                                    resultsKeysToAxe.forEach(key => delete problemCopy[key]);
-                                    Object.assign(problemCopy, {
-                                        solutions: {},
-                                        selectedSource: undefined,
-                                        selectedSolutions: {}
-                                    });
                                     workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                                     app.setShowModalAlerts(false);
                                     app.setSelectedProblem(problemCopy.problemId);
@@ -1332,8 +1326,6 @@ export let buildForceData = problem => {
     return {pebbles, groups, groupLinks, summaries};
 };
 
-// TODO: move these keys into a .results sub-key that can just be deleted
-let resultsKeysToAxe = ["solutions", "selectedSolutions", "solverState", "datasetPaths", "datasetSchemaPaths", "datasetPathsManipulated", "datasetSchemaPathsManipulated", "levels", "domains"];
 
 export let setGroup = (problem, group, name) => {
     if (problem.system === 'solved') {
@@ -1341,12 +1333,6 @@ export let setGroup = (problem, group, name) => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = app.getProblemCopy(problem);
-                resultsKeysToAxe.forEach(key => delete problemCopy[key]);
-                Object.assign(problemCopy, {
-                    solutions: {},
-                    selectedSource: undefined,
-                    selectedSolutions: {}
-                });
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
                 app.setSelectedProblem(problemCopy.problemId);
@@ -1422,12 +1408,6 @@ let setContextPebble = pebble => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = app.getProblemCopy(selectedProblem);
-                resultsKeysToAxe.forEach(key => delete problemCopy[key]);
-                Object.assign(problemCopy, {
-                    solutions: {},
-                    selectedSource: undefined,
-                    selectedSolutions: {}
-                });
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
                 app.setSelectedProblem(problemCopy.problemId);
@@ -1782,15 +1762,26 @@ let setLabel = (problem, label, name) => {
     }
 
     if (label === 'geographic') {
+        // if we are going to add the tag
         if (!app.getGeographicVariables(problem).includes(name)) {
-            app.variableSummaries[name].geographic = true;
             app.remove(problem.tags.boundary, name);
             app.remove(problem.tags.temporal, name);
             app.remove(problem.tags.weights, name);
             app.remove(problem.tags.indexes, name);
             app.add(problem.tags.nominal, name);
-        } else app.variableSummaries[name].geographic = false;
-        app.toggle(problem.tags.geographic, name);
+            app.add(problem.tags.geographic, name);
+        }
+        // we are going to remove
+        else {
+            // if the tag is at the dataset level
+            if (variableSummaries[name].geographic) {
+                if (confirm("Do you want to remove the dataset-level geographic annotation?")) {
+                    setVariableSummaryAttr(name, 'geographic', false)
+                }
+            } else {
+                app.remove(problem.tags.geographic, name);
+            }
+        }
     }
 
     if (label === 'boundary') {
@@ -1805,11 +1796,23 @@ let setLabel = (problem, label, name) => {
     }
 
     if (label === 'temporal') {
+        // if we are going to add the tag
         if (!app.getTemporalVariables(problem).includes(name)) {
             app.remove(problem.tags.geographic, name);
             app.remove(problem.tags.boundary, name);
+            app.toggle(problem.tags.temporal, name);
         }
-        app.toggle(problem.tags.temporal, name);
+        // if we are going to remove the tag
+        else {
+            // if the tag is at the dataset level
+            if (variableSummaries[name].temporal) {
+                if (confirm("Do you want to remove the dataset-level temporal annotation?")) {
+                    setVariableSummaryAttr(name, 'temporal', false)
+                }
+            } else {
+                app.toggle(problem.tags.temporal, name);
+            }
+        }
     }
 
     if (label === 'weights') {

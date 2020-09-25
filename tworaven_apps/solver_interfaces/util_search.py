@@ -1,5 +1,6 @@
 
 import pandas
+from celery.result import allow_join_result
 from scipy.sparse.csr import csr_matrix
 
 from tworaven_apps.solver_interfaces.models import \
@@ -10,7 +11,7 @@ from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, M
 import uuid
 import abc
 import requests
-
+from celery import group
 import multiprocessing
 import os
 
@@ -57,7 +58,7 @@ class Search(object):
             'mljar-supervised': SearchMLJarSupervised,
             'ludwig': SearchLudwig,
             'mlbox': SearchMLBox,
-            'two-ravens': SearchTwoRavens
+            'TwoRavens': SearchTwoRavens
         }[system](
             specification=specification,
             callback_found=callback_found,
@@ -516,7 +517,7 @@ class SearchMLJarSupervised(Search):
 
 
 class SearchTwoRavens(Search):
-    system = 'two-ravens'
+    system = 'TwoRavens'
 
     def run(self):
         from tworaven_apps.solver_interfaces.tasks import pipeline_task
@@ -552,30 +553,28 @@ class SearchTwoRavens(Search):
             problem_specification=problem_specification,
             system_params=self.system_params)
 
-        task_ids = []
+        signatures = []
         while True:
             pipeline_specification = manager.get_pipeline_specification()
             if not pipeline_specification:
                 break
 
-            task_ids.append(pipeline_task.delay(
+            signatures.append(pipeline_task.s(
                 search_id=self.search_id,
                 train_specification=self.specification,
                 pipeline_specification=pipeline_specification,
                 callback_name=self.callback_found,
                 callback_arguments=self.callback_arguments))
 
-        while task_ids:
-            if task_ids[0].ready():
-                del task_ids[0]
-            else:
-                sleep(0.5)
+        result = group(*signatures)()
+        with allow_join_result():
+            result.join()
 
         return {
             KEY_SUCCESS: True,
             KEY_MESSAGE: 'search complete',
             KEY_DATA: {
                 'search_id': self.search_id,
-                'system': 'two-ravens'
+                'system': 'TwoRavens'
             }
         }

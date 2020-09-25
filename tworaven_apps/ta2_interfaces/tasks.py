@@ -231,7 +231,7 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
         'privileged': 'suggestedPriviligedData'
     }
 
-    def update_roles(prev_roles, col_name):
+    def do_update_roles(prev_roles, col_name):
         roles = [i for i in prev_roles if i in passthrough_roles]
 
         for role_name in map_roles:
@@ -246,7 +246,7 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
             return
         col_schema['colIndex'] = i
         if update_roles:
-            col_schema['role'] = update_roles(col_schema['role'], col_name)
+            col_schema['role'] = do_update_roles(col_schema['role'], col_name)
         return col_schema
 
     # modify in place
@@ -270,7 +270,6 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
 def split_dataset(configuration, workspace):
 
     # parse input data
-    print(configuration)
     split_options = configuration.get('split_options', {})
     problem = configuration.get('problem')
     dataset_schema = json.load(open(configuration['dataset_schema'], 'r'))

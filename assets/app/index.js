@@ -201,7 +201,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.isResultsMode && selectedProblem && Object.keys(selectedProblem.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
+            app.isResultsMode && selectedProblem && Object.keys(selectedProblem.results.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
                 onclick: solverD3M.endSession,
@@ -239,10 +239,12 @@ class Body {
     }
 
     peekTable() {
+        let selectedProblem = app.getSelectedProblem();
+        if (!selectedProblem) return;
 
         let pipeline = [
             ...app.workspace.raven_config.hardManipulations,
-            ...(app.isModelMode ? app.getSelectedProblem().manipulations : [])
+            ...(app.isModelMode ? selectedProblem.manipulations : [])
         ];
         if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
 
@@ -256,7 +258,7 @@ class Body {
                     "overflow-y": "scroll",
                     "overflow-x": "auto",
                     'z-index': 100,
-                    'background': 'rgba(255,255,255,.6)'
+                    'background': 'rgba(255,255,255,.8)'
                 },
                 onscroll: () => {
                     // don't apply infinite scrolling when list is empty
@@ -364,8 +366,9 @@ class Body {
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
+            app.peekInlineShown && italicize(app.peekLabel),
 
-            m('div.btn-group', {style: 'float: right; padding: 0px;margin:5px'},
+            m('div.btn-group', {style: 'float: right; padding: 0px;margin:5px;margin-top:7px'},
 
 
                 m(Button, {

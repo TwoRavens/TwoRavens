@@ -14,17 +14,17 @@ import {locationReload, setModal} from '../common/views/Modal';
 import * as queryMongo from "./manipulations/queryMongo";
 import * as solverD3M from './solvers/d3m';
 import * as solverWrapped from './solvers/wrapped';
+import {SPEC_problem} from './solvers/wrapped';
 
 import * as model from './modes/model';
 import * as manipulate from './manipulations/manipulate';
+import {setConstraintMenu} from './manipulations/manipulate';
 import * as results from "./modes/results";
 import * as explore from './modes/explore';
-import {bold, linkURLwithText, linkURL, link} from "./index";
-import {getClearWorkspacesLink, clearWorkpacesAndReloadPage} from "./utils";
+import {bold, link, linkURLwithText} from "./index";
+import {clearWorkpacesAndReloadPage, getClearWorkspacesLink} from "./utils";
 
-import {search, setDatamartDefaults} from "./datamart/Datamart";
-import {setConstraintMenu} from "./manipulations/manipulate";
-import {SPEC_problem} from './solvers/wrapped';
+import {setDatamartDefaults} from "./datamart/Datamart";
 import Subpanel from "../common/views/Subpanel";
 
 //-------------------------------------------------
@@ -71,6 +71,7 @@ export let peekMouseUp = () => {
 
 export let peekData;
 export let peekId = 'tworavens';
+export let peekLabel = '';
 
 let peekLimit = 100;  // how many records to load at a time
 let peekSkip = 0;  // how many records have already been loaded
@@ -116,8 +117,7 @@ export async function resetPeek(pipeline) {
     peekSkip = 0;
     peekIsExhausted = false;
     localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify([]));
-    localStorage.setItem('peekTableData' + peekId,
-        JSON.stringify([]));
+    localStorage.setItem('peekTableData' + peekId, JSON.stringify([]));
 
     if (pipeline) await updatePeek(pipeline);
 }
@@ -127,13 +127,21 @@ export async function updatePeek(pipeline) {
     if (peekIsLoading || peekIsExhausted || pipeline === undefined)
         return;
 
+    peekLabel = pipeline && manipulate.constraintMenu
+        ? 'Data at the current location in the manipulations pipeline.'
+        : ({
+            'model': 'Variables present in model after all manipulations.',
+            'dataset': 'Entire dataset after hard manipulations.',
+            'results': 'Variables present in model after all manipulations.',
+            'explore': 'All data after all manipulations-- used in explore.',
+        }[selectedMode]);
+
     peekIsLoading = true;
     let variables = [];
 
     let problem = getSelectedProblem();
-    if (isModelMode)
+    if (isModelMode || isResultsMode)
         variables = [...getPredictorVariables(problem), ...problem.targets];
-
 
     let previewMenu = {
         type: 'menu',
@@ -147,11 +155,26 @@ export async function updatePeek(pipeline) {
         }
     };
 
+    // potentially pull data from a different dataset, if viewing data from a split
+    let datasetDetails = {};
+    if (isResultsMode) {
+        let dataSplit = results.resultsPreferences.dataSplit;
+        let splitPath = problem?.results?.datasetPaths?.[dataSplit];
+        if (splitPath) {
+            datasetDetails = {
+                datafile: splitPath, // location of the dataset csv
+                collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}` // collection/dataset name
+            }
+            peekLabel = `Data from the ${dataSplit} split.`;
+        }
+    }
+
     let data = await manipulate.loadMenu(
         manipulate.constraintMenu
             ? pipeline.slice(0, pipeline.indexOf(manipulate.constraintMenu.step))
             : pipeline,
-        previewMenu
+        previewMenu,
+        {datasetDetails}
     );
 
     if (!data) return;
@@ -183,6 +206,7 @@ export async function updatePeek(pipeline) {
 
     localStorage.setItem('peekTableHeaders' + peekId, JSON.stringify(Object.keys(data[0])));
     localStorage.setItem('peekTableData' + peekId, JSON.stringify(peekData));
+    localStorage.setItem('peekTableLabel' + peekId, peekLabel);
 
     // stop blocking new requests
     peekIsLoading = false;
@@ -306,8 +330,12 @@ export function setSelectedMode(mode) {
             workspace.raven_config.problems[copiedProblem.problemId] = copiedProblem;
 
             // denote as solved problem
-            if (!selectedProblem.solverState)
-                selectedProblem.solverState = {};
+            selectedProblem.results = selectedProblem.results || {
+                solutions: {},
+                selectedSource: undefined,
+                selectedSolutions: {},
+                solverState: {}
+            };
 
             if (!results.resultsPreferences.dataSplit)
                 results.resultsPreferences.dataSplit = 'test';
@@ -954,7 +982,7 @@ export let applicableMetrics = {
     }
 };
 
-let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'two-ravens']; // 'mlbox', 'caret', 'mljar-supervised'
+let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'
 
 export let applicableSolvers = {
     classification: {
@@ -967,7 +995,7 @@ export let applicableSolvers = {
         multivariate: standardWrappedSolvers
     },
     forecasting: {
-        subTypeNone: ['two-ravens']
+        subTypeNone: ['TwoRavens']
     },
     clustering: {subTypeNone: []},
     linkPrediction: {subTypeNone: []},
@@ -1162,9 +1190,6 @@ let buildEmptyProblem = problemId => ({
 
     meaningful: false,
     manipulations: [],
-    solutions: {},
-    selectedSource: undefined,
-    selectedSolutions: {},
     tags: {
         nominal: [],
         crossSection: [],
@@ -1260,7 +1285,7 @@ let buildDefaultProblem = problemDoc => {
         splitOptions: Object.assign({
             outOfSampleSplit: true,
             // evaluationMethod can only be holdOut
-            trainTestRatio: problemDoc.inputs.dataSplits.testSize || 0.7,
+            trainTestRatio: 1. - (problemDoc.inputs.dataSplits.testSize || 0.3),
             stratified: problemDoc.inputs.dataSplits.stratified,
             shuffle: problemDoc.inputs.dataSplits.shuffle === undefined ? true : problemDoc.inputs.dataSplits.shuffle,
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
@@ -1287,9 +1312,6 @@ let buildDefaultProblem = problemDoc => {
         },
         meaningful: false,
         manipulations: [],
-        solutions: {},
-        selectedSource: undefined,
-        selectedSolutions: {},
         tags: {
             nominal: swandive ? [] : workspace.datasetDoc.dataResources
                 .filter(resource => resource.resType === 'table')
@@ -1946,27 +1968,25 @@ export let needsManipulationRewritePriorToSolve = problem => {
 
 
 export let materializeManipulationsPromise = {};
-export let materializeManipulations = async (problem, schemaIds) => {
-    if (!needsManipulationRewritePriorToSolve(problem))
-        return;
+export let materializeManipulations = async problem => {
+    problem.results.datasetPaths = {all: workspace.datasetPath};
+    problem.results.datasetSchemaPaths = {all: workspace.d3m_config.dataset_schema};
+    problem.results.datasetSchemas = {all: common.deepCopy(workspace.datasetDoc)};
+
+    if (!needsManipulationRewritePriorToSolve(problem)) return;
 
     // TODO: upon deleting or reassigning datasetDocProblemUrl, server-side temp directories may be deleted
-    return Promise.all(Object.keys(problem.datasetSchemaPaths)
-        // only apply manipulations to a preset list of schema ids
-        .filter(schemaId => schemaIds.includes(schemaId))
-        // ignore schemas with manipulations
-        .filter(schemaId => !(schemaId in problem.datasetSchemaPathsManipulated))
-        // build manipulated dataset for schema
-        .map(schemaId => buildDatasetUrl(
-            problem, undefined, problem.datasetPaths[schemaId],
-            `${workspace.d3m_config.name}_${problem.problemId}_${schemaId}`,
-            problem.datasetSchemas[schemaId])
-            .then(({data_path, metadata_path, metadata}) => {
-                problem.datasetSchemaPathsManipulated[schemaId] = metadata_path;
-                problem.datasetSchemasManipulated[schemaId] = metadata;
-                problem.datasetPathsManipulated[schemaId] = data_path;
-            })))
-        .then(() => problem.useManipulations = true)
+    return buildDatasetUrl(
+        problem, undefined,
+        problem.results.datasetPaths.all,
+        `${workspace.d3m_config.name}_${problem.problemId}`,
+        problem.results.datasetSchemas.all
+    )
+        .then(({data_path, metadata_path, metadata}) => {
+            problem.results.datasetPaths = {all: data_path};
+            problem.results.datasetSchemaPaths = {all: metadata_path};
+            problem.results.datasetSchemas = {all: metadata};
+        })
 };
 
 // materializing partials may only happen once per problem, all calls wait for same response
@@ -1990,23 +2010,23 @@ export let materializePartials = async problem => {
         url: D3M_SVC_URL + '/get-partials-datasets',
         body: {
             problem: SPEC_problem(problem),
-            dataset_id: problem.d3mDatasetId,
+            dataset_id: problem.results.d3mDatasetId,
             domains: problem.domains,
             all_variables: Object.keys(variableSummaries),
-            dataset_schema: workspace.datasetDoc,
+            dataset_schema: problem.results.datasetSchemas.all,
             dataset,
             separate_variables: false,
             name: 'partials'
         }
     });
-    if (!partialsLocationInfo.success) {
+    if (partialsLocationInfo.success) {
+        problem.results.datasetIndexPartialsPaths = problem.results.datasetIndexPartialsPaths || {};
+        Object.assign(problem.results.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.results.datasetPaths, partialsLocationInfo.data.dataset_paths);
+        Object.assign(problem.results.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
+    } else {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
-    } else {
-        problem.datasetIndexPartialsPaths = problem.datasetIndexPartialsPaths || {};
-        Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
-        Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        Object.assign(problem.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
     }
 };
 
@@ -2029,7 +2049,7 @@ export let materializeICE = async problem => {
         method: 'aggregate',
         query: JSON.stringify([...compiled, {$sample: {size: ICE_SAMPLE_MAX_SIZE}}, {$project: {_id: 0}}]),
         export: 'dataset',
-        metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, workspace.datasetDoc, problem))
+        metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, problem.results.datasetSchemas.all, problem))
     });
 
     // BUILD ICE DATASETS
@@ -2041,53 +2061,53 @@ export let materializeICE = async problem => {
             dataset_schema_path: samplePaths.metadata_path,
             dataset_path: samplePaths.data_path,
             all_variables: Object.keys(variableSummaries),
-            dataset_id: problem.d3mDatasetId,
+            dataset_id: problem.results.d3mDatasetId,
             update_roles: true,
             domains: problem.domains,
             separate_variables: true,
             name: 'ICE_synthetic_'
         }
     });
-    if (!partialsLocationInfo.success) {
+    if (partialsLocationInfo.success) {
+        problem.results.datasetIndexPartialsPaths = problem.results.datasetIndexPartialsPaths || {};
+        Object.assign(problem.results.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
+        Object.assign(problem.results.datasetPaths, partialsLocationInfo.data.dataset_paths);
+        Object.assign(problem.results.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
+    } else {
         alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
-    } else {
-        problem.datasetIndexPartialsPaths = problem.datasetIndexPartialsPaths || {};
-        Object.assign(problem.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
-        Object.assign(problem.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        Object.assign(problem.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
     }
 };
 
-export let materializeTrainTestIndicesPromise = {};
-export let materializeTrainTestIndices = async problem => {
-
-    let response = await m.request({
-        method: 'POST',
-        url: D3M_SVC_URL + '/get-train-test-split-indices',
-        body: {
-            split_options: problem.splitOptions,
-            dataset_schema: problem.datasetSchemaPaths.all,
-            dataset_path: problem.datasetPaths.all,
-            problem: SPEC_problem(problem),
-            // if not manipulated, then don't rewrite datasetDoc with new metadata
-            // new datasetDoc will come from the translateDatasetDoc function
-            update_roles: !needsManipulationRewritePriorToSolve(problem)
-        }
-    });
-
-    if (!response.success) {
-        console.warn('Materialize train/test indices error:', response.message);
-        alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
-        results.resultsPreferences.dataSplit = 'all';
-        problem.splitOptions.outOfSampleSplit = false;
-        return false;
-    }
-
-    // splits collection has been materialized in the database
-    problem.results.splitCollection = response.data.split_collection;
-    return true;
-};
+// export let materializeTrainTestIndicesPromise = {};
+// export let materializeTrainTestIndices = async problem => {
+//
+//     let response = await m.request({
+//         method: 'POST',
+//         url: D3M_SVC_URL + '/get-train-test-split-indices',
+//         body: {
+//             split_options: problem.splitOptions,
+//             dataset_schema: problem.datasetSchemaPaths.all,
+//             dataset_path: problem.datasetPaths.all,
+//             problem: SPEC_problem(problem),
+//             // if not manipulated, then don't rewrite datasetDoc with new metadata
+//             // new datasetDoc will come from the translateDatasetDoc function
+//             update_roles: !needsManipulationRewritePriorToSolve(problem)
+//         }
+//     });
+//
+//     if (!response.success) {
+//         console.warn('Materialize train/test indices error:', response.message);
+//         alertWarn('Unable to create out-of-sample split. Using entire dataset for training and for in-sample testing.');
+//         results.resultsPreferences.dataSplit = 'all';
+//         problem.splitOptions.outOfSampleSplit = false;
+//         return false;
+//     }
+//
+//     // splits collection has been materialized in the database
+//     problem.results.splitCollection = response.data.split_collection;
+//     return true;
+// };
 
 // materializing splits may only happen once per problem, all calls wait for same response
 export let materializeTrainTestPromise = {};
@@ -2101,14 +2121,11 @@ export let materializeTrainTest = async problem => {
         method: 'POST',
         url: D3M_SVC_URL + '/get-train-test-split',
         body: {
-            dataset_id: problem.d3mDatasetId,
+            dataset_id: problem.results.d3mDatasetId,
             split_options: problem.splitOptions,
-            dataset_schema: problem.datasetSchemaPaths.all,
-            dataset_path: problem.datasetPaths.all,
-            problem: SPEC_problem(problem),
-            // if not manipulated, then don't rewrite datasetDoc with new metadata
-            // new datasetDoc will come from the translateDatasetDoc function
-            update_roles: !needsManipulationRewritePriorToSolve(problem)
+            dataset_schema: problem.results.datasetSchemaPaths.all,
+            dataset_path: problem.results.datasetPaths.all,
+            problem: SPEC_problem(problem)
         }
     });
 
@@ -2120,17 +2137,17 @@ export let materializeTrainTest = async problem => {
         return false;
     }
 
-    problem.datasetSchemas.all = response.data.dataset_schemas.all;
-    problem.datasetSchemas.train = response.data.dataset_schemas.train;
-    problem.datasetSchemas.test = response.data.dataset_schemas.test;
+    problem.results.datasetSchemas.all = response.data.dataset_schemas.all;
+    problem.results.datasetSchemas.train = response.data.dataset_schemas.train;
+    problem.results.datasetSchemas.test = response.data.dataset_schemas.test;
 
-    problem.datasetSchemaPaths.all = response.data.dataset_schema_paths.all;
-    problem.datasetSchemaPaths.train = response.data.dataset_schema_paths.train;
-    problem.datasetSchemaPaths.test = response.data.dataset_schema_paths.test;
+    problem.results.datasetSchemaPaths.all = response.data.dataset_schema_paths.all;
+    problem.results.datasetSchemaPaths.train = response.data.dataset_schema_paths.train;
+    problem.results.datasetSchemaPaths.test = response.data.dataset_schema_paths.test;
 
-    problem.datasetPaths.all = response.data.dataset_paths.all;
-    problem.datasetPaths.train = response.data.dataset_paths.train;
-    problem.datasetPaths.test = response.data.dataset_paths.test;
+    problem.results.datasetPaths.all = response.data.dataset_paths.all;
+    problem.results.datasetPaths.train = response.data.dataset_paths.train;
+    problem.results.datasetPaths.test = response.data.dataset_paths.test;
 
     return true;
 };
@@ -2248,9 +2265,6 @@ export function standardizeDiscovery(problems) {
             },
 
             manipulations: manips,
-            solutions: {},
-            selectedSource: undefined,
-            selectedSolutions: {},
             tags: {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
@@ -2747,14 +2761,15 @@ export function setSelectedProblem(problemId) {
 }
 
 export function getProblemCopy(problemSource) {
-    // deep copy of original
-    return Object.assign($.extend(true, {}, problemSource), {
+    return Object.assign(common.deepCopy(problemSource), {
         problemId: generateProblemID(),
         provenanceID: problemSource.problemId,
         unedited: true,
         pending: true,
         system: 'user',
-    });
+        // IMPORTANT: this resets all results mode state
+        results: undefined
+    })
 }
 
 export let setCheckedDiscoveryProblem = (status, problemId) => {

@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {TreeAggregate, TreeImputation, TreeSubset, TreeTransform, TreeAugment} from '../views/QueryTrees';
+import {TreeAggregate, TreeAugment, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
 import CanvasDiscrete from '../canvases/CanvasDiscrete';
@@ -15,7 +15,6 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import Panel from "../../common/views/Panel";
 import Canvas from "../../common/views/Canvas";
 import Table from "../../common/views/Table";
-import Popper from '../../common/views/Popper';
 
 import * as common from '../../common/common';
 
@@ -743,7 +742,11 @@ export let setConstraintType = (type, pipeline) => {
 };
 
 // download data to display a menu
-export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { // the dict is for optional named arguments
+export let loadMenu = async (
+    pipeline, menu,
+    // the dict is for optional named arguments
+    {recount, requireMatch, datasetDetails} = {datasetDetails: {}}
+) => {
 
     let ravenConfig = app.workspace.raven_config;
     // convert the pipeline to a mongo query. Note that passing menu extends the pipeline to collect menu data
@@ -763,10 +766,10 @@ export let loadMenu = async (pipeline, menu, {recount, requireMatch} = {}) => { 
         console.log("Count Query:");
         console.log(compiled);
 
-        promises.push(app.getData({
+        promises.push(app.getData(Object.assign({
             method: 'aggregate',
             query: compiled
-        }).then(response => {
+        }, datasetDetails)).then(response => {
             let total = (response[0] || {}).total || 0;
 
             // intentionally breaks the entire downloading promise array and subsequent promise chain

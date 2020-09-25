@@ -23,7 +23,7 @@ TA2_D3M_SOLVER_ENABLED = strtobool(os.environ.get('TA2_D3M_SOLVER_ENABLED', 'Tru
 # Set the list of Wrapped Solvers
 #
 # Example of setting by env variable:
-#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot", "two-ravens"]'
+#   export TA2_WRAPPED_SOLVERS='["mlbox", "tpot", "tworavens"]'
 #
 # -------------------------------------
 TA2_WRAPPED_SOLVERS_ALL = [
@@ -33,7 +33,7 @@ TA2_WRAPPED_SOLVERS_ALL = [
     #"ludwig",
     "mlbox",
     "tpot",
-    "two-ravens"
+    "TwoRavens"
 ]
 TA2_WRAPPED_SOLVERS = ast.literal_eval(\
                     os.environ.get('TA2_WRAPPED_SOLVERS', str(TA2_WRAPPED_SOLVERS_ALL)))

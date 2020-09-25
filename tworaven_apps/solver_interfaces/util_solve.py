@@ -24,7 +24,7 @@ class Solve(object):
             'ludwig': SearchLudwig,
             'mljar-supervised': SearchMLJarSupervised,
             'mlbox': SearchMLBox,
-            'two-ravens': SearchTwoRavens
+            'TwoRavens': SearchTwoRavens
         }[system](
             specification=self.specification['search'],
             callback_found=callback_found,

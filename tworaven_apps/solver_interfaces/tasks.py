@@ -247,17 +247,22 @@ def produce_task(websocket_id, model_id, spec):
 # fit a pipeline to create a solution
 @celery_app.task()
 def pipeline_task(search_id, pipeline_specification, train_specification, callback_name, callback_arguments=None):
-    model = tworaven_solver.fit_pipeline(pipeline_specification, train_specification)
+    try:
+        model = tworaven_solver.fit_pipeline(pipeline_specification, train_specification)
 
-    model_wrapped = ModelTwoRavens(
-        model,
-        system='two-ravens',
-        predictors=train_specification['problem']['predictors'],
-        targets=train_specification['problem']['targets'],
-        task=train_specification['problem']['taskType'],
-        search_id=search_id)
+        model_wrapped = ModelTwoRavens(
+            model,
+            system='TwoRavens',
+            predictors=train_specification['problem']['predictors'],
+            targets=train_specification['problem']['targets'],
+            task=train_specification['problem']['taskType'],
+            search_id=search_id)
 
-    FOUND_MODEL_CALLBACKS[callback_name](model_wrapped, **callback_arguments)
+        FOUND_MODEL_CALLBACKS[callback_name](model_wrapped, **callback_arguments)
+    except Exception:
+        logger.info("caught traceback when running fit:")
+        logger.info(traceback.format_exc())
+        logger.info("discarding pipeline:", pipeline_specification)
 
 
 def load_model_helper(websocket_id, model_id):
