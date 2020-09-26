@@ -351,17 +351,17 @@ class Body {
                 //     onclick: () => app.setShowModalTA2Debug(true)
                 // }, m(Icon, {name: 'bug'})),
 
-                app.isResultsMode && m(Button, {
-                    style: {'margin': '8px'},
-                    title: 'ta2 stop searches',
-                    class: 'btn-sm',
-                    onclick: () => {
-                        solverD3M.endAllSearches();
-                        solverD3M.stopAllSearches();
-                        // solverD3M.endsession();
-                        // solverD3M.handleENDGetSearchSolutionsResults();
-                    }
-                }, m(Icon, {name: 'stop'}))
+                // app.isResultsMode && m(Button, {
+                //     style: {'margin': '8px'},
+                //     title: 'ta2 stop searches',
+                //     class: 'btn-sm',
+                //     onclick: () => {
+                //         solverD3M.endAllSearches();
+                //         solverD3M.stopAllSearches();
+                //         // solverD3M.endsession();
+                //         // solverD3M.handleENDGetSearchSolutionsResults();
+                //     }
+                // }, m(Icon, {name: 'stop'}))
             ],
 
             // m("span", {"class": "footer-info-break"}, "|"),

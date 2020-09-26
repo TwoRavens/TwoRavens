@@ -33,12 +33,17 @@ export default class PlotVegaLite {
         let {width, height} = vnode.dom.getBoundingClientRect();
 
         if (this.isPlotting) return;
-        if (this.specification !== newSpecification || this.width !== width || this.height !== height) {
+        if (this.specification !== newSpecification
+            || this.width !== width
+            || this.height !== height
+            || this.theme !== localStorage.getItem('plotTheme')) {
+
             this.isPlotting = true;
             this.specification = newSpecification;
             if (width) this.width = width;
             if (height) this.height = height;
             this.dataKeys = undefined;
+            this.theme = localStorage.getItem('plotTheme');
 
             // include padding in width/height calculations
             if (!('autosize' in specification)) specification.autosize = {
@@ -49,7 +54,7 @@ export default class PlotVegaLite {
             // change-sets are not currently supported
             // if (data) specification.data = {name: 'embedded'};
 
-            let options = {actions: true};
+            let options = {actions: true, theme: this.theme || 'default'};
             if ('vconcat' in specification)
                 width && specification.vconcat.forEach(spec => spec.width = spec.width || width);
             else if ('hconcat' in specification)
@@ -67,6 +72,19 @@ export default class PlotVegaLite {
             ]));
 
             vegaEmbed(vnode.dom, specification, options).then(result => {
+                console.log(result);
+                let addThemeSetter = theme => {
+                    const themeAction = document.createElement('a');
+                    themeAction.textContent = "Theme: " + theme;
+                    themeAction.onclick = () => {
+                        localStorage.setItem('plotTheme', theme);
+                        vnode.dom.querySelector('details').removeAttribute('open');
+                        m.redraw();
+                    }
+                    vnode.dom.querySelector('.vega-actions').appendChild(themeAction);
+                }
+                ['default', 'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'latimes', 'dark'].map(addThemeSetter)
+
                 // vegalite only gets close to the width/height set in the config
                 let {width, height} = vnode.dom.getBoundingClientRect();
                 this.width = width;

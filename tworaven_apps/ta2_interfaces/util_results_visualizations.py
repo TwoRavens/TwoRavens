@@ -350,7 +350,7 @@ def util_results_importance_efd(data_pointer, metadata):
         return {
             f'fitted {variable}': {"$avg": f'$fitted {variable}'},
             f'actual {variable}': {"$avg": f'$actual {variable}'},
-            'error': {'$sum': {"$pow": [{'$subtract': [f'$fitted {variable}', f'$actual {variable}']}, 2]}}
+            # 'error': {'$sum': {"$pow": [{'$subtract': [f'$fitted {variable}', f'$actual {variable}']}, 2]}}
         }
 
     def aggregate_targets(variables, levels):
@@ -432,7 +432,8 @@ def util_results_importance_efd(data_pointer, metadata):
                     },
                     {
                         "$project": {
-                            **{"predictor": {"$avg": ["$_id\\.min", "$_id\\.max"]}},
+                            **{"predictor": "$_id\\.min"},
+                            # **{"predictor": {"$avg": ["$_id\\.min", "$_id\\.max"]}},
                             **{k: 1 for k in target_aggregator.keys()},
                             **{"_id": 0}
                         }

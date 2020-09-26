@@ -689,7 +689,11 @@ export class CanvasSolutions {
 
         if (resultsPreferences.interpretationMode === 'EFD') {
             let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
-            interpretationContent.push(m('div[style=margin: 1em]', italicize("Empirical first differences"), ` is a tool to interpret the influence of variables on the model, from the empirical distribution of the data. The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. Parts of the domain where the fitted and actual values align indicate high utility from the predictor. If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),);
+            interpretationContent.push(m('div[style=margin: 1em]',
+                italicize("Empirical first differences"), ` is a tool to interpret the influence of variables on the model, from the empirical distribution of the data. ` +
+                `The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. ` +
+                `Parts of the domain where the fitted and actual values align indicate high utility from the predictor. ` +
+                `If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),);
 
             let interpretationEFDContent = common.loader('ModelInterpretation');
             if (adapters.length === 1) {
@@ -704,10 +708,14 @@ export class CanvasSolutions {
                 let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(interpretationData))
                     .filter(predictor => interpretationData[predictor]);
 
+                if (!problem.task.toLowerCase().includes("classification")) {
+                    resultsPreferences.factor = undefined;
+                }
+
                 if (plotVariables.length > 0) interpretationEFDContent = m('div', [
 
-                    problem.task.toLowerCase().includes('classification') && m('div[style=margin-bottom:1em]', 'Set the factor to filter EFD plots to a single class/factor/level.',
-                        m('br'),
+                    problem.task.toLowerCase().includes('classification') && m('div[style=margin-bottom:1em]',
+                        'Set the factor to filter EFD plots to a single class/factor/level.', m('br'),
                         m('label#resultsFactorLabel', 'Active factor/level: '),
                         m('[style=display:inline-block]', m(Dropdown, {
                             id: 'resultsFactorDropdown',
@@ -721,20 +729,22 @@ export class CanvasSolutions {
                         }))),
                     m(Paginated, {
                         data: plotVariables,
-                        makePage: variablesToPlot => variablesToPlot.map(predictor => [
-                            bold(predictor),
-                            m(ModelInterpretation, {
-                                mode: resultsPreferences.interpretationMode,
-                                data: interpretationData[predictor]
-                                    .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === String(point.level)),
-                                problem: problem,
-                                predictor,
-                                target: resultsPreferences.target,
-                                yLabel: valueLabel,
-                                variableLabel: variableLabel,
-                                summary: app.variableSummaries[predictor]
-                            })
-                        ]),
+                        makePage: variablesToPlot => variablesToPlot
+                            .filter(predictor => predictor in interpretationData)
+                            .map(predictor => [
+                                m('br'), bold(predictor),
+                                m(ModelInterpretation, {
+                                    mode: resultsPreferences.interpretationMode,
+                                    data: interpretationData[predictor]
+                                        .filter(point => resultsPreferences.factor === undefined || String(resultsPreferences.factor) === String(point.level)),
+                                    problem: problem,
+                                    predictor,
+                                    target: resultsPreferences.target,
+                                    yLabel: valueLabel,
+                                    variableLabel: variableLabel,
+                                    summary: app.variableSummaries[predictor]
+                                })
+                            ]),
                         limit: 10,
                         page: resultsPreferences.interpretationPage,
                         setPage: setInterpretationPage
@@ -2684,8 +2694,9 @@ export let prepareResultsDatasets = async (problem, solverId) => {
     problem.results.d3mDatasetId = problem.results.d3mDatasetId
         || workspace.datasetDoc.about.datasetID + '_' + Math.abs(app.generateID(String(Math.random())));
 
+    problem.results.selectedSolutions[solverId] = problem.results.selectedSolutions[solverId] || [];
+    app.setRecursive(problem, [['results', {}], ['solverState', {}], [solverId, {}], ['thinking', true]]);
 
-    setDefault(problem.results.solverState, solverId, {});
     problem.results.solverState[solverId].message = 'applying manipulations to data';
     m.redraw();
     try {
@@ -2696,9 +2707,6 @@ export let prepareResultsDatasets = async (problem, solverId) => {
         alertError(`Applying data manipulations failed: ${err}`);
         throw err
     }
-
-    problem.results.selectedSolutions[solverId] = problem.results.selectedSolutions[solverId] || [];
-    app.setRecursive(problem, [['results', {}], ['solverState', {}], [solverId, {}], ['thinking', true]]);
 
     if (['classification', 'regression'].includes(problem.task)) {
         problem.results.solverState[solverId].message = 'preparing partials data';

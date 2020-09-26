@@ -1892,16 +1892,6 @@ export function helpmaterials(type) {
     console.log(type);
 }
 
-
-export function downloadIncomplete() {
-    // TODO: session id is no longer used, so there is no check
-    // if (PRODUCTION && zparams.zsessionid === '') {
-    //     alertWarn('Warning: Data download is not complete. Try again soon.');
-    //     return true;
-    // }
-    return false;
-}
-
 // should be equivalent to partials.app
 // loads up linearly spaced observations along domain and non-mangled levels/counts
 let loadPredictorDomains = async problem => {
@@ -2722,7 +2712,7 @@ export function setSelectedProblem(problemId) {
 
     ravenConfig.selectedProblem = problemId;
     let problem = getSelectedProblem();
-    console.log('problem: ' + JSON.stringify(problem));
+    // console.log('problem: ' + JSON.stringify(problem));
 
     // Behavioral Logging
     let logParams = {
