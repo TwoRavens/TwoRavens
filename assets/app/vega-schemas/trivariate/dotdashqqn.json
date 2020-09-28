@@ -12,7 +12,7 @@
         "y": {
           "field": "tworavensY",
           "type": "quantitative",
-          "axis": {"labels": false, "domain": false, "ticks": false},
+          "axis": {"labels": false, "domain": false, "ticks": false, "titleX": 0},
           "scale": {"zero":  false}
         },
         "x": {
@@ -26,7 +26,8 @@
           }
         },
         "color": {"field": "tworavensZ", "type": "nominal"}
-      }
+      },
+      "height": null
     },
     {
       "vconcat": [

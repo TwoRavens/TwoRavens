@@ -530,7 +530,7 @@ export let LEFT_TAB_NAME_DISCOVER = 'Discover';
 export let leftTab = LEFT_TAB_NAME_VARIABLES; // current tab in left panel
 export let leftTabHidden = LEFT_TAB_NAME_VARIABLES; // stores the tab user was in before summary hover
 
-export let rightTab = 'Problem'; // current tab in right panel
+export let rightTab = 'Manipulate'; // current tab in right panel
 
 export let setRightTab = tab => {
     rightTab = tab;
@@ -556,7 +556,6 @@ export let setLeftTab = (tabName) => {
     saveSystemLogEntry(logParams);
 
     if (tabName === LEFT_TAB_NAME_DISCOVER) taskPreferences.isDiscoveryClicked = true;
-    explore.setExploreVariate(tabName === LEFT_TAB_NAME_DISCOVER ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
 
     if (tabName === LEFT_TAB_NAME_DISCOVER && !taskPreferences.task1_finished && tutorial_mode)
@@ -1892,16 +1891,6 @@ export function helpmaterials(type) {
     console.log(type);
 }
 
-
-export function downloadIncomplete() {
-    // TODO: session id is no longer used, so there is no check
-    // if (PRODUCTION && zparams.zsessionid === '') {
-    //     alertWarn('Warning: Data download is not complete. Try again soon.');
-    //     return true;
-    // }
-    return false;
-}
-
 // should be equivalent to partials.app
 // loads up linearly spaced observations along domain and non-mangled levels/counts
 let loadPredictorDomains = async problem => {
@@ -2722,7 +2711,7 @@ export function setSelectedProblem(problemId) {
 
     ravenConfig.selectedProblem = problemId;
     let problem = getSelectedProblem();
-    console.log('problem: ' + JSON.stringify(problem));
+    // console.log('problem: ' + JSON.stringify(problem));
 
     // Behavioral Logging
     let logParams = {

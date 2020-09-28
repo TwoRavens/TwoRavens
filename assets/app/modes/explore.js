@@ -1,4 +1,3 @@
-import vegaEmbed from 'vega-embed';
 import m from "mithril";
 import * as d3 from 'd3';
 
@@ -12,9 +11,11 @@ import binnedcrossfilter from '../vega-schemas/multi/binnedcrossfilter.json';
 import binnedscatter from '../vega-schemas/binnedscatter.json';
 import binnedtableheat from '../vega-schemas/binnedtableheat.json';
 import box2d from '../vega-schemas/box2d.json';
+// import boxplot from '../vega-schemas/univariate/boxplot.json'
 import bubbleqqq from '../vega-schemas/trivariate/bubbleqqq.json';
 import bubbletri from '../vega-schemas/trivariate/bubbletri.json';
 import densityschema from '../vega-schemas/univariate/density'
+import densitycdfschema from '../vega-schemas/univariate/densitycdf'
 import dot from '../vega-schemas/univariate/dot.json';
 import dotdashqqn from '../vega-schemas/trivariate/dotdashqqn.json';
 import facetbox from '../vega-schemas/trivariate/facetbox.json';
@@ -54,11 +55,10 @@ import Icon from "../../common/views/Icon";
 import * as queryMongo from "../manipulations/queryMongo";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Paginated from "../../common/views/Paginated";
-import {bold} from "../index";
-import {getTemporalVariables} from "../app";
-
-let recordLimit = 5000;
-
+import {bold, italicize} from "../index";
+import PlotVegaLite from "../views/PlotVegaLite";
+import TextField from "../../common/views/TextField";
+import PlotVegaLiteWrapper from "../views/PlotVegaLiteWrapper";
 
 // adds some padding, sets the size so the content fills nicely in the page
 let wrapCanvas = (...contents) => m('div#canvasExplore', {
@@ -73,7 +73,7 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
 );
 
 let get_node_label = problemOrVariableName => {
-    if (app.leftTab === 'Discover') {
+    if (explorePreferences.mode === 'problems') {
         let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[problemOrVariableName];
         let predictorVariables = app.getPredictorVariables(exploreProblem);
 
@@ -88,7 +88,7 @@ let get_node_label = problemOrVariableName => {
         return problemText ? [m('b', problemOrVariableName), m('p', problemText)] : problemOrVariableName;
     }
 
-    let pos = exploreVariables.indexOf(problemOrVariableName);
+    let pos = explorePreferences.variables.indexOf(problemOrVariableName);
     if (pos === -1) return problemOrVariableName;
 
     let str = pos === 0 ? 'x' :
@@ -100,53 +100,95 @@ let get_node_label = problemOrVariableName => {
 
 export class CanvasExplore {
     view(vnode) {
-        let {variables, variate} = vnode.attrs;
-        let nodeSummaries = variables.map(variable => app.variableSummaries[variable]);
+        let {exploreMode, variables} = vnode.attrs;
+
+        if (exploreMode === 'variables') {
+            explorePreferences.go = true;
+            explorePreferences.mode = exploreMode;
+            explorePreferences.variables = variables;
+        } else if (exploreMode === 'problems') {
+            explorePreferences.go = true;
+            explorePreferences.mode = exploreMode;
+        } else if (exploreMode === 'custom') {
+            explorePreferences.go = true;
+            explorePreferences.mode = exploreMode;
+        } else {
+            explorePreferences.go = false;
+        }
+
         let selectedProblem = app.getSelectedProblem();
 
-        if (!variate) return wrapCanvas(
+        if (!explorePreferences.go) return wrapCanvas(
             m(ButtonRadio, {
                 id: 'problemVariateButtonRadio',
-                attrsAll: {style: {width: '200px', margin: '.5em', position: 'fixed'}},
-                activeSection: app.leftTab,
-                onclick: app.setLeftTab,
+                attrsAll: {style: {width: '300px', margin: '.5em', position: 'fixed'}},
+                activeSection: explorePreferences.mode,
+                onclick: value => explorePreferences.mode = value.toLowerCase(),
                 sections: [
                     {value: 'Variables'},
-                    {value: 'Discover'},
+                    {value: 'Problems'},
+                    {value: 'Custom'}
                 ]
             }),
-            m(Button, {
+            explorePreferences.mode !== 'custom' && m(Button, {
                 id: 'exploreGo',
                 class: 'btn-success',
-                style: {margin: '.5em', 'margin-left': 'calc(200px + 1.5em)', position: 'fixed'},
+                style: {margin: '.5em', 'margin-left': 'calc(300px + 1.5em)', position: 'fixed'},
                 onclick: () => {
-                    let selected = app.leftTab === 'Discover' ? [app.workspace.raven_config.selectedProblem] : exploreVariables;
+                    let selected = explorePreferences.mode === 'problems'
+                        ? [app.workspace.raven_config.selectedProblem]
+                        : explorePreferences.variables;
                     if (selected.length === 0) return;
-                    let variate = app.leftTab === 'Discover' ? 'problem' : ({
-                        1: 'univariate', 2: 'bivariate', 3: 'trivariate'
-                    })[selected.length] || 'multivariate';
 
                     // behavioral logging
                     let logParams = {
                         feature_id: 'EXPLORE_MAKE_PLOTS',
                         activity_l1: 'MODEL_SELECTION',
                         activity_l2: 'MODEL_SEARCH',
-                        other: {variate: variate}
+                        other: {selected}
                     };
                     app.saveSystemLogEntry(logParams);
 
-                    m.route.set(`/explore/${variate}/${selected.join('/')}`);
+                    m.route.set(`/explore/${explorePreferences.mode}/${selected.join('/')}`);
                 }
             }, 'go'),
 
-            m('br'),
+            m('label', {
+                style: {
+                    margin: '20px 0',
+                    'margin-left': 'calc(460px + 1.5em)',
+                    position: 'fixed'
+                }
+            }, bold('Record Limit')),
+            m(TextField, {
+                id: 'recordLimit',
+                value: explorePreferences.recordLimit || '',
+                oninput: value => explorePreferences.recordLimit = value.replace(/[^\d.-]/g, ''),
+                onblur: value => explorePreferences.recordLimit = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined,
+                style: {margin: '.5em', 'margin-left': 'calc(570px + 1.5em)', position: 'fixed', width: "200px"}
+            }),
 
-            m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
+            m('br'),
+            explorePreferences.mode === 'custom'
+                ? m('[style=margin-top:3em;position:relative;height:calc(100% - 6em)]', m(PlotVegaLiteWrapper, {
+                    getData: app.getData,
+                    variables: Object.keys(app.variableSummaries),
+                    nominals: new Set(app.getNominalVariables(selectedProblem)),
+                    configuration: customConfiguration,
+                    abstractQuery: [
+                        ...app.workspace.raven_config.hardManipulations || [],
+                        ...selectedProblem.manipulations || []
+                    ],
+                    summaries: app.variableSummaries,
+                    sampleSize: parseInt(explorePreferences.recordLimit),
+                    variablesInitial: app.workspace.raven_config.variablesInitial
+                }))
+                : m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
                 // x could either be a problemId or a variable name
-                (app.leftTab === 'Discover' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
-                    let selected = app.leftTab === 'Discover'
+                (explorePreferences.mode === 'problems' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
+                    let selected = explorePreferences.mode === 'problems'
                         ? x === selectedProblem.problemId
-                        : exploreVariables.includes(x);
+                        : explorePreferences.variables.includes(x);
 
                     let node = app.variableSummaries[x];
                     let kind = node && node.temporal ? 'temporal' :
@@ -159,16 +201,14 @@ export class CanvasExplore {
 
                     // tile for each variable or problem
                     let tile = m('span#exploreNodeBox', {
-                            onclick: _ => {
-                                if (app.leftTab === 'Discover') {
+                            onclick: () => {
+                                if (explorePreferences.mode === 'problems') {
                                     app.setSelectedProblem(x);
-                                    exploreVariables = [x];
+                                    explorePreferences.variables = [x];
                                     return;
                                 }
 
-                                exploreVariables.includes(x)
-                                    ? app.remove(exploreVariables, x)
-                                    : exploreVariables.push(x);
+                                app.toggle(explorePreferences.variables, x);
                             },
                             style: {
                                 // border: '1px solid rgba(0, 0, 0, .2)',
@@ -192,7 +232,7 @@ export class CanvasExplore {
                                 this.node && plot(this.node, vnode.dom, 110, true);
                             },
                             onupdate(vnode) {
-                                let targetName = app.leftTab === 'Discover'
+                                let targetName = explorePreferences.mode === 'problems'
                                     ? app.workspace.raven_config.problems[x].targets[0]
                                     : x;
                                 let node = app.variableSummaries[targetName];
@@ -219,12 +259,65 @@ export class CanvasExplore {
                 }))
         );
 
+        let getPlotBar = nodeSummaries => {
+            return m('div#explorePlotBar', {
+                    style: {
+                        'margin-bottom': '1em',
+                        position: 'relative'
+                    }
+                },
+                m('div', {
+                    style: {
+                        'overflow-x': 'scroll',
+                        'white-space': 'nowrap',
+                        width: '100%',
+                    }
+                }, getRelevantPlots(nodeSummaries, explorePreferences.mode).map(schemaName => m("figure", {style: 'display: inline-block'}, [
+                        m(`img#${schemaName}_img[alt=${schemaName}][height=140px][width=260px][src=/static/images/${schemaName}.png]`, {
+                            onclick: () => explorePreferences.schemaName = schemaName,
+                            style: getThumbnailStyle(nodeSummaries, schemaName)
+                        }),
+                        m("figcaption",
+                            {style: {"text-align": "center"}},
+                            schemaName === explorePreferences.schemaName ? bold(plotMap[schemaName]) : plotMap[schemaName])
+                    ])
+                )),
+                m('div', {
+                    style: {
+                        'position': 'absolute',
+                        'width': '100%',
+                        'height': '100%',
+                        'box-shadow': 'inset -10px 0 10px -10px #333, inset 10px 0 10px -10px #333',
+                        'top': '0',
+                        'left': '0', 'pointer-events': 'none'
+                    }
+                }))
+        }
+
         let getPlot = () => {
 
-            if (variate === "problem") {
+            if (explorePreferences.mode === "problems") {
+                let predictors = app.getPredictorVariables(selectedProblem);
+                if (predictors.length === 0)
+                    return "No predictors are selected. Please select some predictors."
+
+                if (!selectedProblem.targets.includes(explorePreferences.target))
+                    explorePreferences.target = selectedProblem.targets[0]
+                if (!explorePreferences.target)
+                    return "No targets are selected. Please select a target."
+
+                let nodeSummaries = [
+                    app.variableSummaries[predictors[0]],
+                    app.variableSummaries[explorePreferences.target]
+                ];
+                let relevantPlots = getRelevantPlots(nodeSummaries, explorePreferences.mode);
+                if (!relevantPlots.includes(explorePreferences.schemaName) || !getIsRecommended(nodeSummaries, explorePreferences.schemaName)) {
+                    explorePreferences.schemaName = relevantPlots[0];
+                }
+
+                let specification = getPlotSpecification();
+
                 let exploreContent = [];
-                if (!selectedProblem.targets.includes(exploreTarget))
-                    exploreTarget = selectedProblem.targets[0]
 
                 if (selectedProblem.targets.length > 1) exploreContent.push(
                     m('div', {style: {display: 'inline-block'}}, bold("Target:")),
@@ -232,62 +325,49 @@ export class CanvasExplore {
                         id: 'exploreTargetButtonRadio',
                         title: 'select target variable',
                         sections: selectedProblem.targets.map(target => ({value: target})),
-                        activeSection: exploreTarget,
-                        onclick: target => {
-                            exploreTarget = target;
-                            plotVega(app.variableSummaries, undefined, selectedProblem, variate)
-                        },
+                        activeSection: explorePreferences.target,
+                        onclick: target => explorePreferences.target = target,
                         attrsAll: {style: {width: 'auto', margin: '1em'}},
                         attrsButtons: {style: {width: 'auto'}}
                     }))
 
-                exploreContent.push(m(Paginated, {
-                    data: app.getPredictorVariables(selectedProblem),
-                    makePage: _ => m('#plot', {
-                        style: 'display: block',
-                        oncreate: () => plotVega(app.variableSummaries, undefined, selectedProblem, variate)
-                    }),
-                    limit: explorePageLength,
-                    page: explorePage,
-                    setPage: index => {
-                        explorePage = index;
-                        plotVega(app.variableSummaries, undefined, selectedProblem, variate)
-                    }
-                }));
+                exploreContent.push(
+                    getPlotBar(nodeSummaries),
+                    m(Paginated, {
+                        data: predictors,
+                        makePage: () => exploreCache.specificationIsLoading
+                            ? [italicize("Loading data exploration."), common.loader('explore')]
+                            : specification && m('[style=display:block;height:500px]',
+                            italicize(specification.annotation),
+                            m(PlotVegaLite, {specification})),
+                        limit: explorePreferences.pageLength,
+                        page: explorePreferences.page,
+                        setPage: index => explorePreferences.page = index
+                    }));
 
                 return exploreContent
             }
 
-            if (nodeSummaries.length === 0) return;
+            if (variables.length === 0) return;
+            let nodeSummaries = variables.map(variable => app.variableSummaries[variable]);
+            // clear out old state if not relevant
+            let relevantPlots = getRelevantPlots(nodeSummaries, explorePreferences.mode);
+            if (!(relevantPlots.includes(explorePreferences.schemaName)) || !getIsRecommended(nodeSummaries, explorePreferences.schemaName)) {
+                explorePreferences.schemaName = relevantPlots[0];
+            }
+            let specification = getPlotSpecification();
 
             return m('div',
-                m('div#explorePlotBar', {
-                        style: {
-                            'margin-bottom': '1em',
-                            'overflow-x': 'scroll',
-                            'white-space': 'nowrap',
-                            width: '100%'
-                        }
-                    },
-                    getRelevantPlots(nodeSummaries, variate).map(x => m("figure", {style: 'display: inline-block'}, [
-                            m(`img#${x}_img[alt=${x}][height=140px][width=260px][src=/static/images/${x}.png]`, {
-                                onclick: _ => plotVega(nodeSummaries, x, selectedProblem, variate),
-                                style: getThumbnailStyle(nodeSummaries, x)
-                            }),
-                            m("figcaption", {style: {"text-align": "center"}}, plotMap[x])
-                        ])
-                    )),
-                m('#plot', {
-                    style: 'display: block;height:500px',
-                    oncreate: () => plotVega(
-                        nodeSummaries,
-                        getRelevantPlots(nodeSummaries, variate)[0],
-                        selectedProblem, variate)
-                })
+                getPlotBar(nodeSummaries),
+                exploreCache.specificationIsLoading
+                    ? [italicize("Loading data exploration."), common.loader('explore')]
+                    : specification && m('[style=display:block;height:500px]',
+                    italicize(specification.annotation),
+                    m(PlotVegaLite, {specification}))
             );
         };
 
-        if (['problem', 'univariate', 'bivariate', 'trivariate', 'multivariate'].includes(variate)) return wrapCanvas(
+        if (['variables', 'problems'].includes(explorePreferences.mode)) return wrapCanvas(
             m(Button, {
                     class: 'btn-secondary',
                     onclick: () => {
@@ -304,9 +384,12 @@ export class CanvasExplore {
     }
 }
 
-export let getRelevantPlots = (nodeSummaries, variates) => {
-    let filtered = variateSchemas[variates];
-    if (variates === 'bivariate' || variates === 'trivariate')
+export let getRelevantPlots = (nodeSummaries, mode) => {
+    let variate = mode === 'problems' ? 'bivariate' : ({
+        1: 'univariate', 2: 'bivariate', 3: 'trivariate'
+    })[nodeSummaries.length] || 'multivariate';
+    let filtered = variateSchemas[variate];
+    if (variate === 'bivariate' || variate === 'trivariate')
         filtered = `${filtered} ${variateSchemas.multivariate}`;
 
     let plotGroups = {
@@ -326,11 +409,6 @@ export let getRelevantPlots = (nodeSummaries, variates) => {
     finalOrder.unshift(bestPlot);
     return finalOrder;
 };
-
-export let exploreVariables = [];
-let explorePage = 0;
-let explorePageLength = 5;
-let exploreTarget;
 
 let plotMap = {
     aggbar: "Aggregate Bar",
@@ -421,7 +499,7 @@ let schemaMap = {
 };
 
 let variateSchemas = {
-    univariate: 'areauni dot histogram histogrammean simplebar density',
+    univariate: 'density histogram histogrammean dot areauni simplebar',
     bivariate: 'scatter box tableheat binnedtableheat aggbar area averagediff binnedscatter ' +
         'groupedbar horizon interactivebarmean line scattermatrix ' +
         'scattermeansd stackedbar step strip trellishist timeseries',
@@ -432,7 +510,7 @@ let variateSchemas = {
 };
 
 let appropriateSchemas = {
-    q: ["density", "areauni", "dot", "histogram", "histogrammean", "simplebar"],
+    q: ["density", "histogram", "histogrammean", "dot", "areauni", "simplebar"],
     n: ["simplebar"],
     qq: ["scatter", "line", "area", "binnedscatter", "binnedtableheat", "horizon", "scattermatrix", "scattermeansd", "step", "timeseries"],
     nn: ["tableheat", "stackedbar"],
@@ -537,6 +615,8 @@ let fillVegaSchema = (schema, data, flip) => {
         data.vars[1] = temp;
     }
 
+    // vega treats periods and brackets as indexing into structures unless they are escaped
+    // unfortunately, vega still shows the escape characters. Annoying bug, obvious fix, lots of work
     data.varsRenamed = data.vars.map(variable => variable
         .replace(".", "\\.")
         .replace("[", "\\[")
@@ -599,11 +679,61 @@ let fillVegaSchema = (schema, data, flip) => {
     return JSON.parse(stringified);
 };
 
-export async function plotVega(nodeSummaries, schemaName, problem, variate) {
+let customConfiguration = {};
+window.customConfiguration = customConfiguration;
+export let explorePreferences = {
+    go: false,
+    mode: 'variables',
+    recordLimit: 5000,
+    schemaName: undefined,
+    variate: undefined,
+    variables: [],
+    page: 0,
+    pageLength: 5,
+    target: undefined
+}
+window.explorePreferences = explorePreferences;
 
-    if (app.downloadIncomplete()) {
-        return;
-    }
+let exploreCache = {
+    id: undefined,
+    // the specification of the vega-lite plot currently shown on the page
+    specification: undefined,
+    // used to block duplicate requests for updating the plot
+    specificationIsLoading: false
+}
+
+function getPlotSpecification() {
+    // update and kick off changes to internal state
+    loadPlotSpecification()
+    // if preferences have changed, then this will return undefined until loaded
+    return exploreCache.specification
+}
+
+export async function loadPlotSpecification() {
+
+    let problem = app.getSelectedProblem();
+    let pendingId = JSON.stringify(Object.assign({
+        manipulations: [
+            ...app.workspace.raven_config.hardManipulations || [],
+            ...problem.manipulations || []
+        ]
+    }, explorePreferences));
+
+    // data is already current
+    if (pendingId === exploreCache.id)
+        return
+
+    exploreCache.specification = undefined;
+    exploreCache.id = pendingId;
+
+    // data is already being loaded
+    if (exploreCache.specificationIsLoading)
+        return
+
+    exploreCache.specificationIsLoading = true;
+
+    // ~~~~ begin building the plot specification
+    let {mode, variables, schemaName} = explorePreferences;
 
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
@@ -612,18 +742,22 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
                 pt[0] === "averagediff" && pt[1] === "nq";
     };
 
-    let facetSummaries = [nodeSummaries];
+    let facetSummaries;
 
-    if (variate === 'problem') {
-        if (explorePageLength * (explorePage - 1) > app.getPredictorVariables(problem).length)
-            explorePage = 0
+    if (mode === 'problems') {
+        if (explorePreferences.pageLength * (explorePreferences.page - 1) > app.getPredictorVariables(problem).length)
+            explorePreferences.page = 0
+
+        if (!(explorePreferences.target in problem.targets))
+            explorePreferences.target = problem.targets[0];
 
         facetSummaries = app.getPredictorVariables(problem).map(predictor => [
-            nodeSummaries[predictor],
-            nodeSummaries[exploreTarget]
-        ]).splice(explorePage * explorePageLength, explorePageLength).filter(_ => _)
+            app.variableSummaries[predictor],
+            app.variableSummaries[explorePreferences.target]
+        ]).splice(explorePreferences.page * explorePreferences.pageLength, explorePreferences.pageLength).filter(_ => _)
+    } else {
+        facetSummaries = [variables.map(variable => app.variableSummaries[variable])]
     }
-
 
     // build vega-lite specifications for every facet
     let facetSpecifications = [];
@@ -641,7 +775,7 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
                     type: 'data',
                     variables: nodeNames,
                     dropNA: nodeNames,
-                    sample: recordLimit
+                    sample: parseInt(explorePreferences.recordLimit) || 5000
                 }
             }],
             app.workspace.raven_config.variablesInitial)['pipeline'];
@@ -693,11 +827,15 @@ export async function plotVega(nodeSummaries, schemaName, problem, variate) {
         facetSpecifications[i] = fillVegaSchema(schema, json, flip);
     }));
 
-    let specification = facetSpecifications.length === 1
-        ? facetSpecifications[0]
-        : {vconcat: facetSpecifications, config: {axisY: {minExtent: 30}}}
+    // requested plot may have changed while waiting for response
+    if (exploreCache.id !== pendingId)
+        return;
 
-    vegaEmbed('#plot', specification, {width: 800, height: 600});
+    exploreCache.specification = facetSpecifications.length === 1
+        ? facetSpecifications[0]
+        : {vconcat: facetSpecifications, config: {axisY: {minExtent: 30}}};
+    exploreCache.specificationIsLoading = false;
+    m.redraw();
 }
 
 function getThumbnailStyle(nodeSummaries, schemaName) {
@@ -722,11 +860,8 @@ function getIsRecommended(nodeSummaries, schemaName) {
     let plotType = inferPlotType(nodeSummaries);
     if (!plotType) return;
 
-    return (appropriateSchemas[plotType[1]] || []).indexOf(schemaName) > -1;
+    return (appropriateSchemas[plotType[1]] || []).includes(schemaName);
 }
-
-export let exploreVariate = 'Univariate';
-export let setExploreVariate = variate => exploreVariate = variate;
 
 // prefer using vegaLite going forward
 
@@ -787,7 +922,7 @@ export function densityNode(node, obj, radius, explore) {
         .datum(data2)
         .attr("class", "area")
         .attr("d", area)
-        .attr("fill", "#1f77b4");
+        .attr("fill", common.d3Color);
 }
 
 export function barsNode(node, obj, radius, explore) {
@@ -870,5 +1005,5 @@ export function barsNode(node, obj, radius, explore) {
         .attr("y", d => y(maxY - d))
         .attr("width", x(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
         .attr("height", y)
-        .attr("fill", "#1f77b4");
+        .attr("fill", common.d3Color);
 }

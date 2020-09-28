@@ -1,10 +1,11 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "annotation": "The red mean is computed over the highlighted bins. Click to highlight a bin. Shift-click to highlight multiple bins.",
   "data": {"url": "tworavensData"},
   "layer": [{
     "selection": {
       "brush": {
-        "type": "interval",
+        "type": "multi",
         "encodings": ["x"]
       }
     },
@@ -24,7 +25,11 @@
           "selection": "brush", "value": 1
         },
         "value": 0.7
-      }
+      },
+      "tooltip": [
+        {"field": "tworavensX", "type": "nominal"},
+        {"field": "tworavensY", "type": "quantitative", "aggregate":  "mean"}
+      ]
     }
   }, {
     "transform": [{
@@ -37,8 +42,11 @@
         "field": "tworavensY",
         "type": "quantitative"
       },
-      "color": {"value": "firebrick"},
-      "size": {"value": 3}
+      "color": {"value": "red"},
+      "size": {"value": 5},
+      "tooltip": [
+        {"aggregate": "mean", "field": "tworavensY", "type": "quantitative"}
+      ]
     }
   }]
 }

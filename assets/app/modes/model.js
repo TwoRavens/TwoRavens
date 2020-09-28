@@ -297,7 +297,7 @@ export let leftpanel = forceData => {
                         id: 'varList',
                         items: leftpanelVariables,
                         colors: {
-                            [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.exploreVariables,
+                            [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.explorePreferences.variables,
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
                             [app.hexToRgba(common.gr2Color, .25)]: app.isExploreMode ? [] : selectedProblem.targets
                         },
@@ -1737,19 +1737,30 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
 
 let setLabel = (problem, label, name) => {
     if (label === 'nominal') {
-        app.variableSummaries[name].nature = label;
-        if (problem.tags.nominal.includes(name)) {
+        // if we are going to add the tag
+        if (!app.getNominalVariables(problem).includes(name)) {
             if (app.variableSummaries[name].numchar === 'character') {
-                app.alertLog(`Cannot interpret "${name}" as non-nominal, because the column is character-based.`);
+                app.alertLog(`Cannot interpret "${name}" as non-nominal, because the column is character-based. Use a manipulation to parse the strings.`);
                 return;
             }
-            app.remove(problem.tags.crossSection, name);
-            app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.geographic, name);
-            app.remove(problem.tags.indexes, name);
+            app.add(problem.tags.nominal, name);
         }
-        delete problem.unedited;
-        app.toggle(problem.tags.nominal, name);
+        // we are going to remove
+        else {
+            // if the tag is at the dataset level
+            if (variableSummaries[name].nature === 'nominal') {
+                if (confirm("Do you want to remove the dataset-level nominal annotation?")) {
+                    setVariableSummaryAttr(name, 'nature', 'nominal')
+                }
+            } else {
+                app.remove(problem.tags.crossSection, name);
+                app.remove(problem.tags.boundary, name);
+                app.remove(problem.tags.geographic, name);
+                app.remove(problem.tags.indexes, name);
+
+                app.remove(problem.tags.nominal, name);
+            }
+        }
     }
 
     delete problem.unedited;

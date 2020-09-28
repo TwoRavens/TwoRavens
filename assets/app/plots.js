@@ -17,9 +17,31 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
 
         "layer": [
             {
+                "mark": "line",
+                "data": {
+                    'values': [
+                        {
+                            [xName]: Math.min(...data.map(point => point[xName]).filter(v => !isNaN(v))),
+                            [yName]: Math.min(...data.map(point => point[yName]).filter(v => !isNaN(v)))
+                        },
+                        {
+                            [xName]: Math.max(...data.map(point => point[xName]).filter(v => !isNaN(v))),
+                            [yName]: Math.max(...data.map(point => point[yName]).filter(v => !isNaN(v)))
+                        }
+                    ],
+                },
+                "encoding": {
+                    "color": {"value": "black"},
+                    "opacity": {"value": 0.5}
+                }
+            },
+            {
                 "selection": {
                     "grid": {
                         "type": "interval", "bind": "scales"
+                    },
+                    "Solution Name": {
+                        "type": "multi", "fields": [groupName], "bind": "legend"
                     }
                 },
                 "data": {
@@ -32,22 +54,11 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
                         {"field": groupName, "type": "nominal"},
                         {"field": countName, "type": "quantitative"},
                     ],
-                    "size": {"field": countName, "type": "quantitative", "bin": {'binned': true, "minstep": 1}}
-                }
-            },
-            {
-                "mark": "line",
-                "data": {
-                    'values': Object.entries(data.reduce((extrema, point) => Object.assign(extrema, {
-                        [point[groupName]]: {
-                            min: Math.min((extrema[point[groupName]] || {min: point[xName]}).min, point[xName], point[yName]),
-                            max: Math.max((extrema[point[groupName]] || {max: point[xName]}).max, point[xName], point[yName]),
-                        }
-                    }), {}))
-                        .flatMap(entry => [
-                            {[groupName]: entry[0], [xName]: entry[1].min, [yName]: entry[1].min},
-                            {[groupName]: entry[0], [xName]: entry[1].max, [yName]: entry[1].max}
-                        ])
+                    "size": {"field": countName, "type": "quantitative", "bin": {'binned': true, "minstep": 1}},
+                    "opacity": {
+                        "condition": {"selection": "Solution Name", "value": 0.7},
+                        "value": 0.05
+                    }
                 }
             }
         ]

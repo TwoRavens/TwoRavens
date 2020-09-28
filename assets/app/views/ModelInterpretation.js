@@ -80,12 +80,12 @@ export default class ModelInterpretation {
                         'data': {'values': data},
                         "mark": "bar",
                         "encoding": {
-                            "x": {
+                            "y": {
                                 "field": variableLabel,
                                 "type": "nominal", title: ''
                             },
-                            "y": {"field": yLabel, "type": "quantitative"},
-                            "column": {"field": "predictor", "type": "ordinal"},
+                            "x": {"field": yLabel, "type": "quantitative"},
+                            "row": {"field": "predictor", "type": "ordinal"},
                             "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},

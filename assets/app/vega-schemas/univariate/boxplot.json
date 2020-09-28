@@ -1,0 +1,11 @@
+{
+  "data": {"url": "tworavensData"},
+  "mark": "boxplot",
+  "encoding": {
+    "x": {
+      "field": "tworavensX",
+      "type": "quantitative",
+      "scale": {"zero": false}
+    }
+  }
+}

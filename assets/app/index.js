@@ -64,7 +64,7 @@ export let abbreviate = (text, length) => text.length > length
 
 class Body {
     oninit() {
-        app.setRightTab(IS_D3M_DOMAIN ? 'Problem' : 'Models');
+        app.setRightTab('Manipulate');
         app.setSelectedMode('model');
         m.route.set('/model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
@@ -79,7 +79,7 @@ class Body {
     view(vnode) {
         //app.alertLog(m(TextField, {value: JSON.stringify(app.workspaces)}));
 
-        let {mode, vars, variate} = vnode.attrs;
+        let {mode, exploreMode, vars} = vnode.attrs;
 
         // after calling m.route.set, the params for mode, variate, vars don't update in the first redraw.
         // checking window.location.href is a workaround, permits changing mode from url bar
@@ -122,7 +122,7 @@ class Body {
                     },
                     app.isDatasetMode && m(MainCarousel, {previousMode: this.previousMode}, m(dataset.CanvasDataset, {})),
                     app.isResultsMode && m(MainCarousel, {previousMode: this.previousMode}, m(results.CanvasSolutions, {problem: selectedProblem})),
-                    app.isExploreMode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, variate})),
+                    app.isExploreMode && m(MainCarousel, {previousMode: this.previousMode}, m(explore.CanvasExplore, {variables: exploreVariables, exploreMode})),
                     app.isModelMode && m(MainCarousel, {previousMode: this.previousMode}, m(model.CanvasModel, {drawForceDiagram, forceData}))
                 )
             )
@@ -351,17 +351,17 @@ class Body {
                 //     onclick: () => app.setShowModalTA2Debug(true)
                 // }, m(Icon, {name: 'bug'})),
 
-                app.isResultsMode && m(Button, {
-                    style: {'margin': '8px'},
-                    title: 'ta2 stop searches',
-                    class: 'btn-sm',
-                    onclick: () => {
-                        solverD3M.endAllSearches();
-                        solverD3M.stopAllSearches();
-                        // solverD3M.endsession();
-                        // solverD3M.handleENDGetSearchSolutionsResults();
-                    }
-                }, m(Icon, {name: 'stop'}))
+                // app.isResultsMode && m(Button, {
+                //     style: {'margin': '8px'},
+                //     title: 'ta2 stop searches',
+                //     class: 'btn-sm',
+                //     onclick: () => {
+                //         solverD3M.endAllSearches();
+                //         solverD3M.stopAllSearches();
+                //         // solverD3M.endsession();
+                //         // solverD3M.handleENDGetSearchSolutionsResults();
+                //     }
+                // }, m(Icon, {name: 'stop'}))
             ],
 
             // m("span", {"class": "footer-info-break"}, "|"),
@@ -953,7 +953,7 @@ else {
         //         ])
         //     ]
         // },
-        '/explore/:variate/:vars...': Body,
+        '/explore/:exploreMode/:vars...': Body,
         '/data': {render: () => m(Peek, {id: app.peekId, image: '/static/images/TwoRavens.png'})},
         '/:mode': Body
     });

@@ -1,8 +1,14 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
   "description": "An area plot.",
+  "annotation": "Scroll to zoom. Drag to pan. Double click to reset.",
   "data": {"url": "tworavensData"},
   "mark": "area",
+  "selection": {
+    "grid": {
+      "type": "interval", "bind": "scales"
+    }
+  },
   "encoding": {
     "x": {
       "field": "tworavensX", "type": "quantitative",
@@ -11,6 +17,10 @@
     "y": {
       "aggregate": "count", "field": "tworavensX", "type": "quantitative",
       "axis": {"title": "Number of Records"}
-    }
+    },
+    "tooltip": [
+      {"field": "tworavensX", "type": "quantitative"},
+      {"aggregate": "count", "field": "tworavensX", "type": "quantitative"}
+    ]
   }
 }
