@@ -835,7 +835,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .attr('class', 'embedded-plot')
             .data([null]).enter().append('path')
             .attr("class", "area")
-            .attr("fill", "#1f77b4");
+            .attr("fill", common.steelBlue);
 
         // bind all events to the plot
         Object.keys(attrs.pebbleEvents)
@@ -900,7 +900,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .attr("y", d => yScale(maxY - d.y))
             .attr("width", xScale(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
             .attr("height", d => yScale(d.y))
-            .attr("fill", "#1f77b4")
+            .attr("fill", common.steelBlue)
             .attr("transform", "translate(" + (-width / 2) + "," + (-height) + ")");
     });
 };

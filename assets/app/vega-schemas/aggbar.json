@@ -12,6 +12,10 @@
     "x": {
       "aggregate": "sum", "field": "tworavensX", "type": "quantitative",
       "axis": {"title": "tworavensX"}
-    }
+    },
+    "tooltip": [
+      {"field": "tworavensX","type": "quantitative"},
+      {"field": "tworavensY","type": "nominal"}
+    ]
   }
 }

@@ -19,7 +19,11 @@
         "y": {
           "aggregate": "count",
           "type": "quantitative"
-        }
+        },
+        "tooltip": [
+          {"field": "tworavensX", "type": "quantitative", "bin": true},
+          {"aggregate": "count", "field": "tworavensX", "type": "quantitative"}
+        ]
       }
     },
     {
@@ -38,7 +42,10 @@
         },
         "size": {
           "value": 5
-        }
+        },
+        "tooltip": [
+          {"aggregate": "mean", "field": "tworavensX", "type": "quantitative"}
+        ]
       }
     }
   ]

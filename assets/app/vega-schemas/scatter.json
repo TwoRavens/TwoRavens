@@ -1,10 +1,20 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
   "description": "A scatterplot.",
+  "annotation": "Scroll to zoom. Drag to pan. Double click to reset.",
   "data": {"url": "tworavensData"},
   "mark": "point",
+  "selection": {
+    "grid": {
+      "type": "interval", "bind": "scales"
+    }
+  },
   "encoding": {
     "x": {"field": "tworavensX","type": "quantitative", "scale": {"zero": false}},
-    "y": {"field": "tworavensY","type": "quantitative", "scale": {"zero": false}}
+    "y": {"field": "tworavensY","type": "quantitative", "scale": {"zero": false}},
+    "tooltip": [
+      {"field": "tworavensX","type": "quantitative"},
+      {"field": "tworavensY","type": "quantitative"}
+    ]
   }
 }

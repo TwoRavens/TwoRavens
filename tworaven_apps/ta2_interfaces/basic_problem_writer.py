@@ -12,6 +12,9 @@ from tworaven_apps.utils.basic_response import (ok_resp,
 from tworaven_apps.utils.basic_err_check import BasicErrCheck
 from tworaven_apps.utils.file_util import create_directory
 
+import time
+import uuid
+
 OUTPUT_PROBLEMS_DIR = '/ravens_volume/problems' # temp use while eval specs worked on
 ERR_MSG_UNEXPECTED_DIRECTORY = 'Unexpected base directory'
 ERR_MSG_NO_FILENAME = '"filename" is not specified (cannot be blank)'
@@ -131,6 +134,30 @@ class BasicProblemWriter(BasicErrCheck):
                                 ' Tried these directories:') %
                                (attempted_dirs))
 
+    def add_stamp_to_filename(self, fullpath):
+        """Add timestamp/hash to filename. Use instead of add_increment_to_filename to avoid race conditions"""
+        if not isinstance(fullpath, str):
+            return err_resp("add_stamp_to_filename: Fullpath must be a string")
+
+        path, filename = split(fullpath)
+        if not filename:
+            return err_resp(('add_stamp_to_filename: The fullpath'
+                             ' must be valid--not an empty string!'))
+
+        # Determine starting file name and number
+
+        # examples: ('data', 'csv'); ('data_0001', 'csv')
+        #
+        filename, ext = splitext(fullpath)
+
+        # examples: ('data', ''); ('data', '0001')
+        #
+        start_fname, stamp_suffix = filename.rsplit('_', 1)
+
+        if stamp_suffix and stamp_suffix.startswith('trstamp'):
+            filename = start_fname
+
+        return ok_resp(os.path.join(path, f'{filename}_trstamp-{str(int(time.time()))}-{str(uuid.uuid4())[:8]}{ext}'))
 
     def add_increment_to_filename(self, fullpath):
         """Add "_0001", "_0002", etc to filename"""
@@ -233,7 +260,8 @@ class BasicProblemWriter(BasicErrCheck):
             #   to the filename?
             #
             if self.increment_filename:
-                increment_info = self.add_increment_to_filename(fullpath)
+                increment_info = self.add_stamp_to_filename(fullpath)
+                # increment_info = self.add_increment_to_filename(fullpath)
                 if not increment_info.success:
                     self.add_error_message(increment_info.err_msg)
                     return False

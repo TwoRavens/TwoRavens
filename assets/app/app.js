@@ -530,7 +530,7 @@ export let LEFT_TAB_NAME_DISCOVER = 'Discover';
 export let leftTab = LEFT_TAB_NAME_VARIABLES; // current tab in left panel
 export let leftTabHidden = LEFT_TAB_NAME_VARIABLES; // stores the tab user was in before summary hover
 
-export let rightTab = 'Problem'; // current tab in right panel
+export let rightTab = 'Manipulate'; // current tab in right panel
 
 export let setRightTab = tab => {
     rightTab = tab;
@@ -556,7 +556,6 @@ export let setLeftTab = (tabName) => {
     saveSystemLogEntry(logParams);
 
     if (tabName === LEFT_TAB_NAME_DISCOVER) taskPreferences.isDiscoveryClicked = true;
-    explore.setExploreVariate(tabName === LEFT_TAB_NAME_DISCOVER ? 'Problem' : 'Univariate');
     setFocusedPanel('left');
 
     if (tabName === LEFT_TAB_NAME_DISCOVER && !taskPreferences.task1_finished && tutorial_mode)

@@ -56,12 +56,12 @@ export default class PlotVegaLite {
 
             let options = {actions: true, theme: this.theme || 'default'};
             if ('vconcat' in specification)
-                width && specification.vconcat.forEach(spec => spec.width = spec.width || width);
+                width && specification.vconcat.forEach(spec => spec.width = 'width' in spec ? spec.width : width);
             else if ('hconcat' in specification)
-                height && specification.hconcat.forEach(spec => spec.height = spec.height || height);
+                height && specification.hconcat.forEach(spec => spec.height = 'height' in spec ? spec.height : height);
             else {
-                if (width) specification.width = specification.width || width;
-                if (height) specification.height = specification.height || height;
+                if (width && !specification?.encoding?.column) specification.width = 'width' in specification ? specification.width : width;
+                if (height && !specification?.encoding?.row) specification.height = 'height' in specification ? specification.height : height;
             }
 
             // by default, make sure labels on all plots are limited to 50 pixels
@@ -72,7 +72,6 @@ export default class PlotVegaLite {
             ]));
 
             vegaEmbed(vnode.dom, specification, options).then(result => {
-                console.log(result);
                 let addThemeSetter = theme => {
                     const themeAction = document.createElement('a');
                     themeAction.textContent = "Theme: " + theme;

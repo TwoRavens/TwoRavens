@@ -19,6 +19,11 @@
     "size": {
       "aggregate": "count",
       "type": "quantitative"
-    }
+    },
+    "tooltip": [
+      {"field": "tworavensX","type": "quantitative", "bin":  {"maxbins": 20}},
+      {"field": "tworavensY","type": "quantitative", "bin":  {"maxbins": 20}},
+      {"aggregate":  "count", "type": "quantitative"}
+    ]
   }
 }
