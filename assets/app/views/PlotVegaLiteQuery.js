@@ -75,12 +75,6 @@ export default class PlotVegaLiteQuery {
         pruneSpec('hconcat');
         pruneSpec('vconcat');
 
-        specificationStripped.selection = {
-            "grid": {
-                "type": "interval", "bind": "scales"
-            }
-        };
-
         // draw plot
         return m(PlotVegaLite, {specification: specificationStripped})
     }

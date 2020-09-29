@@ -34,22 +34,23 @@ export default class PlotVegaLiteWrapper {
                 ...(specification.hconcat || [])
             ].map(countEncodings).reduce((sum, count) => sum + count, 0);
 
-            plot = encodingsCount > 0 && m(PlotVegaLiteQuery, {
+            // 5px margin keeps the drag bar visible
+            plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
                 getData,
                 specification,
                 abstractQuery,
                 summaries,
                 sampleSize,
                 variablesInitial
-            })
+            }))
         }
 
         return m(TwoPanel, {
-            left: plot,
-            right: m(PlotVegaLiteEditor, {
+            left: m(PlotVegaLiteEditor, {
                 configuration,
                 variables: Object.keys(summaries)
-            })
+            }),
+            right: plot
         })
     }
 }
@@ -95,7 +96,13 @@ let makeLayer = (layer, varTypes) => {
     let orientation = channels.find(channel => channel.name === 'primary axis').orientation || 'x';
     let spec = {};
 
-    if ('mark' in layer) spec.mark = layer.mark;
+    if ('mark' in layer) spec.mark = {type: layer.mark};
+    if (['line', 'area'].includes(layer.mark)) {
+        if (layer.interpolation) spec.mark.interpolate = layer.interpolation;
+        if (layer.point) spec.mark.point = layer.point;
+    }
+
+    if (!('nice' in layer)) layer.nice = true;
 
     spec.encoding = channels.reduce((encodings, channel) => {
         if (channel.name === 'primary axis') {
@@ -189,5 +196,11 @@ let makeLayer = (layer, varTypes) => {
             : (channel.variables || []).length === 1
                 ? makeTooltipSpec(channel.variables[0])
                 : makeTooltipSpec(channel.value)).filter(_ => _)
+
+    if (layer.interactive && layer.mark !== 'bars') spec.selection = {
+        "grid": {
+            "type": "interval", "bind": "scales"
+        }
+    };
     return spec;
 };

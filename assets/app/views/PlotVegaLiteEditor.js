@@ -104,7 +104,7 @@ export default class PlotVegaLiteEditor {
             'opacity',
             'row',
             'column',
-            'detail',
+            configuration.mark === "line" && 'detail',
             // 'fillOpacity',
             // 'strokeWidth',
             configuration.mark === "text" && 'text',
@@ -143,27 +143,27 @@ export default class PlotVegaLiteEditor {
         return [
             m('h4', 'Mark'),
             m(Table, {
-                data: {
-                    "type": m(Dropdown, {
+                data: [
+                    ["type", m(Dropdown, {
                         items: allMarks,
                         activeItem: configuration.mark,
                         onclickChild: value => configuration.mark = value
-                    }),
-                    "nice": m(Popper, {
-                        content: () => configuration.nice
-                            ? "Nice is enabled, so axes are extended to significant numbers. "
-                            : "Nice is disabled, so axes are not extended to significant numbers. "
-                    }, m(ButtonRadio, {
-                        id: 'niceOption',
-                        attrsAll: {style: {width: '150px'}},
-                        onclick: nice => configuration.nice = nice === "True",
-                        activeSection: configuration.nice ? "True" : "False",
-                        sections: [
-                            {value: 'True'},
-                            {value: 'False'},
-                        ]
-                    })),
-                    "zero": m(Popper, {
+                    })],
+                    // ["nice", m(Popper, {
+                    //     content: () => configuration.nice
+                    //         ? "Nice is enabled, so axes are extended to significant numbers. "
+                    //         : "Nice is disabled, so axes are not extended to significant numbers. "
+                    // }, m(ButtonRadio, {
+                    //     id: 'niceOption',
+                    //     attrsAll: {style: {width: '150px'}},
+                    //     onclick: nice => configuration.nice = nice === "True",
+                    //     activeSection: configuration.nice ? "True" : "False",
+                    //     sections: [
+                    //         {value: 'True'},
+                    //         {value: 'False'},
+                    //     ]
+                    // }))],
+                    ["zero", m(Popper, {
                         content: () => configuration.zero
                             ? "Zero is enabled, so axes are extended to include zero. "
                             : "Zero is disabled, so axes are not extended to include zero. "
@@ -176,22 +176,52 @@ export default class PlotVegaLiteEditor {
                             {value: 'True'},
                             {value: 'False'},
                         ]
-                    })),
-                    "bin": m(Popper, {
-                        content: () => configuration.bin
-                            ? "Bin is enabled, so the x axis is binned. "
-                            : "Bin is disabled, so a sampling is made along the x axis. "
+                    }))],
+                    configuration.mark !== 'bar' && ["interactive", m(Popper, {
+                        content: () => configuration.interactive
+                            ? "Interactive is enabled, so plots may be dragged/panned to change scales. "
+                            : "Interactive is disabled to make scrolling easier. "
                     }, m(ButtonRadio, {
-                        id: 'binOption',
+                        id: 'interactiveOption',
                         attrsAll: {style: {width: '150px'}},
-                        onclick: bin => configuration.bin = bin === "True",
-                        activeSection: configuration.bin ? "True" : "False",
+                        onclick: interactive => configuration.interactive = interactive === "True",
+                        activeSection: configuration.interactive ? "True" : "False",
                         sections: [
                             {value: 'True'},
                             {value: 'False'},
                         ]
-                    }))
-                }
+                    }))],
+                    ['line', 'area'].includes(configuration.mark) && ["interpolation", m(Dropdown, {
+                        id: 'interpolationOption',
+                        items: [
+                            "basis", "cardinal", "catmull-rom", "linear", "monotone", "natural",
+                            "step", "step-after", "step-before"
+                        ],
+                        activeItem: configuration.interpolation || 'linear',
+                        onclickChild: child => configuration.interpolation = child
+                    })],
+                    ['line', 'area'].includes(configuration.mark) && ["point", m(ButtonRadio, {
+                        id: 'pointOption',
+                        attrsAll: {style: {width: '150px'}},
+                        onclick: point => configuration.point = point === "True",
+                        activeSection: configuration.point ? "True" : "False",
+                        sections: [{value: 'True'}, {value: 'False'}]
+                    })]
+                    // "bin": m(Popper, {
+                    //     content: () => configuration.bin
+                    //         ? "Bin is enabled, so the x axis is binned. "
+                    //         : "Bin is disabled, so a sampling is made along the x axis. "
+                    // }, m(ButtonRadio, {
+                    //     id: 'binOption',
+                    //     attrsAll: {style: {width: '150px'}},
+                    //     onclick: bin => configuration.bin = bin === "True",
+                    //     activeSection: configuration.bin ? "True" : "False",
+                    //     sections: [
+                    //         {value: 'True'},
+                    //         {value: 'False'},
+                    //     ]
+                    // }))
+                ]
             }),
             configuration.mark === "text" && "Use the text channel to map text from your dataset to plot points. You may want to use manipulations to create a shortened text column. ",
             ['bar', 'area'].includes(configuration.mark) && "If no aggregation is chosen, the maximum of each category is shown. ",
@@ -227,8 +257,8 @@ export default class PlotVegaLiteEditor {
             'sum',
             'mean',
             // 'average',
-            'stdDev',
-            'variance',
+            // 'stdDev',
+            // 'variance',
             'min',
             'max',
             // 'q1',
