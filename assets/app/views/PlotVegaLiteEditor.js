@@ -120,6 +120,7 @@ export default class PlotVegaLiteEditor {
             "line",
             "area",
             "point",
+            'boxplot',
             // 'rect',
             // 'rule'
         ];
@@ -186,10 +187,7 @@ export default class PlotVegaLiteEditor {
                         attrsAll: {style: {width: '150px'}},
                         onclick: interactive => configuration.interactive = interactive === "True",
                         activeSection: configuration.interactive ? "True" : "False",
-                        sections: [
-                            {value: 'True'},
-                            {value: 'False'},
-                        ]
+                        sections: [{value: 'True'}, {value: 'False'}]
                     }))],
                     ['line', 'area'].includes(configuration.mark) && ["interpolation", m(Dropdown, {
                         id: 'interpolationOption',
