@@ -118,7 +118,7 @@ export class CanvasExplore {
 
         let selectedProblem = app.getSelectedProblem();
 
-        if (!explorePreferences.go) return wrapCanvas(
+        if (!explorePreferences.go) return [wrapCanvas(
             m(ButtonRadio, {
                 id: 'problemVariateButtonRadio',
                 attrsAll: {style: {width: '300px', margin: '.5em', position: 'fixed'}},
@@ -170,19 +170,7 @@ export class CanvasExplore {
 
             m('br'),
             explorePreferences.mode === 'custom'
-                ? m('[style=margin-top:3em;position:relative;height:calc(100% - 6em)]', m(PlotVegaLiteWrapper, {
-                    getData: app.getData,
-                    variables: Object.keys(app.variableSummaries),
-                    nominals: new Set(app.getNominalVariables(selectedProblem)),
-                    configuration: customConfiguration,
-                    abstractQuery: [
-                        ...app.workspace.raven_config.hardManipulations || [],
-                        ...selectedProblem.manipulations || []
-                    ],
-                    summaries: app.variableSummaries,
-                    sampleSize: parseInt(explorePreferences.recordLimit),
-                    variablesInitial: app.workspace.raven_config.variablesInitial
-                }))
+                ? ''
                 : m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
                 // x could either be a problemId or a variable name
                 (explorePreferences.mode === 'problems' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
@@ -257,7 +245,23 @@ export class CanvasExplore {
                     );
                     return tile;
                 }))
-        );
+        ),
+            explorePreferences.mode === 'custom' && m('div', {style: {
+                    position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
+                }}, m(PlotVegaLiteWrapper, {
+                getData: app.getData,
+                variables: Object.keys(app.variableSummaries),
+                nominals: new Set(app.getNominalVariables(selectedProblem)),
+                configuration: customConfiguration,
+                abstractQuery: [
+                    ...app.workspace.raven_config.hardManipulations || [],
+                    ...selectedProblem.manipulations || []
+                ],
+                summaries: app.variableSummaries,
+                sampleSize: parseInt(explorePreferences.recordLimit),
+                variablesInitial: app.workspace.raven_config.variablesInitial
+            }))
+        ];
 
         let getPlotBar = nodeSummaries => {
             return m('div#explorePlotBar', {
