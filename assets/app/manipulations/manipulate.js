@@ -606,6 +606,7 @@ export let redraw = false;
 export let setRedraw = state => redraw = state;
 
 export let constraintMenu;
+// window.getConstraintMenu = () => constraintMenu;
 // let constraintMenuExample = {
 //     type: 'transform' || 'subset' || 'unit' || 'accumulator',
 //     step: {
@@ -824,6 +825,12 @@ let loadMenuManipulations = async (pipeline) => {
 
 // contains the menu state (which nominal variables are selected, ranges, etc.)
 export let constraintPreferences = {};
+// window.getConstraintPreferences = () => constraintPreferences;
+export let setConstraintPreferences = preferences => {
+    // this is strange to avoid breaking the object reference. May or may not be necessary
+    Object.keys(constraintPreferences).forEach(key => delete constraintPreferences[key])
+    Object.assign(constraintPreferences, preferences)
+}
 
 // contains the raw data used to draw the constraint menu
 export let constraintData;

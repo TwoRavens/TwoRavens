@@ -527,12 +527,12 @@ class MenuManual {
         let userInput = i => {
             if (preferences.variableType === 'Boolean') return m(ButtonRadio, {
                 attrsAll: {style: {'max-width': '10em'}},
-                sections: [{value: 'true'}, {value: 'false'}],
+                sections: [{value: 'True'}, {value: 'False'}],
                 activeSection: String(!!preferences.userValues[i] || preferences.variableDefault),
-                onclick: response => preferences.userValues[i] = response === 'true'
+                onclick: response => preferences.userValues[i] = response === 'True'
             });
 
-            if (['Nominal', 'Numchar'].includes(preferences.variableType)) return m(TextField, {
+            if (['Nominal', 'Numeric'].includes(preferences.variableType)) return m(TextField, {
                 placeholder: preferences.variableDefault === undefined ? '' : preferences.variableDefault,
                 value: String(preferences.userValues[i] === undefined ? '' : preferences.userValues[i]),
                 oninput: response => preferences.userValues[i] = response
@@ -557,7 +557,7 @@ class MenuManual {
             m('[style=display:inline-block]', m(Dropdown, {
                 style: {display: 'inline-block'},
                 id: 'dropdownVariableType',
-                items: ['Boolean', 'Nominal', 'Numchar'],
+                items: ['Boolean', 'Nominal', 'Numeric'],
                 activeItem: preferences.variableType,
                 onclickChild: child => preferences.variableType = child
             })),
@@ -575,11 +575,11 @@ class MenuManual {
             m('label#labelVariableDefault[style=width:10em;display:inline-block]', 'Variable Default'),
             preferences.variableType === 'Boolean' && m(ButtonRadio, {
                 attrsAll: {style: {'max-width': '10em'}},
-                sections: [{value: 'true'}, {value: 'false'}],
+                sections: [{value: 'True'}, {value: 'False'}],
                 activeSection: String(!!preferences.variableDefault),
-                onclick: response => preferences.variableDefault = response === 'true'
+                onclick: response => preferences.variableDefault = response === 'True'
             }),
-            ['Nominal', 'Numchar'].includes(preferences.variableType) && m(TextField, {
+            ['Nominal', 'Numeric'].includes(preferences.variableType) && m(TextField, {
                 value: String(preferences.variableDefault === undefined ? '' : preferences.variableDefault),
                 style: {display: 'inline-block', width: 'calc(100% - 10em)'},
                 oninput: response => preferences.variableDefault = response

@@ -48,6 +48,7 @@ export class CanvasModel {
             drawForceDiagram && m(ForceDiagram, Object.assign(forceDiagramState, {
                 nodes: forceDiagramNodesReadOnly,
                 // these attributes may change dynamically, (the problem could change)
+                // drag pebble out of screen
                 onDragOut: pebble => {
                     let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
@@ -65,10 +66,14 @@ export class CanvasModel {
                     app.resetPeek();
                     m.redraw();
                 },
+                // drag pebble away from group, but not out of screen
                 onDragAway: (pebble, groupId) => {
                     let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-                    pebbles.forEach(pebble => setGroup(selectedProblem, 'Loose', pebble));
+                    let selectedProblem = app.getSelectedProblem();
+                    pebbles.forEach(pebble => {
+                        if (groupId !== 'Loose') setGroup(selectedProblem, 'Loose', pebble)
+                    });
                     app.resetPeek();
                     m.redraw();
                 },
@@ -138,6 +143,14 @@ export class CanvasModel {
                         vars: selectedProblem.tags.weights,
                         name: 'Weight',
                         borderColor: common.weightColor,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "ordinalButton",
+                        vars: selectedProblem.tags.privileged,
+                        name: 'Ordinal',
+                        borderColor: common.ordinalColor,
                         innerColor: 'white',
                         width: 1
                     },
@@ -304,6 +317,7 @@ export let leftpanel = forceData => {
                         classes: {
                             'item-nominal': nominalVariables,
                             'item-cross-section': selectedProblem.tags.crossSection,
+                            'item-ordinal': selectedProblem.tags.ordinal,
                             'item-boundary': selectedProblem.tags.boundary,
                             'item-geographic': app.getGeographicVariables(selectedProblem),
                             'item-time': app.getTemporalVariables(selectedProblem),
@@ -678,7 +692,7 @@ export let leftpanel = forceData => {
 
     sections.push({
         value: 'Summary',
-        title: 'Select a variable from within the visualization in the center panel to view its summary statistics.',
+        title: "Select a variable from within the visualization in the center panel to view its summary statistics.",
         display: 'none',
         contents: summaryContent
     });
@@ -1102,7 +1116,7 @@ export let rightpanel = () => {
                                 ...selectedProblem.manipulations
                             ],
                             pipeline: selectedProblem.manipulations,
-                            editable: true,
+                            editable: selectedProblem.systemId !== 'solved',
                             hard: false
                         }),
                         selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
@@ -1502,6 +1516,11 @@ let variableTagMetadata = (selectedProblem, variableName) => [
         title: 'Nominal variables are text-based, and handled similarly to categorical variables.'
     },
     {
+        name: 'Ordinal', active: selectedProblem.tags.ordinal.includes(variableName),
+        onclick: () => setLabel(selectedProblem, 'ordinal', variableName),
+        title: 'Ordinal variables are categorical, but the categories are ordered.'
+    },
+    {
         name: 'Cross Section', active: selectedProblem.tags.crossSection.includes(variableName),
         onclick: () => setLabel(selectedProblem, 'crossSection', variableName),
         title: 'Cross sectional variables group observations into treatments.'
@@ -1583,6 +1602,7 @@ export let mutateNodes = problem => (state, context) => {
         loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
         nominal: new Set(app.getNominalVariables(problem)),
+        ordinal: new Set(problem.tags.ordinal),
         crossSection: new Set(problem.tags.crossSection),
         boundary: new Set(problem.tags.boundary),
         geographic: new Set(app.getGeographicVariables(problem)),
@@ -1598,6 +1618,7 @@ export let mutateNodes = problem => (state, context) => {
         predictors: 4,
         targets: 4,
         nominal: 4,
+        ordinal: 4,
         crossSection: 4,
         boundary: 4,
         geographic: 4,
@@ -1612,6 +1633,7 @@ export let mutateNodes = problem => (state, context) => {
     let nodeColors = {
         targets: common.taggedColor,
         nominal: common.taggedColor,
+        ordinal: common.taggedColor,
         crossSection: common.taggedColor,
         boundary: common.taggedColor,
         geographic: common.taggedColor,
@@ -1626,6 +1648,7 @@ export let mutateNodes = problem => (state, context) => {
 
     let strokeColors = {
         nominal: common.nomColor,
+        ordinal: common.ordinalColor,
         crossSection: common.csColor,
         boundary: common.boundaryColor,
         geographic: common.locationColor,
@@ -1705,6 +1728,15 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 }
             },
             {
+                id: 'Ordinal',
+                name: 'Ord',
+                attrs: {fill: common.ordinalColor},
+                onclick: d => {
+                    setLabel(problem, 'ordinal', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
+            },
+            {
                 id: 'Cross',
                 name: 'Cross',
                 attrs: {fill: common.csColor},
@@ -1764,6 +1796,49 @@ let setLabel = (problem, label, name) => {
     }
 
     delete problem.unedited;
+
+    if (label === "ordinal") {
+        app.remove(problem.tags.nominal, name);
+        if (app.getNominalVariables(problem).includes(name)) {
+            if (confirm("Ordinal variables must be orderable. Would you like to define an ordering?")) {
+                let pipeline = [...app.workspace.raven_config.hardManipulations, problem.manipulations];
+                let step = {
+                    type: 'transform',
+                    id: 'transform ' + pipeline.length,
+                    transforms: [],
+                    expansions: [],
+                    binnings: [],
+                    manual: []
+                }
+                problem.manipulations.push(step);
+                pipeline.push(step);
+
+                manipulate.setConstraintMenu({type: 'transform', pipeline, step})
+                    .then(() => manipulate.setConstraintPreferences({
+                        menus: {
+                            "Binning": {},
+                            "Equation": {},
+                            "Expansion": {},
+                            "Manual": {
+                                "indicatorKeys": [],
+                                "userValues": [],
+                                "variableName": name,
+                                "variableNameError": false,
+                                "variableType": "Numeric",
+                                "variableDefault": -1
+                            }
+                        },
+                        "type": "Manual"
+                    }))
+                    // HACK: wait for .select to be applied to the preferences object
+                    .then(m.redraw)
+                    .then(() => new Promise(resolve => setTimeout(() => resolve(), 1000)))
+                    .then(() => manipulate.constraintPreferences.select(name))
+            }
+        } else {
+            app.toggle(problem.tags.ordinal, name)
+        }
+    }
 
     if (label === 'crossSection') {
         if (!problem.tags.crossSection.includes(name)) {
@@ -1832,11 +1907,11 @@ let setLabel = (problem, label, name) => {
             return;
         }
         if (!problem.tags.weights.includes(name)) {
-            app.remove(problem.tags.nominal, name);
+            if (app.getNominalVariables(problem).includes(name)) setLabel(problem, 'nominal', name);
+            if (app.getTemporalVariables(problem).includes(name)) setLabel(problem, 'temporal', name);
+            if (app.getGeographicVariables(problem).includes(name)) setLabel(problem, 'geographic', name);
             app.remove(problem.tags.crossSection, name);
             app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.geographic, name);
-            app.remove(problem.tags.temporal, name);
             app.remove(problem.tags.indexes, name);
         }
         if (problem.tags.weights.includes(name))
