@@ -428,6 +428,9 @@ tr.item-lineout{
 .item-cross-section {
     border: solid #419641;
 }
+.item-ordinal {
+    border: solid #ffb700;
+}
 .item-boundary {
     border: solid #3cc394;
 }

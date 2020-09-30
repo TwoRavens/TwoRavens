@@ -353,6 +353,7 @@ export function setSelectedMode(mode) {
 
             loadPreprocess(datasetQuery).then(setPreprocess).then(m.redraw)
             loadDiscovery(datasetQuery).then(discovery => {
+                if (!discovery) return
                 ravenConfig.problems = standardizeDiscovery(discovery);
 
                 let emptyProblemId = generateProblemID();
@@ -1191,6 +1192,7 @@ let buildEmptyProblem = problemId => ({
     manipulations: [],
     tags: {
         nominal: [],
+        ordinal: [],
         crossSection: [],
         geographic: [],
         boundary: [],
@@ -1318,6 +1320,7 @@ let buildDefaultProblem = problemDoc => {
                     .filter(column => column.colType === 'categorical')
                     .map(column => column.colName)),
             crossSection: getTagsByRole('suggestedGroupingKey'),
+            ordinal: [],
             boundary: getTagsByRole('boundaryIndicator'),
             geographic: getTagsByRole('locationIndicator'),
             temporal: getTagsByRole('timeIndicator'),
@@ -1563,11 +1566,11 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
     let promiseDiscovery = promiseSampledDatasetPath
         .then(() => loadDiscovery(datasetQuery))
         .then(async discovery => {
+            if (!discovery) return;
             // merge discovery into problem set if constructing a new raven config
             // wait until after preprocess completes,
             //  so that discovered problems can have additional preprocess metadata attached
-            await promisePreprocess
-                .then(_ => Object.assign(workspace.raven_config.problems, standardizeDiscovery(discovery)));
+            promisePreprocess.then(() => Object.assign(workspace.raven_config.problems, standardizeDiscovery(discovery)));
         });
 
     // RECORD COUNT
@@ -2258,6 +2261,7 @@ export function standardizeDiscovery(problems) {
                 transformed: [...getTransformVariables(manips)], // this is used when updating manipulations pipeline
                 weights: [], // singleton list
                 crossSection: [],
+                ordinal: [],
                 boundary: [],
                 geographic: [],
                 indexes: ['d3mIndex'],

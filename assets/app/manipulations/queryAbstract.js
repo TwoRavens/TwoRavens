@@ -198,14 +198,14 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             indicators.push(indicator);
             values.push({
                 'Boolean': !!menuPreferences.userValues[i],
-                'Numchar': parseFloat(menuPreferences.userValues[i]),
+                'Numeric': parseFloat(menuPreferences.userValues[i]),
                 'Nominal': menuPreferences.userValues[i]
             }[menuPreferences.variableType])
         });
 
         menuPreferences.variableDefault = {
             'Boolean': !!menuPreferences.variableDefault,
-            'Numchar': parseFloat(menuPreferences.variableDefault),
+            'Numeric': parseFloat(menuPreferences.variableDefault),
             'Nominal': menuPreferences.variableDefault
         }[menuPreferences.variableType];
 
