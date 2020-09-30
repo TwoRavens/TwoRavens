@@ -82,7 +82,6 @@ export let getD3MAdapter = problem => ({
         let res = await m.request(D3M_SVC_URL + '/SearchDescribeFitScoreSolutions', {method: 'POST', body: allParams});
 
         if (!res || !res.success) {
-            handleENDGetSearchSolutionsResults();
             problem.results.solverState.d3m.thinking = false;
             problem.results.solverState.d3m.message = 'Search failed.';
             console.error(res.message);
@@ -150,7 +149,7 @@ let handleCompletedSearch = searchId => response => {
         m.redraw();
         return;
     }
-    let solvedProblem = findProblem(String(searchId));
+    let solvedProblem = findProblem({search_id: String(searchId), system: 'd3m'});
     if (!solvedProblem) return
     solvedProblem.results.solverState.d3m.thinking = false;
     solvedProblem.results.solverState.d3m.message = 'search complete';
@@ -710,10 +709,16 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     }
     if (response.is_error) return;
 
+    let d3mSolutionId = response?.response?.solutionId;
+    if (Object.values(solvedProblem.results.solutions.d3m).some(solution => solution.d3mSolutionId === d3mSolutionId)) {
+        console.log("discarded duplicate solution id")
+        return;
+    }
     // save the problem
     Object.assign(solvedProblem.results.solutions.d3m, {
         [response.pipelineId]: {
             solutionId: String(response.pipelineId),
+            d3mSolutionId,
             systemId: 'd3m',
             description: response.description
         }
@@ -856,6 +861,8 @@ export async function handleGetScoreSolutionResultsResponse(response) {
 
     // save scores
     let solution = solvedProblem.results.solutions.d3m[response.pipelineId];
+    if (!solution) return;
+
     solution.scores = solution.scores || [];
     solution.scores.push(...response.response.scores);
     m.redraw();
@@ -906,7 +913,7 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     let pointer = firstOutput.replace('file://', '');
 
     let solution = solvedProblem.results.solutions.d3m?.[response.pipelineId];
-    if (!solution) {return}
+    if (!solution) return
 
     // save produce to solution
     solution.produce = solution.produce || [];
