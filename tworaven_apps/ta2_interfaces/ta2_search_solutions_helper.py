@@ -418,7 +418,7 @@ class SearchSolutionsHelper(BasicErrCheck):
 
                 # HACK: discard solutions with ranks
                 # solutions with ranks are duplicates of streamed solutions that come after the search is complete... that are ranked
-                # stored_response_dict = stored_response.as_dict()
+                stored_response_dict = stored_response.as_dict()
                 # all_scores = [score for score_data in stored_response_dict['response']['scores'] for score in score_data['scores']]
                 # if any(score['metric']['metric'] == "RANK" for score in all_scores):
                 #     continue
