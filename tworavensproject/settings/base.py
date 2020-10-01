@@ -323,7 +323,7 @@ TA2_GRPC_FAST_TIMEOUT = os.environ.get('TA2_GRPC_FAST_TIMEOUT', 10) # seconds
 TA2_GRPC_SHORT_TIMEOUT = os.environ.get('TA2_GRPC_SHORT_TIMEOUT', 60) # seconds
 
 # for streaming responses
-TA2_GRPC_LONG_TIMEOUT = os.environ.get('TA2_GRPC_LONG_TIMEOUT', 8 * 60)  # 8 minutes
+TA2_GRPC_LONG_TIMEOUT = os.environ.get('TA2_GRPC_LONG_TIMEOUT', 60 * 60 * 24 * 7)  # 1 week
 
 # D3M - gRPC file uris
 MAX_EMBEDDABLE_FILE_SIZE = 1 * 500000

@@ -13,6 +13,7 @@ import Table from "../../common/views/Table";
 import PlotContinuous from './views/PlotContinuous';
 
 import {getData, omniSort} from "../app";
+import Paginated from "../../common/views/Paginated";
 
 let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
@@ -586,12 +587,16 @@ class MenuManual {
             }),
             m('br'),
 
-            preferences.indicatorKeys.length > 0 && m(Table, {
-                id: 'tableManualVariable',
-                headers: [preferences.variableIndicator, preferences.variableName],
-                data: preferences.indicatorKeys.map((key, i) => [
-                    key, userInput(i)
-                ])
+            preferences.indicatorKeys.length > 0 && m(Paginated, {
+                data: preferences.indicatorKeys,
+                makePage: keys => m(Table, {
+                    id: 'tableManualVariable',
+                    headers: [preferences.variableIndicator, preferences.variableName],
+                    data: keys.map((key, i) => [key, userInput(i)])
+                }),
+                limit: 100,
+                page: preferences.page || 0,
+                setPage: index => preferences.page = index
             })
         )
     }
