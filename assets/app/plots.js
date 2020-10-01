@@ -54,7 +54,13 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
                         {"field": groupName, "type": "nominal"},
                         {"field": countName, "type": "quantitative"},
                     ],
-                    "size": {"field": countName, "type": "quantitative", "bin": {'binned': true, "minstep": 1}},
+                    "size": {
+                        "field": countName,
+                        "type": "quantitative",
+                        "bin": {'binned': true, "minstep": 1},
+                        "scale": {"type": "log", "base": 10},
+                        "title": "log(count)"
+                    },
                     "opacity": {
                         "condition": {"selection": "Solution Name", "value": 0.7},
                         "value": 0.05
