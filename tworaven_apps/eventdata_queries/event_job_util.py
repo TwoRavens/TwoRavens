@@ -593,13 +593,19 @@ class EventJobUtil(object):
                 # print('data not loaded, and no data in django')
 
         # create lockable record
-        if not MongoDataset.objects.filter(name=collection_name):
-            MongoDataset.objects.create(name=collection_name, loading=True)
-
-        # lock on record
-        dataset_record = MongoDataset.objects.get(name=collection_name)
-        if not dataset_record.loading:
-            return ok_resp({"collection": collection_name})
+        dataset_record, created = MongoDataset.objects.get_or_create(name=collection_name, defaults={'loading': True})
+        # if not MongoDataset.objects.filter(name=collection_name):
+        #     MongoDataset.objects.create(name=collection_name, loading=True)
+        #
+        # # lock on record
+        # dataset_record = MongoDataset.objects.get(name=collection_name)
+        if not created:
+            for _ in range(1000):
+                if not dataset_record.loading:
+                    return ok_resp({"collection": collection_name})
+                time.sleep(1)
+                dataset_record.refresh_from_db()
+            return err_resp(f"the mongo import loading process for {collection_name} timed out")
 
         # print(collection_name + ' does not yet exist. Importing.\n\n\n\n')
 
@@ -628,7 +634,7 @@ class EventJobUtil(object):
         # standardize column metadata to dict
         # -------------------------------------
         if not columns:
-            columns = DuplicateColumnRemover(data_path).updated_columns
+            columns = DuplicateColumnRemover(data_path, rewrite=False).updated_columns
 
         if isinstance(columns, list):
             columns = {col: None for col in columns}
@@ -728,7 +734,7 @@ class EventJobUtil(object):
             # print('--> mongo err: [%s]' % err)
             # print(traceback.format_exc())
             print(
-                "--> import_dataset: mongoimport failed. Running row-by-row insertion instead."
+                "--> import_dataset: mongoimport disabled. Running row-by-row insertion instead."
             )
             db[collection_name].drop()
             with open(data_path, "r") as csv_file:
@@ -741,9 +747,7 @@ class EventJobUtil(object):
                 columns = [encode_variable(value) for value in columns]
 
                 for observation in csv_reader:
-                    db[collection_name].insert_one(
-                        {col: infer_type(val) for col, val in zip(columns, observation)}
-                    )
+                    db[collection_name].insert_one({col: infer_type(val) for col, val in zip(columns, observation)})
 
         if indexes:
             for index in indexes:
