@@ -497,8 +497,8 @@ export class CanvasSolutions {
                 common.loader('PredictionSummary')
             ];
 
-            let xName = 'Fitted Values';
-            let yName = 'Actual Values';
+            let yName = 'Fitted Values';
+            let xName = 'Actual Values';
             let countName = 'count';
             let groupName = 'Solution Name';
             let title = 'Fitted vs. Actuals for predicting ' + resultsPreferences.target;
@@ -603,7 +603,7 @@ export class CanvasSolutions {
                                         specification: plots.vegaLiteConfusionMatrix(
                                             summary.confusionMatrix.data,
                                             summary.confusionMatrix.classes,
-                                            'Predicted', 'Actual', 'count',
+                                            'Actual', 'Predicted', 'count',
                                             `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
                                     }))))
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
@@ -1162,7 +1162,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, selectedAdapters));
 
-        let modelInterpretation = problem.task !== 'forecasting' && m(Subpanel, {
+        let modelInterpretation = problem.task !== 'forecasting' && selectedAdapters.length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Model Interpretation',
             shown: resultsSubpanels['Model Interpretation'],
