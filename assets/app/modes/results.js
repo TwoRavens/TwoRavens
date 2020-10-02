@@ -30,6 +30,8 @@ import Paginated from "../../common/views/Paginated";
 import TextField from "../../common/views/TextField";
 
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
+import Slider from "../../common/views/slider";
+import * as manipulate from "../manipulations/manipulate";
 
 let getSystemAdapters = problem => {
 
@@ -62,7 +64,7 @@ export let leftpanel = () => {
     let ravenConfig = app.workspace.raven_config;
 
     let selectedProblem = app.getSelectedProblem();
-    if (!selectedProblem) return;
+    if (!selectedProblem.results) return;
 
     let comparableProblems = [selectedProblem, ...getComparableProblems(selectedProblem)];
 
@@ -98,25 +100,54 @@ export let leftpanel = () => {
                     idSuffix: 'trainOptions',
                     value: 'Train Options',
                     contents: m('div', {style: {width: '80%', margin: '0px 10%'}},
-                        m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
-                        m(TextField, {
-                            id: 'timeBoundOption',
-                            value: selectedProblem.searchOptions.timeBoundSearch || '',
-                            disabled: selectedProblem.system === 'solved',
-                            oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
-                            onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
-                            style: {'margin-bottom': '1em'}
-                        }),
-                        m('label', 'Maximum record count per data split.'),
-                        m(TextField, {
-                            id: 'maxRecordCountOption',
-                            disabled: selectedProblem.system === 'solved',
-                            value: selectedProblem.splitOptions.maxRecordCount || '',
-                            oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
-                            onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
-                            style: {'margin-bottom': '1em'}
-                        }))
 
+                        m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
+                        m(Popper, {
+                            content: () => ['minutes', m(TextField, {
+                                id: 'timeBoundOption',
+                                value: selectedProblem.searchOptions.timeBoundSearch || '',
+                                disabled: selectedProblem.system === 'solved',
+                                oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.searchOptions.timeBoundSearch = value.replace(/[^\d.-]/g, '')),
+                                onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.searchOptions.timeBoundSearch = Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            })]
+                        }, m(Slider, {
+                            min: Math.log(5) * 10000,
+                            max: Math.log(60 * 24 * 7) * 10000 + 1,
+                            style: {width: '100%'},
+                            value: Math.log(selectedProblem.searchOptions.timeBoundSearch || 15) * 10000,
+                            oninput: value => {
+                                let minutes = Math.round(Math.exp(value / 10000));
+                                if (minutes < 60) minutes = Math.round(minutes / 5) * 5;
+                                if (60 < minutes && minutes < 60 * 6) minutes = Math.round(minutes / 15) * 15;
+                                if (60 * 6 < minutes && minutes < 60 * 12) minutes = Math.round(minutes / 30) * 30;
+                                if (60 * 12 < minutes && minutes < 60 * 24) minutes = Math.round(minutes / 60) * 60;
+                                if (60 * 24 < minutes) minutes = Math.round(minutes / (60 * 24)) * 60 * 24;
+                                selectedProblem.searchOptions.timeBoundSearch = minutes;
+                            }
+                        })),
+                        app.minutesToString(selectedProblem.searchOptions.timeBoundSearch || 15),
+                        m('br'), m('br'),
+
+                        m('label', 'Maximum record count per data split.'),
+                        m(Popper, {
+                            content: () => m(TextField, {
+                                id: 'maxRecordCountOption',
+                                disabled: selectedProblem.system === 'solved',
+                                value: selectedProblem.splitOptions.maxRecordCount || '',
+                                oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
+                                onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                                style: {'margin-bottom': '1em'}
+                            }),
+                        }, m(Slider, {
+                            min: 1,
+                            max: Math.min(manipulate.totalSubsetRecords || Infinity, 50000),
+                            style: {width: '100%'},
+                            value: selectedProblem.splitOptions.maxRecordCount || 10000,
+                            oninput: value => selectedProblem.splitOptions.maxRecordCount = value
+                        })),
+                        selectedProblem.splitOptions.maxRecordCount + " records"
+                    )
                 },
                 {
                     idSuffix: 'solvers',
