@@ -201,7 +201,7 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.isResultsMode && selectedProblem && Object.keys(selectedProblem.results.solutions.d3m || {}).length > 0 && m(ButtonLadda, {
+            app.isResultsMode && selectedProblem && Object.keys(selectedProblem?.results?.solutions?.d3m || {}).length > 0 && m(ButtonLadda, {
                 id: 'btnEndSession',
                 class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
                 onclick: solverD3M.endSession,

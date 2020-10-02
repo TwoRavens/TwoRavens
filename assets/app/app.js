@@ -1296,7 +1296,7 @@ let buildDefaultProblem = problemDoc => {
         }, problemDoc.splitOptions || {}),
 
         searchOptions: Object.assign({
-            timeBoundSearch: 5,
+            timeBoundSearch: 15,
             timeBoundRun: undefined,
             priority: undefined,
             solutionsLimit: undefined
@@ -3072,4 +3072,19 @@ export let setDefaultRecursive = (obj, map) => map
 export let setRecursive = (obj, map) => {
     let [attr, value] = map[map.length - 1];
     setDefaultRecursive(obj, map.slice(0, -1))[attr] = value;
+}
+
+export function minutesToString(minutes) {
+    let seconds = minutes * 60;
+
+    let numDays = Math.floor((seconds % 31536000) / 86400);
+    let strDays = numDays ? (numDays + ` day${numDays === 1 ? '' : 's'} `) : "";
+
+    let numHours = Math.floor(((seconds % 31536000) % 86400) / 3600);
+    let strHours = numHours ? (numHours + ` hour${numHours === 1 ? '' : 's'} `) : "";
+
+    let numMinutes = Math.floor((((seconds % 31536000) % 86400) % 3600) / 60);
+    let strMinutes = numMinutes ? (numMinutes + ` minute${numMinutes === 1 ? '' : 's'} `) : "";
+
+    return (strDays + strHours + strMinutes).replace("  ", " ");
 }
