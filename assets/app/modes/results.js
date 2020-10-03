@@ -64,7 +64,7 @@ export let leftpanel = () => {
     let ravenConfig = app.workspace.raven_config;
 
     let selectedProblem = app.getSelectedProblem();
-    if (!selectedProblem.results) return;
+    if (!selectedProblem.results) selectedProblem.results = {};
 
     let comparableProblems = [selectedProblem, ...getComparableProblems(selectedProblem)];
 
@@ -127,26 +127,26 @@ export let leftpanel = () => {
                             }
                         })),
                         app.minutesToString(selectedProblem.searchOptions.timeBoundSearch || 15),
-                        m('br'), m('br'),
-
-                        m('label', 'Maximum record count per data split.'),
-                        m(Popper, {
-                            content: () => m(TextField, {
-                                id: 'maxRecordCountOption',
-                                disabled: selectedProblem.system === 'solved',
-                                value: selectedProblem.splitOptions.maxRecordCount || '',
-                                oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
-                                onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
-                                style: {'margin-bottom': '1em'}
-                            }),
-                        }, m(Slider, {
-                            min: 1,
-                            max: Math.min(manipulate.totalSubsetRecords || Infinity, 50000),
-                            style: {width: '100%'},
-                            value: selectedProblem.splitOptions.maxRecordCount || 10000,
-                            oninput: value => selectedProblem.splitOptions.maxRecordCount = value
-                        })),
-                        selectedProblem.splitOptions.maxRecordCount + " records"
+                        // m('br'), m('br'),
+                        //
+                        // m('label', 'Maximum record count per data split.'),
+                        // m(Popper, {
+                        //     content: () => m(TextField, {
+                        //         id: 'maxRecordCountOption',
+                        //         disabled: selectedProblem.system === 'solved',
+                        //         value: selectedProblem.splitOptions.maxRecordCount || '',
+                        //         oninput: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = value.replace(/[^\d.-]/g, '')),
+                        //         onblur: selectedProblem.system !== 'solved' && (value => selectedProblem.splitOptions.maxRecordCount = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined),
+                        //         style: {'margin-bottom': '1em'}
+                        //     }),
+                        // }, m(Slider, {
+                        //     min: 1,
+                        //     max: Math.min(manipulate.totalSubsetRecords || Infinity, 50000),
+                        //     style: {width: '100%'},
+                        //     value: selectedProblem.splitOptions.maxRecordCount || 10000,
+                        //     oninput: value => selectedProblem.splitOptions.maxRecordCount = value
+                        // })),
+                        // selectedProblem.splitOptions.maxRecordCount + " records"
                     )
                 },
                 {
@@ -650,7 +650,9 @@ export class CanvasSolutions {
     scoresSummary(problem, adapters) {
 
         if (resultsPreferences.plotScores === 'all')
-            adapters = getSolutions(problem).map(solution => getSolutionAdapter(problem, solution));
+            adapters = [problem, ...problemComparison ? getComparableProblems(problem) : []]
+                .flatMap(problem => getSolutions(problem)
+                    .map(solution => getSolutionAdapter(problem, solution)))
 
         return [
             m('div', m('[style=display:inline-block]', 'Graph'), m(ButtonRadio, {
@@ -717,9 +719,9 @@ export class CanvasSolutions {
             return content
         }
 
-        content.push(m(PlotVegaLite, {
+        content.push(m('div[style=max-height:500px]', m(PlotVegaLite, {
             specification: plots.vegaLiteImportancePlot(importanceScores, modelComparison)
-        }))
+        })))
 
         return content
     }
@@ -876,7 +878,7 @@ export class CanvasSolutions {
                 activeSection: resultsPreferences.interpretationMode,
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
-                    problem.results.datasetPaths.partials && {
+                    problem?.results?.datasetPaths?.partials && {
                         value: 'Partials',
                         title: 'model prediction as predictor varies over its domain'
                     },
@@ -1649,12 +1651,12 @@ export let getProblemRank = (solutions, solutionId) => {
 };
 
 
-export let getSolutions = (problem, source) => {
+export let getSolutions = (problem, systemId) => {
     if (!problem) return [];
 
-    if (source) {
-        if (!(source in problem.results.solutions)) problem.results.solutions[source] = [];
-        Object.values(problem.results.solutions[source]);
+    if (systemId) {
+        if (!(systemId in problem.results.solutions)) problem.results.solutions[systemId] = [];
+        Object.values(problem.results.solutions[systemId]);
     }
 
     return Object.values(problem.results.solutions)

@@ -96,16 +96,28 @@ export class CanvasModel {
                 m(Button, {
                     id: 'btnAdd', style: {margin: '0px .5em'},
                     onclick: addProblemFromForceDiagram,
-                    title: 'add model to problems'
+                    title: 'copy this problem'
                 }, m(Icon, {name: 'plus'})),
                 m(Button, {
                     id: 'btnJoin', style: {margin: '0px .5em'},
-                    onclick: connectAllForceDiagram,
+                    onclick: () => {
+                        if (selectedProblem.system === "solved") {
+                            alertEditCopy();
+                            return;
+                        }
+                        connectAllForceDiagram();
+                    },
                     title: 'make all possible connections between nodes'
                 }, m(Icon, {name: 'link'})),
                 m(Button, {
                     id: 'btnDisconnect', style: {margin: '0px .5em'},
-                    onclick: () => selectedProblem.pebbleLinks = [],
+                    onclick: () => {
+                        if (selectedProblem.system === "solved") {
+                            alertEditCopy();
+                            return;
+                        }
+                        selectedProblem.pebbleLinks = []
+                    },
                     title: 'delete all connections between nodes'
                 }, m(Icon, {name: 'circle-slash'})),
                 m(Button, {
@@ -116,7 +128,13 @@ export class CanvasModel {
                 }, m(Icon, {name: 'pin'})),
                 m(Button, {
                     id: 'btnEraser', style: {margin: '0px .5em'},
-                    onclick: app.erase,
+                    onclick: () => {
+                        if (selectedProblem.system === "solved") {
+                            alertEditCopy();
+                            return;
+                        }
+                        app.erase()
+                    },
                     title: 'wipe all variables from the modeling space'
                 }, m(Icon, {name: 'trashcan'}))),
 
@@ -746,16 +764,7 @@ export let rightpanel = () => {
             m('div#problemConfiguration', {
                     onclick: () => {
                         if (selectedProblem.system === 'solved') {
-                            app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
-                                style: 'margin:1em',
-                                onclick: () => {
-                                    let problemCopy = app.getProblemCopy(selectedProblem);
-                                    workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
-                                    app.setShowModalAlerts(false);
-                                    app.setSelectedProblem(problemCopy.problemId);
-                                }
-                            }, 'Edit Copy')));
-                            m.redraw();
+                            alertEditCopy();
                             return;
                         }
                         isLocked && hopscotch.startTour(app.lockTour())
@@ -918,16 +927,16 @@ export let rightpanel = () => {
                         onblur: !isLocked && (value => selectedProblem.splitOptions.trainTestRatio = Math.max(0, Math.min(1, parseFloat(value.replace(/[^\d.-]/g, '')) || 0))),
                         style: {'margin-bottom': '1em'}
                     }),
-                    m('label[style=margin-top:0.5em]', 'Stratify'),
-                    m(ButtonRadio, {
-                        id: 'stratifiedSplitOption',
-                        onclick: value => {
-                            if (isLocked) return;
-                            selectedProblem.splitOptions.stratified = value === 'True';
-                        },
-                        activeSection: selectedProblem.splitOptions.stratified ? 'True' : 'False',
-                        sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                    }),
+                    // m('label[style=margin-top:0.5em]', 'Stratify'),
+                    // m(ButtonRadio, {
+                    //     id: 'stratifiedSplitOption',
+                    //     onclick: value => {
+                    //         if (isLocked) return;
+                    //         selectedProblem.splitOptions.stratified = value === 'True';
+                    //     },
+                    //     activeSection: selectedProblem.splitOptions.stratified ? 'True' : 'False',
+                    //     sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                    // }),
                     m('label[style=margin-top:0.5em]', 'Shuffle'),
                     m(ButtonRadio, {
                         id: 'shuffleSplitsOption',
@@ -945,14 +954,14 @@ export let rightpanel = () => {
                             style: {'margin-bottom': '1em'}
                         })
                     ],
-                    m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
-                    m(TextField, {
-                        id: 'textFieldSampleSplitsFile',
-                        disabled: isLocked,
-                        value: selectedProblem.splitOptions.splitsFile,
-                        onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
-                        style: {'margin-bottom': '1em'}
-                    }),
+                        // m('label[style=margin-top:0.5em]', 'Splits file (optional)'),
+                        // m(TextField, {
+                        //     id: 'textFieldSampleSplitsFile',
+                        //     disabled: isLocked,
+                        //     value: selectedProblem.splitOptions.splitsFile,
+                        //     onblur: !isLocked && (value => selectedProblem.splitOptions.splitsFile = value),
+                        //     style: {'margin-bottom': '1em'}
+                        // }),
                         m('label', 'Maximum record count per data split'),
                         m(TextField, {
                             id: 'maxRecordCountOption',
@@ -1050,16 +1059,16 @@ export let rightpanel = () => {
                                 style: {'margin-bottom': '1em'}
                             })
                         ],
-                        m('label', 'Stratify'),
-                        m(ButtonRadio, {
-                            id: 'stratifiedScoreOption',
-                            onclick: value => {
-                                if (isLocked) return;
-                                selectedProblem.scoreOptions.stratified = value === 'True';
-                            },
-                            activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
-                            sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
-                        }),
+                        // m('label', 'Stratify'),
+                        // m(ButtonRadio, {
+                        //     id: 'stratifiedScoreOption',
+                        //     onclick: value => {
+                        //         if (isLocked) return;
+                        //         selectedProblem.scoreOptions.stratified = value === 'True';
+                        //     },
+                        //     activeSection: selectedProblem.scoreOptions.stratified ? 'True' : 'False',
+                        //     sections: ['True', 'False'].map(type => ({value: type, attrsInterface: {disabled: isLocked}}))
+                        // }),
                         m('label[style=margin-top:0.5em]', 'Shuffle'),
                         m(ButtonRadio, {
                             id: 'shuffleScoreOption',
@@ -1398,7 +1407,7 @@ export let setGroup = (problem, group, name) => {
 export let forceDiagramNodesReadOnly = {};
 
 export let leftpanelHoveredVariableName;
-let leftpanelHoveredVariablePopper = 'Tags';
+let leftpanelHoveredVariablePopper = 'Summary';
 
 export let forceDiagramState = {
     builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
@@ -1418,16 +1427,7 @@ export let forceDiagramState = {
 let setContextPebble = pebble => {
     let selectedProblem = app.getSelectedProblem();
     if (selectedProblem.system === 'solved') {
-        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
-            style: 'margin:1em',
-            onclick: () => {
-                let problemCopy = app.getProblemCopy(selectedProblem);
-                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
-                app.setShowModalAlerts(false);
-                app.setSelectedProblem(problemCopy.problemId);
-            }
-        }, 'Edit Copy')));
-        m.redraw();
+        alertEditCopy();
         return;
     }
 
@@ -2086,4 +2086,19 @@ export async function submitDiscProb() {
         true,
         "Close",
         true);
+}
+
+
+let alertEditCopy = () => {
+    app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+        style: 'margin:1em',
+        onclick: () => {
+            let selectedProblem = app.getSelectedProblem();
+            let problemCopy = app.getProblemCopy(selectedProblem);
+            workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+            app.setShowModalAlerts(false);
+            app.setSelectedProblem(problemCopy.problemId);
+        }
+    }, 'Edit Copy')))
+    m.redraw();
 }
