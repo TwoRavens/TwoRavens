@@ -26,6 +26,7 @@ import * as app from "../app";
 
 // menu step: mutate to a format that can be rendered in a menu
 // {name: 'Actor', type: 'dyad', preferences: {...}, metadata: {...}}
+window.buildPipeline = buildPipeline;
 
 export function buildPipeline(pipeline, variables = new Set()) {
     let compiled = [];
@@ -1261,8 +1262,11 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         'integer': new Set(['toInt', 'ceil', 'floor', 'trunc']),
         'boolean': new Set(['toBool', 'and', 'not', 'or', 'eq', 'gt', 'gte', 'lt', 'lte', 'ne']),
         'string': new Set(['toString', 'trim', 'toLower', 'toUpper', 'concat']),
-        'real': new Set(['toDouble', 'abs', 'exp', 'ln', 'log10', 'sqrt', 'divide', 'log', 'mod', 'pow',
-            'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp'])
+        'real': new Set([
+            'toDouble', 'abs', 'exp', 'ln', 'log10', 'sqrt', 'divide', 'log', 'mod', 'pow',
+            'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp',
+            'sum'
+        ])
     };
 
     Object.assign(doc, {dataResources: [...doc.dataResources]});
@@ -1271,10 +1275,13 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
     let tableResourceIndex = doc.dataResources.findIndex(resource => resource.resType === 'table');
     let allCols = [...doc.dataResources[tableResourceIndex].columns];
 
+    // rewrite the columns by stepping through each step in the manipulations pipeline
     doc.dataResources[tableResourceIndex].columns = pipeline.reduce((columns, step) => {
 
+        // shallow copy each object to avoid global mutations
         let outColumns = columns.map(column => Object.assign({}, column));
 
+        // helper to modify column
         let mutateField = data => field => {
             let target = outColumns.find(column => column.colName === field);
             if (!target) {
@@ -1282,36 +1289,88 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
                 outColumns.push(target)
             }
             target.colName = field;
+            // if the output value is based on an operation (example {$toString: $colName})
             if (typeof data[field] === 'object')
-                target.colType = Object.keys(typeInferences).find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+                target.colType = Object.keys(typeInferences)
+                    // find the type of the data after transformation based on the $op name
+                    .find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+            // if the output value is based on another column, retrieve the type information (as well as any other information) from the other column
             else if (typeof data[field] === 'string' && data[field][0] === '$')
-                Object.assign(target, allCols.find(column => column.colName === data[field].substr(1)), {colName: field});
+                // assign into target
+                Object.assign(target,
+                    // all information from the source column
+                    allCols.find(column => column.colName === data[field].substr(1)),
+                    // but overwrite the column name
+                    {colName: field});
+            // if the output value is a literal
             else target.colType = {'number': 'real', 'string': 'string', 'boolean': 'boolean'}[typeof data[field]]; // javascript type: D3M type
+            // TODO: roles may not always make sense after modifications
+            //          in many cases, roles are just dropped and rewritten via tags
+            // if role is not defined, make it a suggestedTarget
             target.role = target.role || ['suggestedTarget'];
 
             // prepended mutations are found first when looking up types
             allCols.unshift(target);
         };
 
-        if ('$addFields' in step) Object.keys(step.$addFields).forEach(mutateField(step.$addFields));
+        if ('$addFields' in step) Object.keys(step.$addFields)
+            .forEach(mutateField(step.$addFields));
 
         if ('$project' in step) {
-            // set of columns to mask
+            // set of columns to mask (if every column in projection is falsey)
             if (Object.values(step.$project).every(value => ['number', 'bool'].includes(typeof value) && !value))
-                return outColumns.filter(column => !(column.colName in step.$project));
+                return outColumns.filter(column => !(column.colName.split("\\.")[0] in step.$project));
 
+            // not every projection is falsey, so only columns in projection will be present
             outColumns = outColumns.filter(column => column.colName in step.$project);
+            // for each field in the projection, mutate the column metadata
             Object.keys(step.$project).forEach(field => {
+                // drop falsey columns
                 if (!step.$project[field])
-                    delete outColumns[outColumns.indexOf(column => column.colName === field)];
+                    // match columns to drop based on all text up to "\\."
+                    delete outColumns[outColumns.indexOf(column => column.colName.split("\\.")[0] === field)];
+                // read the projection and apply the mutation if non-trivial
                 else if (![true, 1].includes(step.$project[field])) // no modifications necessary if just trivial projection inclusion
                     mutateField(step.$project)(field)
             });
             return outColumns.filter(_ => _);
         }
 
+        if ('$group' in step) {
+            outColumns = [];
+
+            let getType = (data, field) => {
+                // if the output value is based on an operation (example {$toString: $colName})
+                if (typeof data[field] === 'object')
+                    return Object.keys(typeInferences)
+                        // find the type of the data after transformation based on the $op name
+                        .find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+                // if the output value is based on another column, retrieve the type information (as well as any other information) from the other column
+                else if (typeof data[field] === 'string' && data[field][0] === '$')
+                    // assign into target
+                    return allCols.find(column => column.colName === data[field].substr(1)).colType;
+                // if the output value is a literal
+                else return {'number': 'real', 'string': 'string', 'boolean': 'boolean'}[typeof data[field]]; // javascript type: D3M type
+            }
+            outColumns = [
+                ...step.$group._id ? Object.keys(step.$group._id).map(field => ({
+                    colName: `_id\\.${field}`,
+                    colType: getType(step.$group._id, field),
+                    role: ['suggestedTarget']
+                })) : [],
+                ...Object.keys(step.$group).filter(field => field !== "_id")
+                    .map(field => ({
+                        colName: field,
+                        colType: getType(step.$group, field),
+                        role: ['attribute']
+                    }))
+            ].filter(_=>_)
+
+            // $group creates all new columns
+            allCols = [...outColumns]
+        }
+
         if ('$facet' in step) throw '$facet D3M datasetDoc.json translation not implemented';
-        if ('$group' in step) throw '$group D3M datasetDoc.json translation not implemented';
         if ('$redact' in step) throw '$redact D3M datasetDoc.json translation not implemented';
         if ('$replaceRoot' in step) throw '$replaceRoot D3M datasetDoc.json translation not implemented';
         if ('$unwind' in step) throw '$unwind D3M datasetDoc.json translation not implemented';
@@ -1345,3 +1404,5 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
 
     return doc;
 };
+
+window.translateDatasetDoc = translateDatasetDoc;
