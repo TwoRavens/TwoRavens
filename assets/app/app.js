@@ -266,7 +266,6 @@ export function setSelectedMode(mode) {
 
     let selectedProblem = getSelectedProblem();
     if (!selectedProblem && mode === 'results') {
-        mode = previousMode;
         return;
     }
 
@@ -531,7 +530,7 @@ export let LEFT_TAB_NAME_DISCOVER = 'Discover';
 export let leftTab = LEFT_TAB_NAME_VARIABLES; // current tab in left panel
 export let leftTabHidden = LEFT_TAB_NAME_VARIABLES; // stores the tab user was in before summary hover
 
-export let rightTab = 'Manipulate'; // current tab in right panel
+export let rightTab = 'Problem'; // current tab in right panel
 
 export let setRightTab = tab => {
     rightTab = tab;

@@ -54,6 +54,7 @@ import Icon from "../../common/views/Icon";
 
 import * as queryMongo from "../manipulations/queryMongo";
 import ButtonRadio from "../../common/views/ButtonRadio";
+import Popper from "../../common/views/Popper";
 import Paginated from "../../common/views/Paginated";
 import {bold, italicize} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
@@ -153,13 +154,15 @@ export class CanvasExplore {
                 }
             }, 'go'),
 
-            m('label', {
+            m(Popper, {
+                content: () => `Up to ${explorePreferences.recordLimit} records are sampled from the dataset.`
+            }, m('label', {
                 style: {
                     margin: '20px 0',
                     'margin-left': 'calc(460px + 1.5em)',
                     position: 'fixed'
                 }
-            }, bold('Record Limit')),
+            }, bold('Record Limit'))),
             m(TextField, {
                 id: 'recordLimit',
                 value: explorePreferences.recordLimit || '',
