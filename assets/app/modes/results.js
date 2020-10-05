@@ -101,7 +101,7 @@ export let leftpanel = () => {
                     value: 'Train Options',
                     contents: m('div', {style: {width: '80%', margin: '0px 10%'}},
 
-                        m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
+                        m('label', 'Approximate time bound for overall pipeline search, in minutes.'), //Leave empty for unlimited time.
                         m(Popper, {
                             content: () => ['minutes', m(TextField, {
                                 id: 'timeBoundOption',
