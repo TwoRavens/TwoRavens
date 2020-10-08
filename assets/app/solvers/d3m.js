@@ -1,14 +1,21 @@
 import m from "mithril";
 
 import * as app from '../app.js';
+import {resetPeek} from '../app.js';
 import * as results from "../modes/results";
+import {findProblem, getBestSolution} from "../modes/results";
 
 import {alertError, alertWarn, debugLog, swandive} from "../app";
 
 import {setModal} from "../../common/views/Modal";
 import Table from "../../common/views/Table";
-import {findProblem, getBestSolution} from "../modes/results";
-import {resetPeek} from "../app.js";
+import {
+    getDescription,
+    getOrderingVariable,
+    getPredictorVariables,
+    getSelectedProblem,
+    isProblemValid
+} from "../problem";
 
 export let getSolverSpecification = async problem => {
 
@@ -42,7 +49,7 @@ export let getD3MAdapter = problem => ({
 
         // return if current problem is already being solved
         if ('d3m' in problem.results.solverState) return;
-        if (!app.isProblemValid(problem)) return;
+        if (!isProblemValid(problem)) return;
         problem.system = 'solved';
         console.log("solving:", problem);
 
@@ -371,7 +378,7 @@ let stepDenormalize = (metadata, index) => [{
 let stepRemoveColumns = (metadata, index) => {
     let problem = metadata.problem;
     // looks like some TA2s need "d3mIndex"
-    let keep = [...app.getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
+    let keep = [...getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
 
     let indices = [];
 
@@ -543,13 +550,13 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     }));
 
     let GRPC_ForecastingHorizon = {};
-    if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || app.getTemporalVariables(problem).length > 0)) {
-        let horizonColumn = problem.forecastingHorizon.column || app.getTemporalVariables(problem)[0];
+    if (problem.task === 'forecasting') {
+        let horizonColumn = getOrderingVariable(problem);
         GRPC_ForecastingHorizon = {
             resourceId: learningResource.resID,
             columnIndex: getColIndex(horizonColumn),
             columnName: horizonColumn,
-            horizonValue: problem.forecastingHorizon.value || 10
+            horizonValue: problem.forecastingHorizon || 10
         };
     }
 
@@ -569,7 +576,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     return {
         problem: GRPC_Problem,
         inputs: [GRPC_ProblemInput],
-        description: app.getDescription(problem),
+        description: getDescription(problem),
         version: '1.0.0',
         name: problem.problemId,
         id: problem.problemId
@@ -580,7 +587,7 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDoc, datasetDocUrl) 
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
-        timeBoundSearch: problem.searchOptions.timeBoundSearch || 0,
+        timeBoundSearch: problem.searchOptions.timeBoundSearch || 15,
         timeBoundRun: problem.searchOptions.timeBoundRun || 0,
         rankSolutionsLimit: problem.searchOptions.solutionsLimit || 0,
         priority: problem.searchOptions.priority || 0,
@@ -936,7 +943,7 @@ export function handleENDGetSearchSolutionsResults(response) {
  */
 export async function endSession() {
     app.taskPreferences.isSubmittingPipelines = true;
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
 
     let solutions = selectedProblem.results.solutions;
     if (Object.keys(solutions.d3m).length === 0) {
@@ -1027,7 +1034,7 @@ export async function exportSolution(solutionId) {
     let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {method: 'POST', body: {
         solutionId,
         rank: 1.01 - 0.01 * exportCount,
-        searchId: app.getSelectedProblem().solverState.d3m.searchId
+        searchId: getSelectedProblem().solverState.d3m.searchId
     }});
 
     console.log('--------------------------')

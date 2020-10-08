@@ -121,7 +121,7 @@ def util_results_real_clustered(data_pointer, metadata):
                     **{
                         'actual_' + name: f"${name}" for name in metadata['targets']
                     },
-                    **{"_id": 0}}
+                    **{"_id": 0, "d3mIndex": 1}}
             },
             {
                 "$facet": {
@@ -132,11 +132,13 @@ def util_results_real_clustered(data_pointer, metadata):
                                     'x': {'$toInt': normalize(f'$fitted_{target}', *bounds['fitted'][target], GRID_SIZE)},
                                     'y': {'$toInt': normalize(f'$actual_{target}', *bounds['actual'][target], GRID_SIZE)}
                                 },
-                                'Fitted Values': {"$avg": f'$fitted_{target}'},
-                                'Actual Values': {"$avg": f'$actual_{target}'},
-                                'count': {'$sum': 1}
+                                'Fitted Value': {"$avg": f'$fitted_{target}'},
+                                'Actual Value': {"$avg": f'$actual_{target}'},
+                                'count': {'$sum': 1},
+                                'd3mIndex': {'$push': '$d3mIndex'}
                             }
                         },
+                        {'$addFields': {'d3mIndex': {"$slice": ["$d3mIndex", 0, 10]}}},
                         {'$project': {'_id': 0}}
                     ]
                     for target in metadata['targets']}
@@ -204,7 +206,7 @@ def util_results_confusion_matrix(data_pointer, metadata):
                 **{
                     'Actual_' + name: f"${name}" for name in metadata['targets']
                 },
-                **{"_id": 0}}
+                **{"_id": 0, "d3mIndex": 1}}
         },
         {
             '$facet': {
@@ -212,7 +214,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
                     {
                         "$group": {
                             '_id': {'Actual': f'$Actual_{target}', 'Predicted': f'$Predicted_{target}'},
-                            'count': {'$sum': 1}
+                            'count': {'$sum': 1},
+                            'd3mIndex': {'$push': '$d3mIndex'}
                         }
                     },
                     {
@@ -220,6 +223,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
                             'Actual': '$_id\\.Actual',
                             'Predicted': '$_id\\.Predicted',
                             'count': 1,
+                            # presence of a 51st element indicates slicing
+                            'd3mIndex': {"$slice": ["$d3mIndex", 0, 51]},
                             '_id': 0
                         }
                     },

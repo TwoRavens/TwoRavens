@@ -4,11 +4,13 @@ import Header from "../../common/views/Header";
 import Canvas from "../../common/views/Canvas";
 import {heightHeader} from "../../common/common";
 import * as app from '../app';
+import {generateProblemID} from '../app';
 import * as results from '../modes/results';
+import {customDatasets, resultsPreferences, uploadForModelRun} from '../modes/results';
 
 import TextField from "../../common/views/TextField";
 import Button from "../../common/views/Button";
-import {resultsPreferences, customDatasets, uploadForModelRun} from "../modes/results";
+import {setSelectedProblem} from "../problem";
 
 export default class Body_Dataset {
     async oninit(vnode) {
@@ -16,10 +18,10 @@ export default class Body_Dataset {
 
         let {problem} = vnode.attrs;
 
-        let problemId = app.generateProblemID()
+        let problemId = generateProblemID()
         problem.problemId = problemId;
         workspace.raven_config.problems[problemId] = problem;
-        app.setSelectedProblem(problemId);
+        setSelectedProblem(problemId);
     }
 
     view(vnode) {

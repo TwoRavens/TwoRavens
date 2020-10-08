@@ -1,7 +1,6 @@
 import m from 'mithril';
 import PlotVegaLite from "./PlotVegaLite";
-import * as app from "../app";
-import * as common from '../../common/common';
+import {getNominalVariables} from "../problem";
 
 let axisLabels = false;
 
@@ -12,7 +11,7 @@ export default class ModelInterpretation {
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
-        let nominals = app.getNominalVariables(problem);
+        let nominals = getNominalVariables(problem);
 
         // HEAT MAP
         if (nominals.includes(predictor) && nominals.includes(target)) {
@@ -220,7 +219,7 @@ export default class ModelInterpretation {
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
 
-        let nominals = app.getNominalVariables(problem);
+        let nominals = getNominalVariables(problem);
 
         data = data.filter(point => point[variableLabel] === target);
 
@@ -408,7 +407,7 @@ export default class ModelInterpretation {
     plotICE(vnode) {
         // target doesn't matter, all are plotted together
         let {problem, data, predictor, target, summary} = vnode.attrs;
-        let nominals = app.getNominalVariables(problem);
+        let nominals = getNominalVariables(problem);
 
         if (nominals.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
 

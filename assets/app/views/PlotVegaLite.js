@@ -2,7 +2,7 @@ import m from 'mithril';
 import vegaEmbed from "vega-embed";
 
 import * as vega from 'vega';
-import {setDefaultRecursive} from "../app";
+import {setDefaultRecursive} from "../utils";
 
 // m(PlotVegaLite, {
 //     specification: {...}, // an instance of this spec: https://vega.github.io/vega-lite/docs/spec.html,
@@ -23,7 +23,7 @@ export default class PlotVegaLite {
     }
 
     plot(vnode) {
-        let {data, specification} = vnode.attrs;
+        let {data, specification, listeners} = vnode.attrs;
 
         // change-sets are not currently supported. Data is manually inserted here.
         // long term, if change-sets are not returned, it would be better to remove the data argument from this component
@@ -83,6 +83,10 @@ export default class PlotVegaLite {
                     vnode.dom.querySelector('.vega-actions').appendChild(themeAction);
                 }
                 ['default', 'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'latimes', 'dark'].map(addThemeSetter)
+
+                // attach event listeners
+                Object.entries(listeners || {}).forEach(([name, callback]) =>
+                    result.view.addSignalListener(name, (n, v) => callback(v)))
 
                 // vegalite only gets close to the width/height set in the config
                 let {width, height} = vnode.dom.getBoundingClientRect();

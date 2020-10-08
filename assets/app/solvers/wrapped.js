@@ -2,9 +2,17 @@ import * as jStat from "jstat";
 import m from 'mithril';
 
 import * as app from '../app';
+import {alertWarn} from '../app';
 import * as results from "../modes/results";
-import {alertWarn, setDefault} from "../app";
 import {findProblem, getBestSolution} from "../modes/results";
+import {setDefaultRecursive, setDefault} from "../utils";
+import {
+    getGeographicVariables,
+    getNominalVariables,
+    getOrderingVariable,
+    getPredictorVariables,
+    isProblemValid
+} from "../problem";
 
 export let SOLVER_SVC_URL = '/solver-service/';
 
@@ -54,36 +62,33 @@ let SPEC_metric = (positiveLabel, metric) => {
 
 // GRPC_ProblemDescription
 export let SPEC_problem = problem => {
-    let predictors = app.getPredictorVariables(problem);
+    let predictors = getPredictorVariables(problem);
 
     if (problem.task === 'forecasting') {
         // ensure problem is valid
         if (!problem.forecastingHorizon)
-            problem.forecastingHorizon = {};
-        if (!problem.forecastingHorizon.column)
-            problem.forecastingHorizon.column = app.getTemporalVariables(problem)[0];
-        if (!problem.forecastingHorizon.value)
-            problem.forecastingHorizon.value = 10;
-
-        if (!predictors.includes(problem.forecastingHorizon.column)) {
-            problem.predictors.push(problem.forecastingHorizon.column);
-            predictors = app.getPredictorVariables(problem);
-        }
+            problem.forecastingHorizon = 10;
     }
 
     return {
         "name": problem.problemId,
         "taskSubtype": app.d3mTaskSubtype[problem.subTask],
         "taskType": app.d3mTaskType[problem.task],
-        "timeGranularity": problem.timeGranularity[problem.forecastingHorizon?.column],
-        'forecastingHorizon': problem.forecastingHorizon,
+        "timeGranularity": problem.timeGranularity,
+        'forecastingHorizon': {
+            column: getOrderingVariable(problem),
+            value: problem.forecastingHorizon
+        },
+
+        'time_format': Object.values(app.variableSummaries)
+            .filter(summary => summary.timeUnit)
+            .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.timeUnit})),
 
         // structural variables
         "indexes": problem.tags.indexes,
         "crossSection": problem.tags.crossSection.filter(variable => predictors.includes(variable)),
-        "location": app.getGeographicVariables(problem).filter(variable => predictors.includes(variable)),
+        "location": getGeographicVariables(problem).filter(variable => predictors.includes(variable)),
         "boundary": problem.tags.boundary.filter(variable => predictors.includes(variable)),
-        "time": app.getTemporalVariables(problem).filter(variable => predictors.includes(variable)),
         "weights": problem.tags.weights.filter(variable => predictors.includes(variable)), // singleton list
         "privileged": problem.tags.privileged.filter(variable => predictors.includes(variable)),
         "exogenous": problem.tags.exogenous.filter(variable => predictors.includes(variable)),
@@ -92,7 +97,7 @@ export let SPEC_problem = problem => {
         "predictors": predictors,
 
         // data types
-        "categorical": app.getNominalVariables(problem)
+        "categorical": getNominalVariables(problem)
     };
 }
 
@@ -103,7 +108,10 @@ let SPEC_configuration = problem => ({
     "shuffle": problem.scoreOptions.shuffle,
     "stratified": problem.scoreOptions.stratified,
     "trainTestRatio": problem.scoreOptions.trainTestRatio,
-    "forecastingHorizon": problem.forecastingHorizon
+    "forecastingHorizon": {
+        column: getOrderingVariable(problem),
+        value: problem.forecastingHorizon
+    }
 });
 
 let SPEC_produce = problem => {
@@ -157,7 +165,7 @@ let SPEC_produce = problem => {
 
     // add ice datasets
     if (problem.task !== 'forecasting') {
-        app.getPredictorVariables(problem).forEach(predictor => produces.push({
+        getPredictorVariables(problem).forEach(predictor => produces.push({
             'train': {
                 'name': 'all',
                 'resource_uri': 'file://' + problem.results.datasetPaths?.all
@@ -223,7 +231,7 @@ let systemParams = {
 
 export let getSystemAdapterWrapped = (systemId, problem) => ({
     solve: async () => {
-        if (!app.isProblemValid(problem)) return;
+        if (!isProblemValid(problem)) return;
         problem.system = 'solved';
 
         m.request(SOLVER_SVC_URL + 'Solve', {
@@ -279,29 +287,21 @@ export let getSystemAdapterWrapped = (systemId, problem) => ({
             specification: specification
         }
     }),
-    stop: searchId => {
-        // TODO: implement stop search
-        console.log("stop is not implemented for " + systemId);
-        let solvedProblem = Object.values(app.workspace.raven_config.problems)
-            .find(problem => problem?.results?.solverState?.[systemId]?.searchId === String(searchId));
-
-        if (solvedProblem) {
-            solvedProblem.results.solverState[systemId].thinking = false;
-            solvedProblem.results.solverState[systemId].message = 'search complete';
-        }
-    },
-    end: searchId => {
-        // TODO: implement end search
-        console.log("end is not implemented for " + systemId);
-        let solvedProblem = Object.values(app.workspace.raven_config.problems)
-            .find(problem => problem?.results?.solverState?.[systemId]?.searchId === String(searchId));
-
-        if (solvedProblem) {
-            solvedProblem.results.solverState[systemId].thinking = false;
-            solvedProblem.results.solverState[systemId].message = 'search complete';
-        }
-    }
+    stop: endStopWrappedSearch(problem, systemId),
+    end: endStopWrappedSearch(problem, systemId)
 });
+
+let endStopWrappedSearch = (problem, systemId) => searchId => {
+    // TODO: implement end search
+    console.log("end is not implemented for " + systemId);
+    let solvedProblem = Object.values(app.workspace.raven_config.problems)
+        .find(problem => problem?.results?.solverState?.[systemId]?.searchId === String(searchId));
+
+    if (solvedProblem) {
+        solvedProblem.results.solverState[systemId].thinking = false;
+        solvedProblem.results.solverState[systemId].message = 'search complete';
+    }
+}
 
 // TODO: determine why django sometimes fails to provide a model id
 export let handleDescribeResponse = response => {
@@ -318,7 +318,7 @@ export let handleDescribeResponse = response => {
             return;
         }
 
-        app.setDefaultRecursive(solvedProblem.results.solutions, [
+        setDefaultRecursive(solvedProblem.results.solutions, [
             [data.system, {}], [data.model_id, {}]]);
         Object.assign(solvedProblem.results.solutions[data.system][data.model_id], {
             name: data.model,
@@ -351,7 +351,7 @@ export let handleProduceResponse = response => {
     }
 
     if (response.success) {
-        app.setDefaultRecursive(solvedProblem.results, [
+        setDefaultRecursive(solvedProblem.results, [
             ['solutions', {}], [data.system, {}], [data.model_id, {}], ['produce', []]]);
         let solution = solvedProblem.results.solutions[data.system][data.model_id];
         solution.solutionId = data.model_id;
@@ -371,7 +371,7 @@ export let handleScoreResponse = response => {
     }
 
     if (response.success) {
-        app.setDefaultRecursive(solvedProblem.results, [
+        setDefaultRecursive(solvedProblem.results, [
             ['solutions', {}], [data.system, {}], [data.model_id, {}], ['scores', []]]);
         let solution = solvedProblem.results.solutions[data.system][data.model_id];
         solution.solutionId = data.model_id;
@@ -442,163 +442,3 @@ export function generateConfusionData(Y_true, Y_pred, factor = undefined) {
     return {data, classes, allClasses};
 }
 
-
-// STATISTICS HELPER FUNCTIONS
-
-// covariance matrix returned by R
-let cov = [[1, .87, .28, .1, -.548], [.1, 2, .3, -.4, .5], [.85, .2, .46, .4, -.5], [.1, .2, .3, 4, .23], [.1, .2358, -3.25, .4, .23]];
-// coefficients returned by R
-let coefs = [.2, 2.3, .12, 2.8, 7.78].map(elem => [elem]); // map to a column vector
-
-// description of predictor variable to vary confidence band over
-let predictor = {min: -100, max: 100, index: 2};
-// fixed values for other predictors, likely the mean values of each other predictor
-let constants = [1, 2, 5, 2];
-
-
-// ~~~~ helper functions
-
-// outer broadcast of x and y on column i
-let broadcast = (x, y, i) => y.map(point => [...x.slice(0, i), point, ...x.slice(i)]);
-
-// dot product between vectors
-let dot = (x, y) => x.reduce((sum, _, i) => sum + x[i] * y[i], 0);
-
-// computes diagonal of x @ Sym @ x.T, where C must be symmetric
-let symmetricQuadraticDiag = (x, Sym) => x
-    .map(rowLeft => Sym.map(rowRight => dot(rowLeft, rowRight))) // left product
-    .map((rowLeft, i) => dot(rowLeft, x[i])); // right product
-
-// matrix product between A, B
-let product = (A, B) => A
-    .map(rowA => B[0].map((_, j) => rowA.reduce((sum, _, i) => sum + rowA[i] * B[i][j], 0)));
-
-let makeEllipse = (p1, p2, varCovMat) => {
-    // only consider interactions among two coefficients
-    varCovMat = [
-        [varCovMat[p1][p1], varCovMat[p1][p2]],
-        [varCovMat[p2][p1], varCovMat[p2][p2]]
-    ];
-
-    // λ^2 - trace(Σ)*λ + det(Σ)
-    let [a, b, c] = [1, -varCovMat[0][0] -varCovMat[1][1], varCovMat[0][0] * varCovMat[1][1] - 2 * varCovMat[0][1]];
-    let eigvals = [-1, 1].map(sign => (-b + sign * Math.sqrt(b * b - 4 * a * c)) / (2 * a));
-    let eigvecs = [
-        [varCovMat[0][1], eigvals[0] - varCovMat[0][0]],
-        [eigvals[1] - varCovMat[1][1], varCovMat[1][0]]
-    ];
-
-    let maximalEigvec = eigvecs[Number(Math.abs(eigvals[0]) < Math.abs(eigvals[1]))];
-
-    return {
-        angle: Math.atan2(maximalEigvec[1], maximalEigvec[0]) * 180 / Math.pi,
-        eigvals
-    }
-};
-
-let getMean = data => data.reduce((sum, value) => sum + value, 0) / data.length;
-let getVariance = (data, ddof = 1) => {
-    let mean = getMean(data);
-    return data.reduce((sum, value) => (value - mean) ^ 2, 0) / (data.length - ddof);
-};
-
-
-/**
- * construct a multivariate confidence region, projected onto 'predictor' at 'constants'
- * @param varCovMat - pxp variance-covariance matrix of regression coefficients
- * @param coefficients - regression coefficients
- * @param predictor - {
- *     min, max - bounds to vary the predicted variable
- *     n - number of points to construct intervals for, within the bounds [min, max]
- *     index - column index of predictor within the design matrix
- * }
- * @param constants - fixed values for the other predictors
- * @param preferences - specified in makeIntervals.
- *                      'statistic' should either be 'workingHotelling' (simultaneous) or 't' (pointwise)
- * @returns {*} - list of [lower, upper] intervals
- */
-let makeGLMBands = (varCovMat, coefficients, predictor, constants, preferences) => {
-    let {min, max, index, n = 100} = predictor;
-    let observations = broadcast(constants, app.linspace(min, max, n), index);
-    let fittedValues = product(observations, coefficients).map(row => row[0]); // product produces a column vector
-    let variances = symmetricQuadraticDiag(observations, varCovMat);
-
-    return makeIntervals(Object.assign({
-        values: fittedValues,
-        variances,
-        statistic: 'workingHotelling',
-        ddof: varCovMat.length
-    }, preferences))
-};
-
-/**
- * construct a set of confidence intervals with the specified parameters
- * @param values - construct intervals for each of these values
- * @param variances - variance of each value
- * @param statistic - workingHotelling, scheffe, bonferroni, tukey, t
- * @param type - mean or prediction
- * @param family - glm family
- * @param alpha - 100(1 - alpha)% confidence
- * @param n - number of observations in entire dataset
- * @param ddof - delta degrees of freedom (p for regression intervals, used in statistic computation)
- * @param MSE - mean squared error of the regression model, estimated sample variance (needed for prediction interval only)
- * @param m - mean of m predictions in the prediction interval (optional)
- * @returns {*} - list of [lower, upper] intervals
- */
-let makeIntervals = ({values, variances, statistic, type, family, alpha, n, ddof, MSE, m}) => {
-
-    // MSE is already included in the coefficient variance-covariance matrix
-    let stdErr = variances.map({
-        mean: _ => _,
-        prediction: x => (MSE * 1 / (m || 1)) + x,
-    }[type]).map(Math.sqrt);
-
-    let g = values.length;
-
-    let statValue = {
-        // simultaneous region over regression surface
-        workingHotelling: Math.sqrt(ddof * jStat.centralF.inv(1 - alpha, ddof, n - ddof)),
-
-        // simultaneous set
-        scheffe: Math.sqrt(g * jStat.centralF.inv(1 - alpha, g, n - ddof)),
-        bonferroni: jStat.studentt.inv(1 - alpha / (2 * g), n - ddof),
-
-        // pointwise
-        t: jStat.studentt.inv(1 - alpha / 2, n - ddof)
-    }[statistic];
-
-    let invLink = {
-        gaussian: _ => _,
-        poisson: x => Math.exp(x),
-        exponential: x => -1 / x,
-        gamma: x => -1 / x,
-        binomial: x => 1 / (1 + Math.exp(x))
-    }[family];
-
-    return values
-        .map((val, i) => [-1, 1].map(sign => invLink(val + sign * statValue * stdErr[i])).sort())
-};
-
-// // ~~~~ compute confidence intervals
-// console.warn('GLM Bands');
-// console.log(makeGLMBands(cov, coefs, predictor, constants, {
-//     type: 'mean',
-//     statistic: 'workingHotelling',
-//     family: 'gaussian',
-//     alpha: .05,
-//     n: 2500,
-//     MSE: 1.2
-// }));
-//
-// console.warn('Set of intervals for coefficients');
-// console.log(makeIntervals({
-//     values: coefs.map(coef => coef[0]),
-//     variances: cov.map((_, i) => cov[i][i]),
-//     statistic: 'bonferroni',
-//     type: 'mean',
-//     family: 'gaussian',
-//     alpha: .05,
-//     n: 2500,
-//     ddof: 1,
-//     MSE: 1.2
-// }));

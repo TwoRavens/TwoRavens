@@ -1,5 +1,5 @@
 // handles plotting multiple groups at the same time
-export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = '') => {
+export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = '', groupCount = 1) => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -10,11 +10,9 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
             "contains": "padding"
         },
         "encoding": {
-            "color": {"field": groupName, "type": "nominal"},
             "x": {"field": xName, "type": "quantitative", "axis": {"title": xName}, "scale": {"zero": false}},
             "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
         },
-
         "layer": [
             {
                 "mark": "line",
@@ -37,32 +35,50 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
             },
             {
                 "selection": {
-                    "grid": {
-                        "type": "interval", "bind": "scales"
-                    },
+                    // "grid": {
+                    //     "type": "interval", "bind": "scales"
+                    // },
                     "Solution Name": {
                         "type": "multi", "fields": [groupName], "bind": "legend"
-                    }
+                    },
+                    "panner": {"type": "interval"}
                 },
                 "data": {
                     "values": data
                 },
 
-                "mark": "point",
+                "mark": "circle",
                 "encoding": {
+                    "color": {
+                        "condition": {
+                            "selection": "panner",
+                            "field": groupName,
+                            "type": "nominal",
+                            "legend": {"symbolOpacity": 1}
+                        },
+                        "value": "gray"
+                    },
                     "tooltip": [
                         {"field": groupName, "type": "nominal"},
                         {"field": countName, "type": "quantitative"},
+                        {"field": "Fitted Value", "type": "quantitative"},
+                        {"field": "Actual Value", "type": "quantitative"}
                     ],
                     "size": {
                         "field": countName,
                         "type": "quantitative",
-                        "bin": {'binned': true, "minstep": 1},
-                        "scale": {"type": "log", "base": 10},
+                        // "bin": {'binned': true, "minstep": 1},
+                        // log scale, with points scaled down when multiple plots are graphed
+                        "scale": {"type": "log", "base": 10, "range": [0, 200 / Math.sqrt(groupCount || 1)]},
+                        "legend": {"symbolOpacity": 1},
                         "title": "log(count)"
                     },
                     "opacity": {
-                        "condition": {"selection": "Solution Name", "value": 0.7},
+                        "condition": {
+                            "selection": "Solution Name",
+                            "field": "count",
+                            "scale": {"range": [0.05, 0.9], "type": "log"}
+                        },
                         "value": 0.05
                     }
                 }
@@ -71,7 +87,7 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
     });
 };
 
-export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title = '') => {
+export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSectionName, title = '', timeFormat) => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -86,9 +102,11 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 "type": "interval", "bind": "scales"
             }
         },
-        "data": {
-            "values": data
-        },
+        "data": Object.assign(
+            {"values": data},
+            timeFormat
+                ? {"format": {"parse": {[xName]: `date:'${timeFormat}'`}}}
+                : {}),
         "mark": {
             "type": "line",
             // "point": true
@@ -101,8 +119,18 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 {"field": crossSectionName, "type": "nominal"},
             ],
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}},
-            "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}},
+            "x": {
+                "field": xName,
+                "type": timeFormat ? "temporal" : "quantitative",
+                "axis": {"title": xName},
+                "scale": {"zero": false}
+            },
+            "y": {
+                "field": yName,
+                "type": "quantitative",
+                "axis": {"title": yName},
+                "scale": {"zero": false}
+            },
             "opacity": {"field": splitName, "type": "nominal"},
             "detail": {"field": crossSectionName, "type": "nominal"}
         }
@@ -110,7 +138,11 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
 };
 
 
-export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupName, crossSectionName, title = '') => {
+export let vegaLiteForecastConfidence = (
+    data,
+    xName, yName, splitName, groupName, crossSectionName,
+    title = '', timeFormat
+) => {
 
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -127,11 +159,18 @@ export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupNam
         },
         "encoding": {
             "color": {"field": groupName, "type": "nominal"},
-            "x": {"field": xName, "type": "temporal", "axis": {"title": xName}, "scale": {"zero": false}}
+            "x": {
+                "field": xName,
+                "type": timeFormat ? "temporal" : "quantitative",
+                "axis": {"title": xName},
+                "scale": {"zero": false}
+            }
         },
-        "data": {
-            "values": data
-        },
+        "data": Object.assign(
+            {"values": data},
+            timeFormat
+                ? {"format": {"parse": {[xName]: `date:'${timeFormat}'`}}}
+                : {}),
         "layer": [
             {
                 "mark": {
@@ -161,7 +200,11 @@ export let vegaLiteForecastConfidence = (data, xName, yName, splitName, groupNam
     });
 };
 
-export let vegaLiteConfusionMatrix = (data, classes, xName, yName, countName, title) => ({
+export let vegaLiteConfusionMatrix = (
+    data, classes,
+    xName, yName, countName,
+    title
+) => ({
     "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
     'data': {'values': data},
     'title': title,
@@ -172,20 +215,47 @@ export let vegaLiteConfusionMatrix = (data, classes, xName, yName, countName, ti
         "x": {"field": xName, "type": "nominal", "scale": {"domain": classes}},
         "y": {"field": yName, "type": "nominal", "scale": {"domain": classes}},
     },
+    "selection": {
+        "selector": {"type": "single"}
+    },
     'layer': [
         {
-            "mark": "rect",
+            "selection": {
+                "selector": {"type": "multi"}
+            },
+            "mark": {
+                "type": "rect",
+                "strokeWidth": 3
+            },
             "encoding": {
                 "fill": {
-                    "field": 'microCount', "type": "quantitative", "scale": {
+                    "field": 'microCount',
+                    "type": "quantitative",
+                    "scale": {
                         "range": ['transparent', '#e67e22']
-                    }, legend: {title: 'Significance'}
+                    },
+                    legend: {title: 'Significance'}
                 },
                 "stroke": {
-                    "field": 'diagonal',
+                    "condition": [
+                        {
+                            "test": {
+                                "and": [
+                                    {"selection": "selector"},
+                                    "length(data(\"selector_store\"))"
+                                ]
+                            },
+                            "value": "black"
+                        },
+                        {
+                            "test": "length(data(\"selector_store\"))",
+                            "value": "transparent"
+                        }
+                    ],
+                    "field": "diagonal",
                     "type": "nominal",
-                    "scale": {"range": ['transparent', '#7e3d20']},
-                    legend: false
+                    "scale": {"range": ["transparent", "#7e3d20"]},
+                    "legend": null
                 },
                 "tooltip": [
                     {"field": 'explanation', "type": "nominal"},

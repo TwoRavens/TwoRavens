@@ -29,15 +29,31 @@ import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
 import ButtonLadda from "../views/ButtonLadda";
 import Flowchart from "../views/Flowchart";
 
-import {bold, boldPlain, italicize} from "../index";
+import {bold, boldPlain, italicize, linkURLwithText} from "../index";
 import {setModal} from "../../common/views/Modal";
+import {add, generateID, omniSort, remove, toggle} from "../utils";
+import {
+    erase,
+    getDescription,
+    getGeographicVariables,
+    getNominalVariables,
+    getOrderingTimeUnit,
+    getPredictorVariables,
+    getProblemCopy,
+    getSelectedProblem,
+    getSubtask,
+    setMetric,
+    setSelectedProblem,
+    setSubTask,
+    setTask
+} from "../problem";
 
 
 export class CanvasModel {
 
     view(vnode) {
         let {drawForceDiagram, forceData} = vnode.attrs;
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         if (Object.keys(app.variableSummaries).length === 0)
             return m('div[style=height:100%;position:relative]',
@@ -70,7 +86,7 @@ export class CanvasModel {
                 onDragAway: (pebble, groupId) => {
                     let pebbles = forceData.summaries[pebble.name] && forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-                    let selectedProblem = app.getSelectedProblem();
+                    let selectedProblem = getSelectedProblem();
                     pebbles.forEach(pebble => {
                         if (groupId !== 'Loose') setGroup(selectedProblem, 'Loose', pebble)
                     });
@@ -84,7 +100,7 @@ export class CanvasModel {
                 onclickLink: d => {
                     let originalLink = selectedProblem.pebbleLinks.find(link => d.source === link.source && d.target === link.target);
                     if (!originalLink) return;
-                    app.remove(selectedProblem.pebbleLinks, originalLink);
+                    remove(selectedProblem.pebbleLinks, originalLink);
                     app.resetPeek();
                 }
             }, forceData)),
@@ -133,7 +149,7 @@ export class CanvasModel {
                             alertEditCopy();
                             return;
                         }
-                        app.erase()
+                        erase()
                     },
                     title: 'wipe all variables from the modeling space'
                 }, m(Icon, {name: 'trashcan'}))),
@@ -166,7 +182,7 @@ export class CanvasModel {
                     },
                     {
                         id: "ordinalButton",
-                        vars: selectedProblem.tags.privileged,
+                        vars: selectedProblem.tags.ordinal,
                         name: 'Ordinal',
                         borderColor: common.ordinalColor,
                         innerColor: 'white',
@@ -214,19 +230,28 @@ export class CanvasModel {
                     },
                     {
                         id: "geographicButton",
-                        vars: app.getGeographicVariables(selectedProblem),
+                        vars: getGeographicVariables(selectedProblem),
                         name: 'Geographic',
                         borderColor: common.locationColor,
                         innerColor: 'white',
                         width: 1
                     },
                     {
-                        id: "timeButton",
-                        vars: app.getTemporalVariables(selectedProblem),
+                        id: "temporalButton",
+                        vars: Object.keys(app.variableSummaries)
+                            .filter(variable => app.variableSummaries[variable].timeUnit),
                         name: 'Temporal',
                         borderColor: common.timeColor,
-                        innerColor: common.timeColor,
+                        innerColor: 'white',
                         width: 1
+                    },
+                    {
+                        id: "OrderingButton",
+                        vars: selectedProblem.tags.ordering,
+                        name: 'Ordering',
+                        borderColor: common.orderColor,
+                        innerColor: common.orderColor,
+                        width: 0
                     },
                     {
                         id: "predButton",
@@ -263,7 +288,7 @@ export class CanvasModel {
             }, selectedProblem.manipulations
                 .filter(step => step.type === 'subset')
                 .map(step => m('div', step.id))
-                .concat([`${manipulate.totalSubsetRecords} Records`]))
+                .concat([`${manipulate.totalSubsetRecords} Records`])),
         ]
     }
 }
@@ -286,7 +311,7 @@ export let rightPanelWidths = {
 export let leftpanel = forceData => {
 
     let ravenConfig = app.workspace.raven_config;
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
 
     if (!ravenConfig) return;
 
@@ -309,7 +334,7 @@ export let leftpanel = forceData => {
             ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
         ];
 
-        let nominalVariables = app.getNominalVariables();
+        let nominalVariables = getNominalVariables();
 
         sections.push({
             value: 'Variables',
@@ -330,18 +355,21 @@ export let leftpanel = forceData => {
                         colors: {
                             [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.explorePreferences.variables,
                             [app.hexToRgba(common.gr1Color, .25)]: selectedProblem.predictors,
-                            [app.hexToRgba(common.gr2Color, .25)]: app.isExploreMode ? [] : selectedProblem.targets
+                            [app.hexToRgba(common.gr2Color, .25)]: app.isExploreMode ? [] : selectedProblem.targets,
+                            [app.hexToRgba(common.timeColor, .25)]: selectedProblem.tags.ordering
                         },
                         classes: {
+                            // keep this order aligned with params in mutateNodes
                             'item-nominal': nominalVariables,
-                            'item-cross-section': selectedProblem.tags.crossSection,
+                            'item-geographic': getGeographicVariables(selectedProblem),
                             'item-ordinal': selectedProblem.tags.ordinal,
                             'item-boundary': selectedProblem.tags.boundary,
-                            'item-geographic': app.getGeographicVariables(selectedProblem),
-                            'item-time': app.getTemporalVariables(selectedProblem),
+                            'item-time': Object.keys(app.variableSummaries)
+                                .filter(variable => app.variableSummaries[variable].timeUnit),
                             'item-weight': selectedProblem.tags.weights,
                             'item-privileged': selectedProblem.tags.privileged,
                             'item-exogenous': selectedProblem.tags.exogenous,
+                            'item-cross-section': selectedProblem.tags.crossSection,
                             'item-index': selectedProblem.tags.indexes,
                             'item-matched': matchedVariables,
                             'item-hovered': [leftpanelHoveredVariableName, forceDiagramState.selectedPebble].filter(_ => _)
@@ -409,7 +437,7 @@ export let leftpanel = forceData => {
                         style: {width: '100%', 'margin-top': '10px'},
                         onclick: async () => {
 
-                            let problemPipeline = app.getSelectedProblem().manipulations;
+                            let problemPipeline = getSelectedProblem().manipulations;
                             if ((problemPipeline[problemPipeline.length - 1] || {}).type !== 'transform') {
                                 problemPipeline.push({
                                     type: 'transform',
@@ -469,8 +497,8 @@ export let leftpanel = forceData => {
             checked: problem.meaningful
         })),
         problem.targets.join(', '),
-        app.getPredictorVariables(problem).join(', '),
-        problem.subTask === 'taskSubtypeUndefined' ? '' : app.getSubtask(problem),
+        getPredictorVariables(problem).join(', '),
+        problem.subTask === 'taskSubtypeUndefined' ? '' : getSubtask(problem),
         problem.task,
         problem.metric
     ];
@@ -508,11 +536,11 @@ export let leftpanel = forceData => {
                             style: {float: 'right', margin: '-5px', 'margin-right': '22px'},
                             class: 'btn-sm',
                             onclick: () => {
-                                let problemCopy = app.getProblemCopy(selectedProblem);
+                                let problemCopy = getProblemCopy(selectedProblem);
                                 selectedProblem.pending = false;
 
                                 ravenConfig.problems[problemCopy.problemId] = problemCopy;
-                                app.setSelectedProblem(problemCopy.problemId);
+                                setSelectedProblem(problemCopy.problemId);
                             }
                         }, 'Save'),
                         selectedProblem.manipulations.length !== 0 && m(Button, {
@@ -542,7 +570,7 @@ export let leftpanel = forceData => {
                                 selectedProblem.description = v.target.innerHTML
                                 selectedProblem.unedited = false
                             }
-                        }, m.trust(app.getDescription(selectedProblem)))),
+                        }, m.trust(getDescription(selectedProblem)))),
                     ], // END: Current Problem description
 
                     m(Table, {
@@ -593,14 +621,14 @@ export let leftpanel = forceData => {
 
                             let clickedProblem = problems[problemId];
                             if (clickedProblem.system === 'solved') {
-                                app.setSelectedProblem(problemId);
+                                setSelectedProblem(problemId);
                                 app.setSelectedMode('results');
                                 return;
                             }
                             if (selectedProblem.problemId === problemId) return;
 
                             if (clickedProblem.system === 'user') {
-                                app.setSelectedProblem(problemId);
+                                setSelectedProblem(problemId);
                                 return;
                             }
 
@@ -615,9 +643,9 @@ export let leftpanel = forceData => {
 
                             // create a copy of the autogenerated problem
                             if (clickedProblem.system === 'auto') {
-                                let copiedProblem = app.getProblemCopy(clickedProblem);
+                                let copiedProblem = getProblemCopy(clickedProblem);
                                 problems[copiedProblem.problemId] = copiedProblem;
-                                app.setSelectedProblem(copiedProblem.problemId);
+                                setSelectedProblem(copiedProblem.problemId);
                             }
                         },
                         activeRow: selectedProblem.problemId,
@@ -650,7 +678,7 @@ export let leftpanel = forceData => {
             ? [...forceData.summaries[summaryPebble].childNodes]
             : [summaryPebble];
 
-        summaryContent = summaryPebbles.sort(app.omniSort)
+        summaryContent = summaryPebbles.sort(omniSort)
             .map(variableName => m(Subpanel, {
                     id: 'subpanel' + variableName,
                     header: variableName,
@@ -670,41 +698,21 @@ export let leftpanel = forceData => {
                         class: (tag.active ? 'active' : '') + ' btn-sm'
                     }, tag.name)))),
 
-                app.getTemporalVariables(selectedProblem).includes(variableName) && m('div', {
+                (selectedProblem.tags.ordering.includes(variableName) || app.variableSummaries[variableName].timeUnit) && m('div', {
                     style: {
                         'text-align': 'left',
                         'margin-left': '.5em'
                     }
                 },
-                'Time variables indicate a temporal location.', m('br'), bold('Time Granularity:'),
-                m('br'),
-                m(TextField, {
-                    id: 'timeGranularityValueTextField',
-                    value: (selectedProblem.timeGranularity[variableName] || {}).value || '',
-                    oninput: value => {
-                        selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                        selectedProblem.timeGranularity[variableName].value = value.replace(/[^\d.-]/g, '')
-                    },
-                    onblur: value => selectedProblem.timeGranularity[variableName].value =
-                        Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
-                    style: {
-                        'margin-bottom': '1em',
-                        width: 'calc(100% - 150px)',
-                        display: 'inline-block'
-                    }
-                }),
-                m('div', {style: {display: 'inline-block', width: '92px'}},
-                    m(Dropdown, {
-                        id: 'timeGranularityUnitsDropdown',
-                        items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
-                        activeItem: (selectedProblem.timeGranularity[variableName] || {}).units || 'unspecified',
-                        onclickChild: granularity => {
-                            selectedProblem.timeGranularity[variableName] = selectedProblem.timeGranularity[variableName] || {};
-                            selectedProblem.timeGranularity[variableName].units = granularity
-                        }
-                    }))
-                ),
 
+                bold('Time Format'), m('br'),
+                'Data units in ', linkURLwithText('https://strftime.org/', 'strftime'), ' format',
+                m(TextField, {
+                    id: 'timeFormatTextField',
+                    value: app.variableSummaries[variableName].timeUnit,
+                    oninput: value => setVariableSummaryAttr(variableName, 'timeUnit', value),
+                    onblur: value => setVariableSummaryAttr(variableName, 'timeUnit', value),
+                })),
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
 
@@ -742,7 +750,7 @@ export let rightpanel = () => {
     let sections = [];
 
     let ravenConfig = app.workspace.raven_config;
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
 
     let isLocked = app.isLocked(selectedProblem);
 
@@ -778,7 +786,7 @@ export let rightpanel = () => {
                     //     ? Object.keys(app.d3mTaskType)
                     //     : ['classification', 'regression', 'forecasting'],
                     activeItem: selectedProblem.task,
-                    onclickChild: task => app.setTask(task, selectedProblem),
+                    onclickChild: task => setTask(task, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
                 }),
@@ -787,41 +795,44 @@ export let rightpanel = () => {
                     m(Dropdown, {
                         id: 'taskSubType',
                         items: Object.keys(app.applicableMetrics[selectedProblem.task]),
-                        activeItem: app.getSubtask(selectedProblem),
-                        onclickChild: subTask => app.setSubTask(subTask, selectedProblem),
+                        activeItem: getSubtask(selectedProblem),
+                        onclickChild: subTask => setSubTask(subTask, selectedProblem),
                         style: {'margin': '1em', 'margin-top': '0'},
                         disabled: isLocked
                     })
                 ],
 
                 selectedProblem.task === 'forecasting' && [
-                    m('label', 'Forecast along a temporal variable.'),
-                    app.getTemporalVariables(selectedProblem).length > 0 ? m(Dropdown, {
-                        id: 'forecastingColumnDropdown',
-                        items: app.getTemporalVariables(selectedProblem),
-                        activeItem: (selectedProblem.forecastingHorizon || {}).column,
-                        onclickChild: column => {
-                            if (isLocked) return;
-                            selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
-                            selectedProblem.forecastingHorizon.column = column;
-                        },
-                        style: {'margin': '1em', 'margin-top': '0'},
-                        disabled: isLocked
-                    }) : [
-                        m('br'),
-                        italicize('No variables have been tagged as temporal. Click a node in the graph, and then tag it as "time" from the left panel.'),
-                        m('br'), m('br')
-                    ],
-                    m('label', 'Horizon value. Choose how many time steps to forecast.'),
+
+                    m('label', 'Time Granularity (optional). Specify the gap between observations.'),
+                    m(TextField, {
+                        id: 'timeGranularityValueTextField',
+                        value: selectedProblem.timeGranularity.value || '',
+                        oninput: value => selectedProblem.timeGranularity.value =
+                            value.replace(/[^\d.-]/g, ''),
+                        onblur: value => selectedProblem.timeGranularity.value =
+                            Math.max(0, parseFloat(value.replace(/[^\d.-]/g, ''))) || undefined,
+                        style: {
+                            'margin-bottom': '1em',
+                            width: 'calc(100% - 150px)',
+                            display: 'inline-block'
+                        }
+                    }),
+                    m('div', {style: {display: 'inline-block', width: '92px'}},
+                        m(Dropdown, {
+                            id: 'timeGranularityUnitsDropdown',
+                            items: ["seconds", "minutes", "days", "weeks", "years", "unspecified"],
+                            activeItem: selectedProblem.timeGranularity.units || 'unspecified',
+                            onclickChild: granularity => selectedProblem.timeGranularity.units = granularity
+                        })),
+                    m('label', 'Horizon value. Choose how many granular steps to forecast.'),
                     m(TextField, {
                         id: 'horizonValueTextField',
                         disabled: isLocked,
                         placeholder: 10,
-                        value: (selectedProblem.forecastingHorizon || {}).value || '',
-                        oninput: !isLocked && (value => {
-                            selectedProblem.forecastingHorizon = selectedProblem.forecastingHorizon || {};
-                            selectedProblem.forecastingHorizon.value = Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined
-                        }),
+                        value: selectedProblem.forecastingHorizon || '',
+                        oninput: !isLocked && (value => selectedProblem.forecastingHorizon =
+                            Math.max(0, parseInt(value.replace(/\D/g, ''))) || undefined),
                         style: {'margin-bottom': '1em'}
                     })
                 ],
@@ -841,9 +852,9 @@ export let rightpanel = () => {
                 m(Dropdown, {
                     id: 'performanceMetric',
                     // TODO: filter based on https://datadrivendiscovery.org/wiki/display/work/Matrix+of+metrics
-                    items: app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)],
+                    items: app.applicableMetrics[selectedProblem.task][getSubtask(selectedProblem)],
                     activeItem: selectedProblem.metric,
-                    onclickChild: metric => app.setMetric(metric, selectedProblem),
+                    onclickChild: metric => setMetric(metric, selectedProblem),
                     style: {'margin': '1em', 'margin-top': '0'},
                     disabled: isLocked
                 }),
@@ -858,13 +869,13 @@ export let rightpanel = () => {
                 // }),
 
                 // app.workspace.raven_config.advancedMode &&
-                app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
+                app.applicableMetrics[selectedProblem.task][getSubtask(selectedProblem)].length - 1 > selectedProblem.metrics.length && m(Dropdown, {
                     id: 'performanceMetrics',
-                    items: app.applicableMetrics[selectedProblem.task][app.getSubtask(selectedProblem)]
+                    items: app.applicableMetrics[selectedProblem.task][getSubtask(selectedProblem)]
                         .filter(metric => metric !== selectedProblem.metric && !selectedProblem.metrics.includes(metric)),
                     activeItem: 'Add Secondary Metric',
                     onclickChild: metric => {
-                        selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(app.omniSort);
+                        selectedProblem.metrics = [...selectedProblem.metrics, metric].sort(omniSort);
                         delete selectedProblem.unedited;
                     },
                     style: {'margin': '1em', 'margin-top': '0'},
@@ -872,9 +883,8 @@ export let rightpanel = () => {
                 }),
                 // app.workspace.raven_config.advancedMode &&
                 m(ListTags, {
-                    readonly: isLocked,
                     tags: selectedProblem.metrics,
-                    ondelete: metric => app.remove(selectedProblem.metrics, metric)
+                    ondelete: !isLocked && (metric => remove(selectedProblem.metrics, metric))
                 }),
 
                 // app.workspace.raven_config.advancedMode &&
@@ -1133,12 +1143,54 @@ export let rightpanel = () => {
                             labelWidth: '5em',
                             steps: [{
                                 key: 'Nominal',
-                                color: common.nomColor,
+                                color: app.hexToRgba(common.nomColor, .5),
                                 content: m('div', {style: {'text-align': 'left', 'white-space': 'normal'}},
                                     m(ListTags, {
                                         tags: selectedProblem.tags.nominal,
-                                        ondelete: name => app.remove(selectedProblem.tags.nominal, name)
+                                        ondelete: name => remove(selectedProblem.tags.nominal, name)
                                     }))
+                            }]
+                        }),
+                        selectedProblem.tags.ordering.length > 1 && m(Flowchart, {
+                            attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
+                            labelWidth: '5em',
+                            steps: [{
+                                key: 'Ordering',
+                                color: app.hexToRgba(common.orderColor, .5),
+                                content: m(Table, {
+                                    style: {margin: '-4px', width: 'calc(100% + 8px)'},
+                                    data: [
+                                        [
+                                            m(Popper, {content: () => "Drag to reorder. Click to select the pebble and customize the format."}, "Unit Ordering"),
+                                            m(ListTags, {
+                                                tags: selectedProblem.tags.ordering,
+                                                reorderable: true,
+                                                onclick: setSelectedPebble
+                                            })
+                                        ],
+                                        [
+                                            "Output Time Units",
+                                            italicize(getOrderingTimeUnit(selectedProblem))
+                                        ],
+                                        [
+                                            "Output Name",
+                                            m(TextField, {
+                                                value: selectedProblem.orderingName,
+                                                placeholder: selectedProblem.tags.ordering.join("-"),
+                                                oninput: value => {
+                                                    if (value === selectedProblem.tags.ordering.join("-") || !value)
+                                                        delete selectedProblem.orderingName
+                                                    else selectedProblem.orderingName = value
+                                                },
+                                                onblur: value => {
+                                                    if (value === selectedProblem.tags.ordering.join("-") || !value)
+                                                        delete selectedProblem.orderingName
+                                                    else selectedProblem.orderingName = value
+                                                }
+                                            })
+                                        ]
+                                    ]
+                                })
                             }]
                         })
                     ]
@@ -1175,27 +1227,6 @@ export let rightpanel = () => {
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
 export let colors = d3.scaleOrdinal(d3.schemeCategory20);
 
-const k_combinations = (list, k) => {
-    if (k > list.length || k <= 0) return []; // no valid combinations of size k
-    if (k === list.length) return [list]; // one valid combination of size k
-    if (k === 1) return list.reduce((acc, cur) => [...acc, [cur]], []); // k combinations of size k
-
-    let combinations = [];
-
-    for (let i = 0; i <= list.length - k + 1; i++) {
-        let subcombinations = k_combinations(list.slice(i + 1), k - 1);
-        for (let j = 0; j < subcombinations.length; j++) {
-            combinations.push([list[i], ...subcombinations[j]])
-        }
-    }
-
-    return combinations
-};
-
-// used to compute interaction terms of degree lte k
-const lte_k_combinations = (set, k) =>
-    Array(k).fill(null).reduce((acc, _, idx) => [...acc, ...k_combinations(set, idx + 1)], []);
-
 const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
 
 
@@ -1207,7 +1238,7 @@ export let buildForceData = problem => {
 
     if (!problem) return;
 
-    let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.loose];
+    let pebbles = [...problem.predictors, ...problem.targets, ...problem.tags.ordering, ...problem.tags.loose];
     let groups = [];
     let groupLinks = [];
 
@@ -1240,20 +1271,22 @@ export let buildForceData = problem => {
                 opacity: 0.0
             },
             {
-                name: 'Structural',
+                id: "Structural",
+                name: '',
                 color: "transparent",
-                colorBackground: app.swandive && 'grey',
+                colorBackground: "transparent",
                 nodes: new Set([
                     ...problem.tags.crossSection,
                     ...problem.tags.weights,
+                    ...problem.tags.ordering
                 ]),
                 opacity: 0.3
             },
             {
-                name: "Temporal",
-                color: common.timeColor,
+                name: "Ordering",
+                color: common.orderColor,
                 colorBackground: app.swandive && 'grey',
-                nodes: new Set(app.getTemporalVariables(problem)),
+                nodes: new Set(problem.tags.ordering),
                 opacity: 0.3
             }
             // {
@@ -1269,6 +1302,11 @@ export let buildForceData = problem => {
             {
                 color: common.gr1Color,
                 source: 'Predictors',
+                target: 'Targets'
+            },
+            {
+                color: common.orderColor,
+                source: 'Ordering',
                 target: 'Targets'
             }
         ];
@@ -1355,10 +1393,10 @@ export let setGroup = (problem, group, name) => {
         app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
             style: 'margin:1em',
             onclick: () => {
-                let problemCopy = app.getProblemCopy(problem);
+                let problemCopy = getProblemCopy(problem);
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
-                app.setSelectedProblem(problemCopy.problemId);
+                setSelectedProblem(problemCopy.problemId);
                 setGroup(problemCopy, group, name);
             }
         }, 'Edit Copy')));
@@ -1378,24 +1416,39 @@ export let setGroup = (problem, group, name) => {
     //  console.log('problem: ' + problem.problemId);
 //    console.log('problem: ' + JSON.stringify(problem))
     if (group === 'Loose') {
-        !problem.tags.loose.includes(name) && problem.tags.loose.push(name);
-        app.remove(problem.targets, name);
-        app.remove(problem.predictors, name);
+        remove(problem.targets, name);
+        remove(problem.tags.ordering, name);
+        remove(problem.predictors, name);
+        add(problem.tags.loose, name);
         logParams.feature_id = 'MODEL_ADD_VARIABLE';
+    } else if (group === "Ordering") {
+        // if we are going to include in the ordering group
+        if (!(problem.tags.ordering).includes(name)) {
+            remove(problem.tags.geographic, name);
+            remove(problem.tags.boundary, name);
+        }
+        remove(problem.predictors, name);
+        remove(problem.targets, name);
+        remove(problem.tags.loose, name);
+        add(problem.tags.ordering, name);
+        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_ORDERING';
     } else if (group === 'Predictors') {
-        !problem.predictors.includes(name) && problem.predictors.push(name);
-        app.remove(problem.targets, name);
-        app.remove(problem.tags.loose, name);
+        add(problem.predictors, name);
+        remove(problem.targets, name);
+        remove(problem.tags.loose, name);
+        remove(problem.tags.ordering, name);
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_PREDICTOR';
     } else if (group === 'Targets') {
-        !problem.targets.includes(name) && problem.targets.push(name);
-        app.remove(problem.predictors, name);
-        app.remove(problem.tags.loose, name);
+        add(problem.targets, name)
+        remove(problem.predictors, name);
+        remove(problem.tags.loose, name);
+        remove(problem.tags.ordering, name);
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_TARGET';
     } else if (group === 'None' || group === undefined) {
-        app.remove(problem.predictors, name);
-        app.remove(problem.tags.loose, name);
-        app.remove(problem.targets, name);
+        remove(problem.predictors, name);
+        remove(problem.tags.loose, name);
+        remove(problem.targets, name);
+        remove(problem.tags.ordering, name);
         logParams.feature_id = 'MODEL_REMOVE_VARIABLE';
     }
     // console.log(logParams);
@@ -1425,7 +1478,7 @@ export let forceDiagramState = {
 };
 
 let setContextPebble = pebble => {
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
     if (selectedProblem.system === 'solved') {
         alertEditCopy();
         return;
@@ -1531,14 +1584,14 @@ let variableTagMetadata = (selectedProblem, variableName) => [
         title: 'Boundary variables are a string vector of numeric data points.'
     },
     {
-        name: 'Geographic', active: app.getGeographicVariables(selectedProblem).includes(variableName),
+        name: 'Geographic', active: getGeographicVariables(selectedProblem).includes(variableName),
         onclick: () => setLabel(selectedProblem, 'geographic', variableName),
         title: 'Geographic variables indicate a geospatial location.'
     },
     {
-        name: 'Temporal', active: app.getTemporalVariables(selectedProblem).includes(variableName),
-        onclick: () => setLabel(selectedProblem, 'temporal', variableName),
-        title: 'Temporal variables indicate a point in time.',
+        name: 'Ordering', active: selectedProblem.tags.ordering.includes(variableName),
+        onclick: () => setGroup(selectedProblem, 'Ordering', variableName),
+        title: 'Ordering variables indicate the order of observations.',
     },
     {
         name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
@@ -1601,15 +1654,16 @@ export let mutateNodes = problem => (state, context) => {
         targets: new Set(problem.targets),
         loose: new Set(problem.tags.loose),
         transformed: new Set(problem.tags.transformed),
-        nominal: new Set(app.getNominalVariables(problem)),
+        nominal: new Set(getNominalVariables(problem)),
+        geographic: new Set(getGeographicVariables(problem)),
         ordinal: new Set(problem.tags.ordinal),
-        crossSection: new Set(problem.tags.crossSection),
         boundary: new Set(problem.tags.boundary),
-        geographic: new Set(app.getGeographicVariables(problem)),
-        temporal: new Set(app.getTemporalVariables(problem)),
+        temporal: new Set(Object.keys(app.variableSummaries)
+            .filter(variable => app.variableSummaries[variable].timeUnit)),
         weights: new Set(problem.tags.weights),
         privileged: new Set(problem.tags.privileged),
         exogenous: new Set(problem.tags.exogenous),
+        crossSection: new Set(problem.tags.crossSection),
         indexes: new Set(problem.tags.indexes),
         matched: new Set(matchedVariables),
     };
@@ -1668,7 +1722,7 @@ export let mutateNodes = problem => (state, context) => {
             context.nodes[pebble].strokeColor = 'transparent';
         } else {
             context.nodes[pebble].strokeWidth = 1;
-            context.nodes[pebble].nodeCol = colors(app.generateID(pebble));
+            context.nodes[pebble].nodeCol = colors(generateID(pebble));
             context.nodes[pebble].strokeColor = 'transparent';
         }
     });
@@ -1746,11 +1800,11 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 }
             },
             {
-                id: 'Temporal',
-                name: 'Temporal',
-                attrs: {fill: common.timeColor},
+                id: 'Ordering',
+                name: 'Order',
+                attrs: {fill: common.orderColor},
                 onclick: d => {
-                    setLabel(problem, 'temporal', d);
+                    setGroup(problem, 'Ordering', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
@@ -1770,12 +1824,12 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
 let setLabel = (problem, label, name) => {
     if (label === 'nominal') {
         // if we are going to add the tag
-        if (!app.getNominalVariables(problem).includes(name)) {
+        if (!getNominalVariables(problem).includes(name)) {
             if (app.variableSummaries[name].numchar === 'character') {
                 app.alertLog(`Cannot interpret "${name}" as non-nominal, because the column is character-based. Use a manipulation to parse the strings.`);
                 return;
             }
-            app.add(problem.tags.nominal, name);
+            add(problem.tags.nominal, name);
         }
         // we are going to remove
         else {
@@ -1785,12 +1839,12 @@ let setLabel = (problem, label, name) => {
                     setVariableSummaryAttr(name, 'nature', 'nominal')
                 }
             } else {
-                app.remove(problem.tags.crossSection, name);
-                app.remove(problem.tags.boundary, name);
-                app.remove(problem.tags.geographic, name);
-                app.remove(problem.tags.indexes, name);
+                remove(problem.tags.crossSection, name);
+                remove(problem.tags.boundary, name);
+                remove(problem.tags.geographic, name);
+                remove(problem.tags.indexes, name);
 
-                app.remove(problem.tags.nominal, name);
+                remove(problem.tags.nominal, name);
             }
         }
     }
@@ -1798,8 +1852,8 @@ let setLabel = (problem, label, name) => {
     delete problem.unedited;
 
     if (label === "ordinal") {
-        app.remove(problem.tags.nominal, name);
-        if (app.getNominalVariables(problem).includes(name)) {
+        remove(problem.tags.nominal, name);
+        if (getNominalVariables(problem).includes(name)) {
             if (confirm("Ordinal variables must be orderable. Would you like to define an ordering?")) {
                 let pipeline = [...app.workspace.raven_config.hardManipulations, problem.manipulations];
                 let step = {
@@ -1836,26 +1890,26 @@ let setLabel = (problem, label, name) => {
                     .then(() => manipulate.constraintPreferences.select(name))
             }
         } else {
-            app.toggle(problem.tags.ordinal, name)
+            toggle(problem.tags.ordinal, name)
         }
     }
 
     if (label === 'crossSection') {
         if (!problem.tags.crossSection.includes(name)) {
-            app.remove(problem.tags.weights, name);
+            remove(problem.tags.weights, name);
         }
-        app.toggle(problem.tags.crossSection, name);
+        toggle(problem.tags.crossSection, name);
     }
 
     if (label === 'geographic') {
         // if we are going to add the tag
-        if (!app.getGeographicVariables(problem).includes(name)) {
-            app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.temporal, name);
-            app.remove(problem.tags.weights, name);
-            app.remove(problem.tags.indexes, name);
-            app.add(problem.tags.nominal, name);
-            app.add(problem.tags.geographic, name);
+        if (!getGeographicVariables(problem).includes(name)) {
+            remove(problem.tags.boundary, name);
+            remove(problem.tags.ordering, name);
+            remove(problem.tags.weights, name);
+            remove(problem.tags.indexes, name);
+            add(problem.tags.nominal, name);
+            add(problem.tags.geographic, name);
         }
         // we are going to remove
         else {
@@ -1865,40 +1919,20 @@ let setLabel = (problem, label, name) => {
                     setVariableSummaryAttr(name, 'geographic', false)
                 }
             } else {
-                app.remove(problem.tags.geographic, name);
+                remove(problem.tags.geographic, name);
             }
         }
     }
 
     if (label === 'boundary') {
         if (!problem.tags.boundary.includes(name)) {
-            app.remove(problem.tags.geographic, name);
-            app.remove(problem.tags.temporal, name);
-            app.remove(problem.tags.weights, name);
-            app.remove(problem.tags.indexes, name);
-            app.add(problem.tags.nominal, name);
+            remove(problem.tags.geographic, name);
+            remove(problem.tags.ordering, name);
+            remove(problem.tags.weights, name);
+            remove(problem.tags.indexes, name);
+            add(problem.tags.nominal, name);
         }
-        app.toggle(problem.tags.boundary, name);
-    }
-
-    if (label === 'temporal') {
-        // if we are going to add the tag
-        if (!app.getTemporalVariables(problem).includes(name)) {
-            app.remove(problem.tags.geographic, name);
-            app.remove(problem.tags.boundary, name);
-            app.toggle(problem.tags.temporal, name);
-        }
-        // if we are going to remove the tag
-        else {
-            // if the tag is at the dataset level
-            if (variableSummaries[name].temporal) {
-                if (confirm("Do you want to remove the dataset-level temporal annotation?")) {
-                    setVariableSummaryAttr(name, 'temporal', false)
-                }
-            } else {
-                app.toggle(problem.tags.temporal, name);
-            }
-        }
+        toggle(problem.tags.boundary, name);
     }
 
     if (label === 'weights') {
@@ -1907,12 +1941,12 @@ let setLabel = (problem, label, name) => {
             return;
         }
         if (!problem.tags.weights.includes(name)) {
-            if (app.getNominalVariables(problem).includes(name)) setLabel(problem, 'nominal', name);
-            if (app.getTemporalVariables(problem).includes(name)) setLabel(problem, 'temporal', name);
-            if (app.getGeographicVariables(problem).includes(name)) setLabel(problem, 'geographic', name);
-            app.remove(problem.tags.crossSection, name);
-            app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.indexes, name);
+            if (getNominalVariables(problem).includes(name)) setLabel(problem, 'nominal', name);
+            if (problem.tags.ordering.includes(name)) setGroup(problem, 'Predictors', name);
+            if (getGeographicVariables(problem).includes(name)) setLabel(problem, 'geographic', name);
+            remove(problem.tags.crossSection, name);
+            remove(problem.tags.boundary, name);
+            remove(problem.tags.indexes, name);
         }
         if (problem.tags.weights.includes(name))
             problem.tags.weights = [];
@@ -1922,23 +1956,23 @@ let setLabel = (problem, label, name) => {
 
     if (label === 'privileged') {
         if (!problem.tags.privileged.includes(name)) {
-            app.remove(problem.tags.indexes, name);
+            remove(problem.tags.indexes, name);
         }
-        app.toggle(problem.tags.privileged, name);
+        toggle(problem.tags.privileged, name);
     }
     if (label === 'exogenous') {
         if (!problem.tags.exogenous.includes(name)) {
-            app.remove(problem.tags.indexes, name);
+            remove(problem.tags.indexes, name);
         }
-        app.toggle(problem.tags.exogenous, name);
+        toggle(problem.tags.exogenous, name);
     }
 
     if (label === 'indexes') {
         if (!problem.tags.indexes.includes(name)) {
-            app.remove(problem.tags.boundary, name);
-            app.remove(problem.tags.geographic, name);
-            app.remove(problem.tags.weights, name);
-            app.remove(problem.tags.temporal, name);
+            remove(problem.tags.boundary, name);
+            remove(problem.tags.geographic, name);
+            remove(problem.tags.weights, name);
+            remove(problem.tags.ordering, name);
         }
         if (problem.tags.indexes.includes(name))
             problem.tags.indexes = [];
@@ -1955,16 +1989,16 @@ export let setVariableSearchText = text => variableSearchText = text.toLowerCase
 
 // creates a new problem from the force diagram problem space and adds to disco
 export async function addProblemFromForceDiagram() {
-    let problemCopy = app.getProblemCopy(app.getSelectedProblem());
+    let problemCopy = getProblemCopy(getSelectedProblem());
     app.workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
 
-    app.setSelectedProblem(problemCopy.problemId);
+    setSelectedProblem(problemCopy.problemId);
     app.setLeftTab('Discover');
     m.redraw();
 }
 
 export function connectAllForceDiagram() {
-    let problem = app.getSelectedProblem();
+    let problem = getSelectedProblem();
 
     problem.pebbleLinks = problem.pebbleLinks || [];
     if (app.isExploreMode) {
@@ -2093,11 +2127,11 @@ let alertEditCopy = () => {
     app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
         style: 'margin:1em',
         onclick: () => {
-            let selectedProblem = app.getSelectedProblem();
-            let problemCopy = app.getProblemCopy(selectedProblem);
+            let selectedProblem = getSelectedProblem();
+            let problemCopy = getProblemCopy(selectedProblem);
             workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
             app.setShowModalAlerts(false);
-            app.setSelectedProblem(problemCopy.problemId);
+            setSelectedProblem(problemCopy.problemId);
         }
     }, 'Edit Copy')))
     m.redraw();

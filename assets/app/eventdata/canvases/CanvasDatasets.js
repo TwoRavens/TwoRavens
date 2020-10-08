@@ -108,17 +108,14 @@ export default class CanvasDatasets {
                             tempDataset['subsets'][label]['type'],
                             alignments.length !== 0 && m(ListTags, {
                                 tags: alignments,
-                                readonly: true,
                                 attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                             }),
                             formats.length !== 0 && m(ListTags, {
                                 tags: formats,
-                                readonly: true,
                                 attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                             }),
                             columns.length !== 0 && m(ListTags, {
                                 tags: columnFilter(columns),
-                                readonly: true,
                                 attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                             })
                         ]

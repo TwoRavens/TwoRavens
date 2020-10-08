@@ -1,8 +1,8 @@
 import jsep from 'jsep';
 
-import {alignmentData, generateID, getGeographicVariables, getPredictorVariables, getTemporalVariables} from "../app";
+import {alignmentData} from "../app";
 import * as common from "../../common/common";
-import * as app from "../app";
+import {getGeographicVariables, getNominalVariables, getOrderingVariable, getPredictorVariables} from "../problem";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -46,7 +46,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }, {})
         });
 
-        if (step.type === 'transform' && step.expansions.length) compiled.push({
+        if (step.type === 'transform' && step.expansions?.length) compiled.push({
             '$addFields': Object.assign(...step.expansions.map(expansion => {
                 let terms = expansionTerms(expansion);
                 variables = new Set([...terms, ...variables]);
@@ -57,16 +57,16 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }))
         });
 
-        if (step.type === 'transform' && step.binnings.length) {
+        if (step.type === 'transform' && step.binnings?.length) {
             step.binnings.map(bin => variables.add(bin.name));
             compiled.push(buildBinning(step.binnings));
         }
-        if (step.type === 'transform' && step.manual.length) {
+        if (step.type === 'transform' && step.manual?.length) {
             step.manual.map(labeling => variables.add(labeling.name));
             compiled.push(buildManual(step.manual));
         }
 
-        if (step.type === 'imputation' && step.imputations.length)
+        if (step.type === 'imputation' && step.imputations?.length)
             compiled = compiled.concat(buildImputation(step.imputations));
 
         if (step.type === 'subset') compiled.push({'$match': buildSubset(step.abstractQuery, true)});
@@ -406,7 +406,6 @@ function processRule(rule) {
     let rule_query = {};
 
     if (rule.subset === 'date') {
-        let rule_query_inner = {};
         if (rule.structure === 'point') {
             let rule_query_inner = [];
             let column;
@@ -448,7 +447,6 @@ function processRule(rule) {
     }
 
     if (rule.subset === 'continuous') {
-        let rule_query_inner = {};
 
         rule_query[rule.column] = rule.children.reduce((out, child) => {
             if ('fromLabel' in child) out['$gte'] = child.fromLabel;
@@ -875,7 +873,6 @@ export function buildMenu(step) {
     ];
 
     if (metadata.type === 'continuous') {
-        console.log('buckets', metadata);
         let boundaries = Array(metadata.buckets + 1).fill(0).map((arr, i) => metadata.min + i * (metadata.max - metadata.min) / metadata.buckets);
         boundaries[boundaries.length - 1] += 1; // the upper bound is exclusive
         return [
@@ -978,11 +975,11 @@ export function buildMenu(step) {
 
         // ensures temporal column is sorted
         if (problem.task === 'forecasting')
-            pipeline.push({$sort: {[`$${problem.forecastingHorizon.column}`]: 1}});
+            pipeline.push({$sort: {[`$${getOrderingVariable(problem)}`]: 1}});
 
         let projectionColumns = [...problem.tags.indexes];
         if (problem.task === 'forecasting')
-            projectionColumns.push(problem.forecastingHorizon.column, ...problem.tags.crossSection);
+            projectionColumns.push(getOrderingVariable(problem), ...problem.tags.crossSection);
 
         if (problem.splitOptions.stratified)
             projectionColumns.push(problem.targets[0]);
@@ -1004,7 +1001,7 @@ export function buildMenu(step) {
         let splitOptions = problem.splitOptions;
         let predictors = getPredictorVariables(problem);
         let targets = problem.targets;
-        let temporalName = problem.forecastingHorizon.column;
+        let temporalName = getOrderingVariable(problem);
         let crossSections = problem.tags.crossSection;
         let nominals = getNominalVariables(problem);
 
@@ -1020,14 +1017,14 @@ export function buildMenu(step) {
                 pipeline.push({$sort: {[`$${temporalName}`]: -1}});
 
             if (split === 'train') pipeline.push(
-                {$skip: Math.min(problem.forecastingHorizon.value, splitOptions.maxRecordCount)},
+                {$skip: Math.min(problem.forecastingHorizon, splitOptions.maxRecordCount)},
                 {$limit: splitOptions.maxRecordCount});
 
             if (split === 'test') pipeline.push(
-                {$limit: Math.min(problem.forecastingHorizon.value, splitOptions.maxRecordCount)});
+                {$limit: Math.min(problem.forecastingHorizon, splitOptions.maxRecordCount)});
 
             pipeline.push(
-                {[{'train': '$skip','test': '$limit'}[split]]: problem.forecastingHorizon.value});
+                {[{'train': '$skip','test': '$limit'}[split]]: problem.forecastingHorizon});
 
             if (temporalName)
                 pipeline.push({$sort: {[`$${temporalName}`]: 1}});
@@ -1392,8 +1389,8 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         [problem.tags.privileged, 'suggestedPrivilegedData'],
         [problem.tags.crossSection, 'suggestedGroupingKey'],
         [problem.tags.boundary, 'boundaryIndicator'],
-        [app.getGeographicVariables(problem), 'locationIndicator'],
-        [app.getTemporalVariables(problem), 'timeIndicator'],
+        [getGeographicVariables(problem), 'locationIndicator'],
+        [[getOrderingVariable(problem)], 'timeIndicator'],
         [problem.tags.weights, 'instanceWeight'],
         [problem.tags.indexes, 'index']
     ].forEach(pair => pair[0]
@@ -1404,5 +1401,3 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
 
     return doc;
 };
-
-window.translateDatasetDoc = translateDatasetDoc;

@@ -28,6 +28,7 @@ import hopscotch from 'hopscotch';
 import {formatVariableSummary} from '../views/VariableSummary';
 import Icon from "../../common/views/Icon";
 import * as datamart from '../datamart/Datamart';
+import {getSelectedProblem, getTransformVariables} from "../problem";
 
 
 export function menu(compoundPipeline) {
@@ -201,7 +202,7 @@ export function varList() {
             if (constraintPreferences.type === 'Expansion') {
                 variables = [...new Set([
                     ...Object.keys(app.variableSummaries),
-                    ...app.getTransformVariables(partialPipeline)
+                    ...getTransformVariables(partialPipeline)
                 ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
             }
@@ -582,15 +583,16 @@ export let setQueryUpdated = async state => {
     // if we have an edit to the problem manipulations
     if (!app.isDatasetMode) {
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         let ravenConfig = app.workspace.raven_config;
 
-        selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
+        selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
 
         app.loadProblemPreprocess(selectedProblem)
             .then(setPreprocess)
-            .then(m.redraw);
+            .then(m.redraw)
+            .then(loadDomain);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...ravenConfig.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
