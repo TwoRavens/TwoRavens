@@ -24,6 +24,7 @@ workon 2ravens;
 
 # raven_solver update
 cd tworaven_solver/
+git checkout master
 git pull
 cd ..
 # git submodule update --init --recursive
