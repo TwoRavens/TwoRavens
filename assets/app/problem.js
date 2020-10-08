@@ -224,7 +224,7 @@ export let buildDefaultProblem = problemDoc => {
 // should be equivalent to partials.app
 // loads up linearly spaced observations along domain and non-mangled levels/counts
 export let loadPredictorDomains = async problem => {
-    if (problem.levels || problem.domain) return;
+    if (problem.results.levels || problem.results.domain) return;
 
     let predictors = getPredictorVariables(problem);
     let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
@@ -244,7 +244,7 @@ export let loadPredictorDomains = async problem => {
         }), {});
 
     // {[variable]: [{'level': level, 'count': count}, ...]}
-    problem.levels = Object.keys(facets).length > 0 ? (await getData({
+    problem.results.levels = Object.keys(facets).length > 0 ? (await getData({
         method: 'aggregate',
         query: JSON.stringify([
             ...compiled,
@@ -253,12 +253,12 @@ export let loadPredictorDomains = async problem => {
     }))[0] : {};
 
     // {[variable]: *samples along domain*}
-    problem.domains = predictors.reduce((domains, predictor) => {
+    problem.results.domains = predictors.reduce((domains, predictor) => {
         let summary = variableSummaries[predictor];
         if (!summary.validCount)
             domains[predictor] = [];
         else if (categoricals.includes(predictor))
-            domains[predictor] = problem.levels[predictor].map(entry => entry.level);
+            domains[predictor] = problem.results.levels[predictor].map(entry => entry.level);
         else {
             if (variableSummaries[predictor].binary)
                 domains[predictor] = [variableSummaries[predictor].min, variableSummaries[predictor].max];
@@ -636,6 +636,9 @@ export let isProblemValid = problem => {
             alertError("Only one target variable may be specified at a time.");
             valid = false;
         }
+    }
+    if (problem.task === "classification" && app.variableSummaries[problem.targets[0]].uniqueCount > 100) {
+        alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
     }
     // this triggers the popup
     if (!valid)

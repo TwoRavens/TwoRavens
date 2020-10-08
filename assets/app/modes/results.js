@@ -34,14 +34,14 @@ import Slider from "../../common/views/slider";
 import {formatPrecision, generateID, melt, minutesToString, omniSort, remove, sample, setRecursive} from "../utils";
 import {
     getDescription,
-    getNominalVariables, getOrderingTimeUnit,
+    getNominalVariables,
+    getOrderingTimeUnit,
     getOrderingVariable,
     getPredictorVariables,
     getSelectedProblem,
     getSubtask,
     setSelectedProblem
 } from "../problem";
-import * as d3 from "d3";
 
 
 // these variables hold indices, predictors, predicted and actual data
@@ -1544,7 +1544,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         if (!resultsCache?.[problem.problemId]?.interpretationPartialsFitted?.[adapter.getSolutionId()]) return;
 
         return melt(
-            problem.domains[predictor]
+            problem.results.domains[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
                     resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()][predictor][i])),
             [predictor],
@@ -2382,8 +2382,8 @@ export let loadInterpretationPartialsFittedData = async (problem, adapter) => {
 
     // convert unlabeled string table to predictor format
     let offset = 0;
-    resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()] = Object.keys(problem.domains).reduce((out, predictor) => {
-        let nextOffset = offset + problem.domains[predictor].length;
+    resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()] = Object.keys(problem.results.domains).reduce((out, predictor) => {
+        let nextOffset = offset + problem.results.domains[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
             // for each target specified in the problem
@@ -2638,8 +2638,8 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             return;
         }
         let offset = 0;
-        let partialsData = Object.keys(problem.domains).reduce((out, predictor) => {
-            let nextOffset = offset + problem.domains[predictor].length;
+        let partialsData = Object.keys(problem.results.domains).reduce((out, predictor) => {
+            let nextOffset = offset + problem.results.domains[predictor].length;
             // for each point along the domain of the predictor
             out[predictor] = response.data.slice(offset, nextOffset)
                 // for each target specified in the problem
@@ -2772,9 +2772,10 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         {Actual: actualPoint[target]});
 
     if (!resultsCache[problem.problemId].boundaryImageColormap) {
-        resultsCache[problem.problemId].boundaryImageColormap = Object.keys(fittedPoints).reduce((map, solutionName, i) => Object.assign(map, {
-            [solutionName]: common.colorPalette[i % common.colorPalette.length]
-        }), {});
+        resultsCache[problem.problemId].boundaryImageColormap = Object.keys(fittedPoints)
+            .reduce((map, solutionName, i) => Object.assign(map, {
+                [solutionName]: common.colorPalette[i % common.colorPalette.length]
+            }), {});
     }
 
     let response;

@@ -1500,10 +1500,6 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
         })
         .catch(e => console.warn(e, 'failed to adopt predictors from first discovered problem'))
 
-    // make sure some samples/data from the dataset is available
-    selectedProblemPromise
-        .then(() => loadPredictorDomains(getSelectedProblem()));
-
     // DATAMART (disabled while NYU is default)
     // if (DISPLAY_DATAMART_UI) promiseDatasetPath.then(() => workspace.raven_config.hardManipulations.length ? getData({
     //     method: 'aggregate',
@@ -1735,8 +1731,8 @@ export let materializePartials = async problem => {
     // BUILD BASE DATASET (one record)
     let dataset = [Object.keys(variableSummaries)
         .reduce((record, variable) => Object.assign(record, {
-            [variable]: variable in problem.levels
-                ? problem.levels[variable][0].level // take most frequent level (first mode)
+            [variable]: variable in problem.results.levels
+                ? problem.results.levels[variable][0].level // take most frequent level (first mode)
                 : variableSummaries[variable].median
         }), {})];
 
@@ -1747,7 +1743,7 @@ export let materializePartials = async problem => {
         body: {
             problem: SPEC_problem(problem),
             dataset_id: problem.results.d3mDatasetId,
-            domains: problem.domains,
+            domains: problem.results.domains,
             all_variables: Object.keys(variableSummaries),
             dataset_schema: problem.results.datasetSchemas.all,
             dataset,
@@ -1800,7 +1796,7 @@ export let materializeICE = async problem => {
             all_variables: Object.keys(variableSummaries),
             dataset_id: problem.results.d3mDatasetId,
             update_roles: true,
-            domains: problem.domains,
+            domains: problem.results.domains,
             separate_variables: true,
             name: 'ICE_synthetic_'
         }
