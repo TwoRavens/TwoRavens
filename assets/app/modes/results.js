@@ -2034,8 +2034,8 @@ export let loadFittedVsActuals = async (problem, adapter) => {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
-                    collectionName: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
-                    collectionPath: splitPath,
+                    collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
+                    datafile: splitPath,
                     query: compiled,
                     produceId
                 }
@@ -2111,8 +2111,8 @@ export let loadConfusionData = async (problem, adapter) => {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
-                    collectionName: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
-                    collectionPath: splitPath,
+                    collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
+                    datafile: splitPath,
                     query: compiled,
                     produceId
                 }
