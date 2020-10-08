@@ -191,7 +191,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
                         'Size (rows)', getData(result, 'row count')
                     ],
                     getData(result, 'keywords') && [
-                        'Keywords', m(ListTags, {tags: getData(result, 'keywords'), readonly: true})
+                        'Keywords', m(ListTags, {tags: getData(result, 'keywords')})
                     ]
                 ]
             })),
@@ -331,7 +331,6 @@ export class Datamart {
                                 data: hints.map(row => ({
                                     Domain: row.domain,
                                     Keywords: m(ListTags, {
-                                        readonly: true,
                                         tags: row.keywords
                                             .filter(key => !(preferences.query.keywords || []).includes(key))
                                             .map(key => m('div', {

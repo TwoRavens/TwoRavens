@@ -210,6 +210,11 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
         *problem['predictors'],
         *problem['targets']
     })
+
+    ordering_column = problem.get('forecastingHorizon', {}).get("column")
+    if ordering_column and ordering_column not in keep_variables:
+        keep_variables.append(ordering_column)
+
     # preserve column order, and only keep variables that already existed
     keep_variables = sorted(list(i for i in keep_variables if i in all_variables), key=lambda x: all_variables.index(x))
 
@@ -226,7 +231,6 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
         'crossSection': 'suggestedGroupingKey',
         'location': 'locationIndicator',
         'boundary': 'boundaryIndicator',
-        'time': 'timeIndicator',
         'weights': 'instanceWeight',
         'privileged': 'suggestedPriviligedData'
     }
@@ -237,7 +241,8 @@ def rewrite_dataset_schema(problem, dataset_schema, all_variables, dataset_id, u
         for role_name in map_roles:
             if col_name in problem[role_name]:
                 roles.append(map_roles[role_name])
-
+        # if col_name == ordering_column and 'timeIndicator' not in col_schema['role']:
+        #     col_schema['role'].append('timeIndicator')
         return roles
 
     def update_col_schema(i, col_name):
@@ -295,13 +300,13 @@ def split_dataset(configuration, workspace):
 
     # WARNING: dates are assumed to be monotonically increasing
     #    this is to make it possible to support arbitrarily large datasets
-    if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
-        time_column = problem['time'][0]
+    if problem.get('taskType') == 'FORECASTING' and problem['forecastingHorizon']['column']:
+        time_column = problem['forecastingHorizon']['column']
         dtypes[time_column] = str
         for cross_section in problem.get('crossSection', []):
             dtypes[cross_section] = str
 
-        time_format = problem.get('time_format')
+        time_format = problem.get('time_format', {}).get(time_column)
 
         cross_section_date_limits = {}
         time_buffer = []
@@ -485,8 +490,8 @@ def split_dataset(configuration, workspace):
                     horizon = 10
 
                 if cross_section_date_limits and inferred_freq:
-                    time_format = problem.get('time_format')
-                    time_column = problem['time'][0]
+                    time_column = problem['forecastingHorizon']['column']
+                    time_format = problem.get('time_format', {}).get(time_column)
 
                     cross_section_max_count = int(max_count / len(cross_section_date_limits))
                     horizon = min(cross_section_max_count, horizon)
@@ -574,7 +579,8 @@ def split_dataset(configuration, workspace):
         if len(mode):
             return mode[0]
     # aggregate so that each cross section contains one observation at each time point
-    if problem.get('taskType') == 'FORECASTING' and problem.get('time'):
+    ordering_column = problem.get('forecastingHorizon', {}).get('column')
+    if problem.get('taskType') == 'FORECASTING' and ordering_column:
         for split_name in dataset_paths:
 
             # data no longer needs to be chunked, it should be small enough (unless there are a large number of dupe records)
@@ -584,7 +590,7 @@ def split_dataset(configuration, workspace):
 
             key_order = dataframe.columns.values
 
-            group_keys = [problem['time'][0], *problem.get('crossSection', [])]
+            group_keys = [ordering_column, *problem.get('crossSection', [])]
             other_keys = [i for i in dataframe.columns.values if i not in group_keys]
 
             grouped = dataframe.groupby(group_keys)

@@ -2,8 +2,9 @@ import * as common from '../../common/common'
 import m from 'mithril';
 import PlotBars from "./views/PlotBars";
 import ButtonRadio from "../../common/views/ButtonRadio";
-import {alignmentData, formattingData, omniSort} from "../app";
+import {alignmentData, formattingData} from "../app";
 import TextField from "../../common/views/TextField";
+import {omniSort} from "../utils";
 
 // the text that separates any two observations in the manual selection text field
 let delimiter = ' ';

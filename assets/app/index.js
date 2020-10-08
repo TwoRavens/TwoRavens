@@ -11,14 +11,14 @@ import 'core-js';
 import 'regenerator-runtime/runtime';
 
 import * as app from './app';
+import {alertWarn, buildCsvPath, getAbstractPipeline} from './app';
 import * as dataset from "./modes/dataset";
+import {datasetPreferences} from "./modes/dataset";
 import * as model from './modes/model';
 import * as explore from './modes/explore';
 import * as results from './modes/results';
 
 import * as manipulate from './manipulations/manipulate';
-
-import * as solverWrapped from "./solvers/wrapped";
 import * as solverD3M from "./solvers/d3m";
 
 import * as common from '../common/common';
@@ -33,8 +33,7 @@ import ModalVanilla from "../common/views/ModalVanilla";
 import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
-import Popper from '../common/views/Popper';
-import {ModalDatamart} from "./datamart/Datamart";
+import {Datamart, ModalDatamart} from "./datamart/Datamart";
 
 import Icon from '../common/views/Icon';
 import ModalWorkspace from "./views/ModalWorkspace";
@@ -42,20 +41,16 @@ import ModalWorkspace from "./views/ModalWorkspace";
 // ALTERNATE WINDOWS
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
-
-import {getSelectedProblem, newWorkspaceMessage} from "./app";
-import {buildCsvUrl} from "./app";
-import {alertWarn} from "./app";
 import ButtonLadda from "./views/ButtonLadda";
-import {datasetPreferences} from "./modes/dataset";
 import Body_Deploy from "./views/Body_Deploy";
+import {getSelectedProblem} from "./problem";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
 export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
 export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
 export let linkURL = url => m('a', {href: url, style: {color: 'blue'}, }, url);
-export let linkURLwithText = (url, text) => m('a', {href: url, style: {color: 'blue'}, }, text);
+export let linkURLwithText = (url, text) => m('a', {href: url, style: {color: 'blue'}, target: '_blank'}, text);
 export let preformatted = text => m('pre', text);
 export let abbreviate = (text, length) => text.length > length
     ? m('div', {'data-toggle': 'tooltip', title: text}, text.substring(0, length - 3).trim() + '...')
@@ -64,7 +59,7 @@ export let abbreviate = (text, length) => text.length > length
 
 class Body {
     oninit() {
-        app.setRightTab('Manipulate');
+        app.setRightTab('Problem');
         app.setSelectedMode('model');
         m.route.set('/model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
@@ -91,7 +86,7 @@ class Body {
 
         let overflow = app.isExploreMode ? 'auto' : 'hidden';
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         let drawForceDiagram = (app.isModelMode || app.isExploreMode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
         let forceData = drawForceDiagram && model.buildForceData(selectedProblem);
@@ -146,7 +141,7 @@ class Body {
             linkInfo.newWin === true ? window.open(linkInfo.url) : window.location.href = linkInfo.url;
         }
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         let createBreadcrumb = () => {
             let path = [
@@ -201,13 +196,13 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.isResultsMode && selectedProblem && Object.keys(selectedProblem?.results?.solutions?.d3m || {}).length > 0 && m(ButtonLadda, {
-                id: 'btnEndSession',
-                class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
-                onclick: solverD3M.endSession,
-                activeLadda: app.taskPreferences.isSubmittingPipelines,
-                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            }, 'Mark Problem Finished'),
+            // app.isResultsMode && selectedProblem && Object.keys(selectedProblem?.results?.solutions?.d3m || {}).length > 0 && m(ButtonLadda, {
+            //     id: 'btnEndSession',
+            //     class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
+            //     onclick: solverD3M.endSession,
+            //     activeLadda: app.taskPreferences.isSubmittingPipelines,
+            //     style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            // }, 'Mark Problem Finished'),
 
             m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -239,14 +234,13 @@ class Body {
     }
 
     peekTable() {
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
         if (!selectedProblem) return;
 
-        let pipeline = [
-            ...app.workspace.raven_config.hardManipulations,
-            ...(app.isModelMode ? selectedProblem.manipulations : [])
-        ];
-        if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
+        let abstractQuery = app.isModelMode
+            ? getAbstractPipeline(selectedProblem)
+            : [...app.workspace.raven_config.hardManipulations];
+        if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(abstractQuery);
 
         return m('div#previewTable', {
                 style: {
@@ -266,7 +260,7 @@ class Body {
 
                     let container = document.querySelector('#previewTable');
                     let scrollHeight = container.scrollHeight - container.scrollTop;
-                    if (scrollHeight < container.offsetHeight + 100) app.updatePeek(pipeline);
+                    if (scrollHeight < container.offsetHeight + 100) app.updatePeek(abstractQuery);
                 }
             },
             m('#horizontalDrag', {
@@ -432,7 +426,7 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildCsvUrl(problem, manipulate.constraintMenu.step);
+                                    let datasetUrl = await buildCsvPath(problem, manipulate.constraintMenu.step);
                                     if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl)
                                 }
@@ -445,7 +439,7 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildCsvUrl(problem);
+                                    let datasetUrl = await buildCsvPath(problem);
                                     if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl);
                                 }
@@ -580,7 +574,7 @@ class Body {
                                 id: 'btnModalSaveAsNewWorkspace',
                                 class: 'btn-sm btn-primary',
                                 onclick: _ => {
-                                    console.log('save clicked...');
+                                    // console.log('save clicked...');
 
                                     // clear any error messages
                                     app.setNewWorkspaceMessageSuccess('Attempting to save...')
@@ -605,7 +599,7 @@ class Body {
                 m('h4', 'Organize all models/datasets'),
                 m(Button, {
                     onclick: () => {
-                        let problem = app.getSelectedProblem();
+                        let problem = getSelectedProblem();
                         m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
                             body: results.getSummaryData(problem)
@@ -622,7 +616,7 @@ class Body {
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: async () => {
-                        this.TA2Post = JSON.stringify(await solverD3M.getSolverSpecification(app.getSelectedProblem()));
+                        this.TA2Post = JSON.stringify(await solverD3M.getSolverSpecification(getSelectedProblem()));
                         m.redraw()
                     }
                 }, 'Prepare'),
@@ -659,7 +653,7 @@ class Body {
                 ),
                 m('div#solutions', {style: {margin: '1em'}},
                     'Solutions',
-                    m(TextField, {value: JSON.stringify(app.getSelectedProblem().solutions.d3m)}))
+                    m(TextField, {value: JSON.stringify(getSelectedProblem().solutions.d3m)}))
             )
         ]
     }
@@ -829,7 +823,7 @@ class Body {
     }
 
     static manipulations() {
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
         return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate')) && manipulate.menu([
             ...app.workspace.raven_config.hardManipulations,
             ...(app.isModelMode ? selectedProblem.manipulations : [])

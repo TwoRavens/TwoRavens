@@ -10,7 +10,7 @@
       "type": "quantitative"
     },
     "tooltip": [
-      {"field": "tworavensX", "type": "quantitative", "bin": true},
+      {"field": "tworavensX", "type": "nominal"},
       {"aggregate": "count", "field": "tworavensX", "type": "quantitative"}
     ]
   }

@@ -1,7 +1,7 @@
 import m from 'mithril';
 
 import * as app from "../app";
-import {alertError, buildDatasetUrl, resetPeek, workspace} from "../app";
+import {alertError, buildDatasetPath, resetPeek, workspace} from "../app";
 import * as plots from "../plots";
 
 import * as solverWrapped from '../solvers/wrapped';
@@ -31,13 +31,69 @@ import TextField from "../../common/views/TextField";
 
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import Slider from "../../common/views/slider";
-import * as manipulate from "../manipulations/manipulate";
+import {formatPrecision, generateID, melt, minutesToString, omniSort, remove, sample, setRecursive} from "../utils";
+import {
+    getDescription,
+    getNominalVariables, getOrderingTimeUnit,
+    getOrderingVariable,
+    getPredictorVariables,
+    getSelectedProblem,
+    getSubtask,
+    setSelectedProblem
+} from "../problem";
+import * as d3 from "d3";
+
+
+// these variables hold indices, predictors, predicted and actual data
+export let resultsCache = {};
+let buildProblemResultsCache = () => ({
+    // specific to problem, solution and target, all solutions stored for one target
+    fittedVsActual: {},
+    fittedVsActualLoading: {},
+
+    // specific to problem, solution and target, all solutions stored for one target
+    confusion: {},
+    confusionLoading: {},
+
+    // cached data for forecasting, per data split
+    dataSample: {},
+    dataSampleLoading: {},
+    dataSampleIndices: {},
+    fitted: {},
+    fittedLoading: {},
+
+    // cached data is specific to the split
+    boundaryImagePathsLoading: {},
+    boundaryImagePaths: {},
+
+    // specific to solution and target, one solution stored for one target (tends to be larger)
+    interpretationEFD: undefined,
+    interpretationEFDLoading: false,
+
+    // this has melted data for both actual and fitted values
+    // specific to solution and target, all solutions stored for one target
+    interpretationPartialsFitted: {},
+    interpretationPartialsFittedLoading: {},
+
+    // this has melted data for both actual and fitted values
+    // specific to combo of solution, predictor and target
+    interpretationICEFitted: {},
+    interpretationICEFittedLoading: {},
+
+    id: {
+        query: [],
+        solutionId: undefined,
+        dataSplit: undefined,
+        target: undefined
+    }
+});
+window.resultsCache = resultsCache;
 
 let getSystemAdapters = problem => {
 
     // Available systems
     //  Note: h2o - requires Java
-    let solverCandidateNames = app.applicableSolvers[problem.task][app.getSubtask(problem)];
+    let solverCandidateNames = app.applicableSolvers[problem.task][getSubtask(problem)];
 
     // only show solvers that are capable of solving this type of problem
     let solverSystemNames = TA2_WRAPPED_SOLVERS // set in templates/index.html
@@ -63,7 +119,7 @@ export let leftpanel = () => {
 
     let ravenConfig = app.workspace.raven_config;
 
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
     if (!selectedProblem.results) selectedProblem.results = {};
 
     let comparableProblems = [selectedProblem, ...getComparableProblems(selectedProblem)];
@@ -126,7 +182,7 @@ export let leftpanel = () => {
                                 selectedProblem.searchOptions.timeBoundSearch = minutes;
                             }
                         })),
-                        app.minutesToString(selectedProblem.searchOptions.timeBoundSearch || 15),
+                        minutesToString(selectedProblem.searchOptions.timeBoundSearch || 15),
                         // m('br'), m('br'),
                         //
                         // m('label', 'Maximum record count per data split.'),
@@ -285,7 +341,7 @@ export let leftpanel = () => {
                             ]),
                         headers: ['problem', 'targets', 'search ID', 'state', 'stop'],
                         activeRow: app.workspace.raven_config.selectedProblem,
-                        onclick: app.setSelectedProblem
+                        onclick: setSelectedProblem
                     }),
                     Object.keys(otherSearches).length > 0 && [
                         m('h4', 'Beyond Workspace'),
@@ -340,18 +396,20 @@ export class CanvasSolutions {
     predictionSummary(problem, adapters) {
 
         let response = [];
+        let plotData;
 
         if (problem.task === 'objectDetection') {
+            if (adapters.length !== 1) return
             // this gets the data sample loaded, so that calls to get images will begin
-            adapters[0].getDataSample(resultsPreferences.target, resultsPreferences.dataSplit);
+            adapters[0].getColumnSample(resultsPreferences.target, resultsPreferences.dataSplit);
             return [
                 m(PlotVegaLite, {
                     specification: {
                         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                         "height": 100,
                         "data": {
-                            "values": Object.keys(resultsData[problem.problemId].boundaryImageColormap || []).map(solutionName => ({
-                                "color": resultsData[problem.problemId].boundaryImageColormap[solutionName],
+                            "values": Object.keys(resultsCache[problem.problemId].boundaryImageColormap || []).map(solutionName => ({
+                                "color": resultsCache[problem.problemId].boundaryImageColormap[solutionName],
                                 "solution": solutionName
                             }))
                         },
@@ -364,7 +422,7 @@ export class CanvasSolutions {
                     }
                 }),
                 m(Paginated, {
-                    data: resultsData[problem.problemId].dataSample[resultsPreferences.dataSplit] || [],
+                    data: resultsCache[problem.problemId].dataSample[resultsPreferences.dataSplit],
                     makePage: dataSample => dataSample
                         .map(point => ({
                             point,
@@ -397,13 +455,13 @@ export class CanvasSolutions {
             let plotSplits = resultsPreferences.dataSplit === 'all' ? ['train', 'test'] : [resultsPreferences.dataSplit];
 
             let actualSummary = plotSplits.reduce((out, split) => Object.assign(out, {
-                [split]: adapters[0].getDataSample(resultsPreferences.target, split)
+                [split]: adapters[0].getColumnSample(resultsPreferences.target, split)
             }), {});
 
             let timeSummary = plotSplits.reduce((out, split) => Object.assign(out, {
-                [split]: adapters[0].getDataSample(app.getTemporalVariables(problem)[0] ?? 'd3mIndex', split)
+                [split]: adapters[0].getColumnSample(getOrderingVariable(problem), split)
             }), {});
-            let predictedVariables = app.getPredictorVariables(problem);
+            let predictedVariables = getPredictorVariables(problem);
             let crossSectionals = problem.tags.crossSection
                 .filter(crossSection => predictedVariables.includes(crossSection))
 
@@ -418,7 +476,7 @@ export class CanvasSolutions {
 
                     // construct an intermediate {[columnName]: values} object
                     let crossSectionData = crossSectionals.reduce((out, columnName) => Object.assign(out, {
-                        [columnName]: adapters[0].getDataSample(columnName, split)
+                        [columnName]: adapters[0].getColumnSample(columnName, split)
                     }), {});
 
                     // concat together the values in the columns for each of the cross sections, for each observation
@@ -435,12 +493,12 @@ export class CanvasSolutions {
             }), {solutionId: adapter.getSolutionId()}));
 
 
-            let xName = 'Time';
+            let xName = getOrderingVariable(problem); // time
             let yName = resultsPreferences.target;
             let groupName = 'Solution Name';
             let dataSplit = 'Data Split';
             let crossSectionName = 'Cross Section';
-            let title = 'Forecasted vs. Actuals for predicting ' + resultsPreferences.target;
+            let title = 'Forecasts for ' + resultsPreferences.target;
 
             let plotData = plotSplits
                 // for each split
@@ -451,7 +509,7 @@ export class CanvasSolutions {
                         [groupName]: 'Actual',
                         [yName]: actualSummary[split][i],
                         [crossSectionName]: crossSectionSummary[split][i],
-                        [xName]: timeSummary[split][i] // new Date(Date.parse(timeSummary[split][i]))
+                        [xName]: String(timeSummary[split][i]) // new Date(Date.parse(timeSummary[split][i]))
                     })),
                     ...forecastSummaries
                         // for each solutionId
@@ -463,7 +521,7 @@ export class CanvasSolutions {
                                 [groupName]: forecastSummary.solutionId,
                                 [yName]: forecastSummary[split][i],
                                 [crossSectionName]: crossSectionSummary[split][i],
-                                [xName]: timeSummary[split][i] // new Date(Date.parse(timeSummary[split][i]))
+                                [xName]: String(timeSummary[split][i]) // new Date(Date.parse(timeSummary[split][i]))
                             })))
                 ])
                 .filter(point => problem.tags.crossSection.length === 0
@@ -507,14 +565,13 @@ export class CanvasSolutions {
                     }))
                 ],
                 m('div', {
-                    style: {'height': '500px'}
+                    style: {'height': '500px', 'max-width': '600px'}
                 }, m(PlotVegaLite, {
                     specification: (resultsPreferences.timeSeriesPlotConfig === 'Confidence interval'
                         ? plots.vegaLiteForecastConfidence : plots.vegaLiteForecast)(
                         plotData, xName, yName, dataSplit,
-                        groupName, crossSectionName, title),
+                        groupName, crossSectionName, title, getOrderingTimeUnit(problem))
                 })))
-
         }
 
         if (problem.task.toLowerCase().includes('regression')) {
@@ -528,20 +585,40 @@ export class CanvasSolutions {
                 common.loader('PredictionSummary')
             ];
 
-            let yName = 'Fitted Values';
-            let xName = 'Actual Values';
+            let yName = 'Fitted Value';
+            let xName = 'Actual Value';
             let countName = 'count';
             let groupName = 'Solution Name';
             let title = 'Fitted vs. Actuals for predicting ' + resultsPreferences.target;
 
             summaries.forEach(summary => summary.fittedVsActual.map(entry => entry[groupName] = summary.name));
 
+            plotData = summaries.flatMap(summary => summary.fittedVsActual);
             response.push(m('div', {
-                style: {'height': '500px'}
+                style: {'height': '500px', 'max-width': '700px'}
             }, m(PlotVegaLite, {
                 specification: plots.vegaLiteScatter(
-                    summaries.flatMap(summary => summary.fittedVsActual),
-                    xName, yName, groupName, countName, title),
+                    plotData,
+                    xName, yName, groupName, countName, title, summaries.length),
+                listeners: {
+                    "panner": selection => {
+                        if (Object.keys(selection).length > 0) {
+                            resultsPreferences.predictionSummarySelection = {
+                                type: 'FittedVsActuals',
+                                indices: plotData.filter(point =>
+                                    selection['Fitted Value'][0] <= point['Fitted Value']
+                                    && point['Fitted Value'] <= selection['Fitted Value'][1]
+                                    && selection['Actual Value'][0] <= point['Actual Value']
+                                    && point['Actual Value'] <= selection['Actual Value'][1])
+                                    .flatMap(point => point.d3mIndex)
+                            };
+                        } else {
+                            delete resultsPreferences.predictionSummarySelection
+                        }
+                        resultsPreferences.predictionSummaryPage = 0
+                        m.redraw()
+                    }
+                }
             })))
         }
 
@@ -575,7 +652,7 @@ export class CanvasSolutions {
             if (this.confusionMatrixSolution === undefined || !summaries.find(summary => summary.name === this.confusionMatrixSolution))
                 this.confusionMatrixSolution = summaries[0].name;
 
-            return [
+            response.push(...[
                 m('div[style=margin-bottom:1em]', 'Set the confusion matrix factor to view a confusion matrix where all other factors/levels are collapsed into a single class.',
                     m('br'),
                     m('label#confusionFactorLabel', 'Active factor/level: '),
@@ -635,15 +712,65 @@ export class CanvasSolutions {
                                             summary.confusionMatrix.data,
                                             summary.confusionMatrix.classes,
                                             'Actual', 'Predicted', 'count',
-                                            `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`)
+                                            `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`),
+                                        listeners: {
+                                            "selector": selection => {
+                                                if (Object.keys(selection).length > 0) {
+                                                    // TODO: this is hacky- the _vgsid_ refers to the 1-based index in the input data
+                                                    resultsPreferences.predictionSummarySelection = {
+                                                        type: 'ConfusionMatrix',
+                                                        indices: selection._vgsid_.map(idx => summary.confusionMatrix.data[idx - 1])
+                                                            .flatMap(point => point.d3mIndex)
+                                                    };
+                                                } else {
+                                                    delete resultsPreferences.predictionSummarySelection
+                                                }
+                                                resultsPreferences.predictionSummaryPage = 0
+                                                m.redraw()
+                                            }
+                                        }
                                     }))))
                                 : 'Too few classes for confusion matrix! There is a data mismatch.'
                                 : 'Too many classes for confusion matrix!'
                         ]
                     }))
                 })
-            ]
+            ])
         }
+
+        let indices = resultsPreferences?.predictionSummarySelection?.indices;
+        if (indices) {
+            // variable for data that will be shown to user
+            let tableData;
+            let observationLimit = 50;
+            // data sampled from the original dataset
+            let predictorData;
+            if (problem.task === 'forecasting') {
+                indices = new Set(indices);
+                predictorData = adapters[0].getDataSample(resultsPreferences.dataSplit)
+                    .filter(point => indices.has(point.d3mIndex));
+            } else {
+                predictorData = adapters[0].getDataSample(resultsPreferences.dataSplit, indices.slice(0, observationLimit));
+                indices = new Set(indices);
+            }
+
+            if (predictorData) {
+                tableData = predictorData.filter(point => indices.has(point.d3mIndex))
+            } else {
+                // deduplicate indices (if multiple solutions selected)
+                tableData = [...indices].map(d3mIndex => ({d3mIndex}));
+            }
+
+            if (indices.size > observationLimit) response.push(italicize(`Only the first ${observationLimit} observations have been collected.`))
+            response.push(m('div[style=overflow:auto;padding-bottom:1em]', m(Paginated, {
+                data: tableData,
+                makePage: data => m(Table, {data}),
+                limit: 10,
+                page: resultsPreferences?.predictionSummaryPage || 0,
+                setPage: value => resultsPreferences.predictionSummaryPage = value
+            })))
+        }
+
         return response;
     };
 
@@ -733,7 +860,7 @@ export class CanvasSolutions {
         let interpretationContent = [];
 
         if (resultsPreferences.interpretationMode === 'EFD') {
-            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
+            let isCategorical = getNominalVariables(problem).includes(resultsPreferences.target);
             interpretationContent.push(m('div[style=margin: 1em]',
                 italicize("Empirical first differences"), ` is a tool to interpret the influence of variables on the model, from the empirical distribution of the data. ` +
                 `The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. ` +
@@ -747,7 +874,7 @@ export class CanvasSolutions {
                 }), {});
 
                 // reassign content if some data is not undefined
-                let sortedPredictors = Object.keys(resultsData[problem.problemId]?.importanceScores
+                let sortedPredictors = Object.keys(resultsCache[problem.problemId]?.importanceScores
                     ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] ?? {});
 
                 let plotVariables = (sortedPredictors.length > 0 ? sortedPredictors.reverse() : Object.keys(interpretationData))
@@ -766,7 +893,7 @@ export class CanvasSolutions {
                             id: 'resultsFactorDropdown',
                             items: [
                                 'undefined',
-                                ...new Set(Object.values(interpretationData)[0].map(point => point.level).sort(app.omniSort))
+                                ...new Set(Object.values(interpretationData)[0].map(point => point.level).sort(omniSort))
                             ],
                             activeItem: resultsPreferences.factor,
                             onclickChild: setResultsFactor,
@@ -800,7 +927,7 @@ export class CanvasSolutions {
         }
 
         if (adapters.length === 1 && resultsPreferences.interpretationMode === 'Partials') {
-            let interpretationPartialsData = app.getPredictorVariables(problem).map(predictor => ({
+            let interpretationPartialsData = getPredictorVariables(problem).map(predictor => ({
                 predictor,
                 data: adapter.getInterpretationPartials(predictor)
             })).filter(predictorEntry => predictorEntry.data);
@@ -828,13 +955,13 @@ export class CanvasSolutions {
             ];
         }
         if (adapters.length === 1 && resultsPreferences.interpretationMode === 'PDP/ICE') {
-            let isCategorical = app.getNominalVariables(problem).includes(resultsPreferences.target);
-            let sortedPredictors = Object.keys(resultsData[problem.problemId]?.importanceScores
+            let isCategorical = getNominalVariables(problem).includes(resultsPreferences.target);
+            let sortedPredictors = Object.keys(resultsCache[problem.problemId]?.importanceScores
                 ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] ?? {});
 
             let predictors = sortedPredictors.length > 0
                 ? sortedPredictors.reverse()
-                : app.getPredictorVariables(problem);
+                : getPredictorVariables(problem);
 
             interpretationContent = [
                 m('div[style=margin: 1em]',
@@ -1073,8 +1200,8 @@ export class CanvasSolutions {
             headers: ['Variable', 'Data'],
             data: [
                 ['Dependent Variables', problem.targets],
-                ['Predictors', app.getPredictorVariables(problem)],
-                ['Description', preformatted(app.getDescription(problem))],
+                ['Predictors', getPredictorVariables(problem)],
+                ['Description', preformatted(getDescription(problem))],
                 ['Task', problem.task]
             ]
         }));
@@ -1268,7 +1395,7 @@ export class CanvasSolutions {
             .map(target => m('div',
                 m('h5', target),
                 m(Table, {
-                    data: ['intercept', ...app.getPredictorVariables(problem)].map((predictor, i) => [
+                    data: ['intercept', ...getPredictorVariables(problem)].map((predictor, i) => [
                         predictor,
                         firstSolution.models[target].coefficients[i]
                     ])
@@ -1281,7 +1408,7 @@ export class CanvasSolutions {
                     endColor: '#5770b0',
                     xLabel: '',
                     yLabel: '',
-                    classes: ['intercept', ...app.getPredictorVariables(problem)],
+                    classes: ['intercept', ...getPredictorVariables(problem)],
                     margin: {left: 10, right: 10, top: 50, bottom: 10},
                     attrsAll: {style: {height: '600px'}}
                 })));
@@ -1293,7 +1420,7 @@ export class CanvasSolutions {
         }, coefficientsContents);
 
 
-        let prepareANOVA = table => [...app.getPredictorVariables(problem), 'Residuals']
+        let prepareANOVA = table => [...getPredictorVariables(problem), 'Residuals']
             .map(predictor => table.find(row => row._row === predictor))
             .map(row => ({
                 'Predictor': row._row,
@@ -1357,6 +1484,16 @@ export let getSolutionAdapter = (problem, solution) => ({
     getDescription: () => solution.description,
     getSystemId: () => solution.systemId,
     getSolutionId: () => solution.solutionId || 'unknown',
+    getIsLoading: isSelected => {
+        let cache = resultsCache?.[problem.problemId];
+        return isSelected && (cache?.interpretationEFDLoading
+            || Object.values(cache?.interpretationICEFittedLoading ?? {}).some(_=>_))
+            || [
+            'confusionLoading', 'boundaryImagePathsLoading', 'dataSampleLoading',
+            'fittedVsActualLoading', 'interpretationPartialsFittedLoading', 'importanceScoresLoading'
+        ].some(dataSource => cache?.[dataSource]?.[solution.solutionId])
+            || Object.values(cache?.fittedLoading?.[solution.solutionId] ?? {}).some(_=>_)
+    },
     getDataPointer: (dataSplit, predict_type = 'RAW') => {
         let produce = (solution.produce || [])
             .find(produce =>
@@ -1367,22 +1504,26 @@ export let getSolutionAdapter = (problem, solution) => ({
     getFittedVsActuals: target => {
         let adapter = getSolutionAdapter(problem, solution);
         loadFittedVsActuals(problem, adapter);
-        return resultsData?.[problem.problemId]?.fittedVsActual?.[solution.solutionId]?.[target]
+        return resultsCache?.[problem.problemId]?.fittedVsActual?.[solution.solutionId]?.[target]
     },
     getConfusionMatrix: target => {
         let adapter = getSolutionAdapter(problem, solution);
         loadConfusionData(problem, adapter);
-        return resultsData?.[problem.problemId]?.confusion?.[solution.solutionId]?.[target]
+        return resultsCache?.[problem.problemId]?.confusion?.[solution.solutionId]?.[target]
     },
-    getDataSample: (target, split) => {
-        loadDataSample(problem, split);
-        let sample = resultsData?.[problem.problemId]?.dataSample?.[split];
+    getColumnSample: (target, split, indices) => {
+        loadDataSample(problem, split, indices);
+        let sample = resultsCache?.[problem.problemId]?.dataSample?.[split]
         if (sample) return sample.map(obs => obs[target])
+    },
+    getDataSample: (split, indices) => {
+        loadDataSample(problem, split, indices);
+        return resultsCache?.[problem.problemId]?.dataSample?.[split]
     },
     getFitted: (target, split) => {
         let adapter = getSolutionAdapter(problem, solution);
         loadFittedData(problem, adapter, split);
-        let fitted = resultsData?.[problem.problemId].fitted?.[adapter.getSolutionId()]?.[split];
+        let fitted = resultsCache?.[problem.problemId].fitted?.[adapter.getSolutionId()]?.[split];
         if (fitted) return fitted.map(obs => obs[target]);
     },
     getScore: metric => {
@@ -1394,18 +1535,18 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadInterpretationEFDData(problem, adapter);
 
-        return resultsData?.[problem.problemId]?.interpretationEFD?.[predictor]
+        return resultsCache?.[problem.problemId]?.interpretationEFD?.[predictor]
     },
     getInterpretationPartials: predictor => {
         let adapter = getSolutionAdapter(problem, solution);
         loadInterpretationPartialsFittedData(problem, adapter);
 
-        if (!resultsData?.[problem.problemId]?.interpretationPartialsFitted?.[adapter.getSolutionId()]) return;
+        if (!resultsCache?.[problem.problemId]?.interpretationPartialsFitted?.[adapter.getSolutionId()]) return;
 
-        return app.melt(
+        return melt(
             problem.domains[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
-                    resultsData[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()][predictor][i])),
+                    resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()][predictor][i])),
             [predictor],
             valueLabel, variableLabel);
     },
@@ -1413,7 +1554,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         let adapter = getSolutionAdapter(problem, solution);
         loadInterpretationICEFittedData(problem, adapter, predictor);
 
-        return resultsData?.[problem.problemId]?.interpretationICEFitted?.[predictor]
+        return resultsCache?.[problem.problemId]?.interpretationICEFitted?.[predictor]
     },
     getImportanceScore: (target, mode) => {
         let adapter = getSolutionAdapter(problem, solution);
@@ -1421,7 +1562,7 @@ export let getSolutionAdapter = (problem, solution) => ({
         mode = 'EFD'
         loadImportanceScore(problem, adapter, mode);
 
-        return resultsData?.[problem.problemId]?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.[target];
+        return resultsCache?.[problem.problemId]?.importanceScores?.[adapter.getSolutionId()]?.[mode]?.[target];
     },
     // get the bounding box image for the selected problem's target variable, in the desired split, at the given index
     getObjectBoundaryImagePath: (target, split, index) => {
@@ -1430,7 +1571,7 @@ export let getSolutionAdapter = (problem, solution) => ({
             .map(solution => getSolutionAdapter(problem, solution));
 
         loadObjectBoundaryImagePath(problem, adapters, target, split, index);
-        return resultsData?.[problem.problemId]?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)];
+        return resultsCache?.[problem.problemId]?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)];
     }
 });
 
@@ -1460,17 +1601,27 @@ let getSolutionTable = (problems, systemId) => {
         return solutions.map(solution => getSolutionAdapter(problem, solution))
     });
 
+    let activeAdapters = new Set(adapters
+        .filter(adapter => (adapter.getProblem().results.selectedSolutions[adapter.getSystemId()]
+            || '').includes(adapter.getSolutionId())));
+
     // metrics shown in the table are whatever was selected in the current problem's scoring configuration
-    let problem = app.getSelectedProblem();
+    let problem = getSelectedProblem();
     let data = adapters
         // extract data for each row (identification and scores)
         .map(adapter => Object.assign(
-            {adapter, id: String(adapter.getSolutionId()),},
+            {
+                adapter,
+                '': adapter.getIsLoading(activeAdapters.has(adapter))
+                    ? common.loaderSmall("solutionTable")
+                    : m('[style=width:20px]'),
+                id: String(adapter.getSolutionId())
+            },
             problems.length > 1 ? {problem: adapter.getProblem().problemId} : {},
             {solver: adapter.getSystemId(), solution: adapter.getName()},
             [problem.metric, ...problem.metrics]
                 .reduce((out, metric) => Object.assign(out, {
-                    [metric]: app.formatPrecision(adapter.getScore(metric))
+                    [metric]: formatPrecision(adapter.getScore(metric))
                 }), {})));
 
     return m(Table, {
@@ -1479,8 +1630,7 @@ let getSolutionTable = (problems, systemId) => {
         sortHeader: resultsPreferences.selectedMetric,
         setSortHeader: header => resultsPreferences.selectedMetric = header,
         sortDescending: !reverseSet.includes(resultsPreferences.selectedMetric),
-        activeRow: new Set(adapters
-            .filter(adapter => (adapter.getProblem().results.selectedSolutions[adapter.getSystemId()] || '').includes(adapter.getSolutionId()))),
+        activeRow: activeAdapters,
         onclick: adapter => {
             let problem = adapter.getProblem();
             problem.results.userSelectedSolution = true;
@@ -1535,7 +1685,7 @@ window.resultsPreferences = resultsPreferences;
 let setResultsFactor = factor => resultsPreferences.factor = factor === 'undefined' ? undefined : factor;
 let setInterpretationPage = page => {
     resultsPreferences.interpretationPage = page;
-    let cache = resultsData[app.getSelectedProblem().problemId];
+    let cache = resultsCache[getSelectedProblem().problemId];
     if (cache) cache.interpretationICEFitted = {};
 }
 
@@ -1580,15 +1730,15 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
     if (!(systemId in problem.results.selectedSolutions)) problem.results.selectedSolutions[systemId] = [];
 
     // TODO: find a better place for this/code pattern. Unsetting this here is ugly
-    if (problem.problemId in resultsData) {
-        resultsData[problem.problemId].interpretationICEFitted = {};
-        resultsData[problem.problemId].interpretationICEFittedLoading = {};
+    if (problem.problemId in resultsCache) {
+        resultsCache[problem.problemId].interpretationICEFitted = {};
+        resultsCache[problem.problemId].interpretationICEFittedLoading = {};
     }
 
     if (modelComparison) {
 
         problem.results.selectedSolutions[systemId].includes(solutionId)
-            ? app.remove(problem.results.selectedSolutions[systemId], solutionId)
+            ? remove(problem.results.selectedSolutions[systemId], solutionId)
             : problem.results.selectedSolutions[systemId].push(solutionId);
 
         // set behavioral logging
@@ -1686,7 +1836,7 @@ export let setProblemComparison = state => problemComparison = state;
 // When enabled, multiple pipelineTable pipelineIDs may be selected at once
 export let modelComparison = false;
 export let setModelComparison = state => {
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
     let selectedSolutions = getSelectedSolutions(selectedProblem);
 
     modelComparison = state;
@@ -1771,7 +1921,7 @@ export let showFinalPipelineModal = false;
 export let setShowFinalPipelineModal = state => showFinalPipelineModal = state;
 
 export let finalPipelineModal = () => {
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
 
     let chosenSolution = getSolutions(selectedProblem, 'd3m').find(solution => solution.chosen);
     if (!chosenSolution) return;
@@ -1804,50 +1954,6 @@ let customDatasetCount = 0;
 let getCustomDatasetId = () => 'dataset ' + customDatasetCount++;
 export let customDatasets = {};
 
-// these variables hold indices, predictors, predicted and actual data
-export let resultsData = {};
-let buildProblemResultsData = () => ({
-    // specific to problem, solution and target, all solutions stored for one target
-    fittedVsActual: {},
-    fittedVsActualLoading: {},
-
-    // specific to problem, solution and target, all solutions stored for one target
-    confusion: {},
-    confusionLoading: {},
-
-    // cached data for forecasting, per data split
-    dataSample: {},
-    dataSampleLoading: {},
-    fitted: {},
-    fittedLoading: {},
-
-    // cached data is specific to the split
-    boundaryImagePathsLoading: {},
-    boundaryImagePaths: {},
-
-    // specific to solution and target, one solution stored for one target (tends to be larger)
-    interpretationEFD: undefined,
-    interpretationEFDLoading: false,
-
-    // this has melted data for both actual and fitted values
-    // specific to solution and target, all solutions stored for one target
-    interpretationPartialsFitted: {},
-    interpretationPartialsFittedLoading: {},
-
-    // this has melted data for both actual and fitted values
-    // specific to combo of solution, predictor and target
-    interpretationICEFitted: {},
-    interpretationICEFittedLoading: {},
-
-    id: {
-        query: [],
-        solutionID: undefined,
-        dataSplit: undefined,
-        target: undefined
-    }
-});
-window.resultsData = resultsData;
-
 // TODO: just need to add menu element, some debug probably needed
 // manipulations to apply to data after joining predictions
 export let resultsQuery = [];
@@ -1856,18 +1962,18 @@ export let loadProblemData = async problem => {
 
     let problemId = problem.problemId;
     // create a default problem
-    if (!(problemId in resultsData))
-        resultsData[problemId] = buildProblemResultsData();
+    if (!(problemId in resultsCache))
+        resultsCache[problemId] = buildProblemResultsCache();
 
     // complete reset if problemId, query, dataSplit or target changed
-    if (JSON.stringify(resultsData[problemId].id.query) === JSON.stringify(resultsQuery) &&
-        resultsData[problemId].id.dataSplit === resultsPreferences.dataSplit &&
-        resultsData[problemId].id.target === resultsPreferences.target)
+    if (JSON.stringify(resultsCache[problemId].id.query) === JSON.stringify(resultsQuery) &&
+        resultsCache[problemId].id.dataSplit === resultsPreferences.dataSplit &&
+        resultsCache[problemId].id.target === resultsPreferences.target)
         return;
 
     // complete reset of problem's cache
-    resultsData[problemId] = buildProblemResultsData();
-    resultsData[problemId].id = {
+    resultsCache[problemId] = buildProblemResultsCache();
+    resultsCache[problemId].id = {
         query: resultsQuery,
         solutionId: undefined,
         dataSplit: resultsPreferences.dataSplit,
@@ -1878,14 +1984,14 @@ export let loadProblemData = async problem => {
 export let loadSolutionData = async (problem, adapter) => {
     await loadProblemData(problem);
 
-    if (resultsData[problem.problemId].id.solutionID === adapter.getSolutionId())
+    if (resultsCache[problem.problemId].id.solutionId === adapter.getSolutionId())
         return;
 
-    resultsData[problem.problemId].id.solutionID = adapter.getSolutionId();
+    resultsCache[problem.problemId].id.solutionId = adapter.getSolutionId();
 
     // solution specific, one solution stored
-    resultsData[problem.problemId].interpretationEFD = undefined;
-    resultsData[problem.problemId].interpretationEFDLoading = false;
+    resultsCache[problem.problemId].interpretationEFD = undefined;
+    resultsCache[problem.problemId].interpretationEFDLoading = false;
 };
 
 export let loadFittedVsActuals = async (problem, adapter) => {
@@ -1902,26 +2008,25 @@ export let loadFittedVsActuals = async (problem, adapter) => {
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()])
+    if (resultsCache[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()])
         return;
 
     // don't load if already loaded
-    if (adapter.getSolutionId() in resultsData[problem.problemId].fittedVsActual)
+    if (adapter.getSolutionId() in resultsCache[problem.problemId].fittedVsActual)
         return;
 
     // begin blocking additional requests to load
-    resultsData[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()] = true;
+    resultsCache[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()] = true;
 
     // how to construct actual values after manipulation
-    let compiled = queryMongo.buildPipeline([
-        ...app.workspace.raven_config.hardManipulations,
-        ...problem.manipulations,
-        ...resultsQuery
-    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+    let compiled = queryMongo.buildPipeline(
+        [...resultsQuery],
+        app.workspace.raven_config.variablesInitial)['pipeline'];
 
-    let produceId = app.generateID(dataPointer);
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let produceId = generateID(dataPointer);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
     let response;
+    let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
             method: 'POST',
@@ -1929,8 +2034,8 @@ export let loadFittedVsActuals = async (problem, adapter) => {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
-                    collectionName: app.workspace.d3m_config.name,
-                    collectionPath: app.workspace.datasetPath,
+                    collectionName: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
+                    collectionPath: splitPath,
                     query: compiled,
                     produceId
                 }
@@ -1951,11 +2056,11 @@ export let loadFittedVsActuals = async (problem, adapter) => {
     // don't accept response if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    resultsData[problem.problemId].fittedVsActual[adapter.getSolutionId()] = response.data;
-    resultsData[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()] = false;
+    resultsCache[problem.problemId].fittedVsActual[adapter.getSolutionId()] = response.data;
+    resultsCache[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()] = false;
 
     // apply state changes to the page
     m.redraw();
@@ -1977,28 +2082,28 @@ export let loadConfusionData = async (problem, adapter) => {
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].confusionLoading[adapter.getSolutionId()])
+    if (resultsCache[problem.problemId].confusionLoading[adapter.getSolutionId()])
         return;
 
     // don't load if already loaded
-    if (adapter.getSolutionId() in resultsData[problem.problemId].confusion)
+    if (adapter.getSolutionId() in resultsCache[problem.problemId].confusion)
         return;
 
     // begin blocking additional requests to load
-    resultsData[problem.problemId].confusionLoading[adapter.getSolutionId()] = true;
+    resultsCache[problem.problemId].confusionLoading[adapter.getSolutionId()] = true;
 
     console.log(adapter.getSolutionId())
 
     // how to construct actual values after manipulation
-    let compiled = queryMongo.buildPipeline([
-        ...app.workspace.raven_config.hardManipulations,
-        ...problem.manipulations,
-        ...resultsQuery
-    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+    let compiled = queryMongo.buildPipeline(
+        [...resultsQuery],
+        app.workspace.raven_config.variablesInitial)['pipeline'];
 
-    let produceId = app.generateID(dataPointer);
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let produceId = generateID(dataPointer);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
     let response;
+
+    let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
             method: 'POST',
@@ -2006,8 +2111,8 @@ export let loadConfusionData = async (problem, adapter) => {
                 data_pointer: dataPointer,
                 metadata: {
                     targets: problem.targets,
-                    collectionName: app.workspace.d3m_config.name,
-                    collectionPath: app.workspace.datasetPath,
+                    collectionName: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
+                    collectionPath: splitPath,
                     query: compiled,
                     produceId
                 }
@@ -2028,13 +2133,13 @@ export let loadConfusionData = async (problem, adapter) => {
     // don't accept response if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
     Object.keys(response.data).forEach(variable => {
         if (response.data[variable].classes.length <= 15) {
             response.data[variable].classes = response.data[variable].classes
-                .sort(app.omniSort);
+                .sort(omniSort);
 
             let extraPoints = [];
             response.data[variable].classes.forEach(levelActual =>
@@ -2047,35 +2152,49 @@ export let loadConfusionData = async (problem, adapter) => {
         interpretConfusionMatrix(response.data[variable].data)
     });
 
-    resultsData[problem.problemId].confusion[adapter.getSolutionId()] = response.data;
-    resultsData[problem.problemId].confusionLoading[adapter.getSolutionId()] = false;
+    resultsCache[problem.problemId].confusion[adapter.getSolutionId()] = response.data;
+    resultsCache[problem.problemId].confusionLoading[adapter.getSolutionId()] = false;
 
     // apply state changes to the page
     m.redraw();
 };
 
-export let loadDataSample = async (problem, split) => {
+export let loadDataSample = async (problem, split, indices) => {
 
     // reset if id is different
     await loadProblemData(problem);
 
+    let dataSampleIndices = JSON.stringify(indices);
+    if (resultsCache[problem.problemId].dataSampleIndices?.[split] !== dataSampleIndices) {
+        setRecursive(resultsCache[problem.problemId], [
+            ['dataSampleIndices', {}],
+            [split, dataSampleIndices]])
+        setRecursive(resultsCache[problem.problemId], [
+            ['dataSample', {}],
+            [split, undefined]])
+        setRecursive(resultsCache[problem.problemId], [
+            ['dataSampleLoading', {}],
+            [split, false]])
+    }
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].dataSampleLoading[split])
+    if (resultsCache[problem.problemId].dataSampleLoading[split])
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId].dataSample[split])
+    if (resultsCache[problem.problemId].dataSample[split])
         return;
 
     // begin blocking additional requests to load
-    resultsData[problem.problemId].dataSampleLoading[split] = true;
+    resultsCache[problem.problemId].dataSampleLoading[split] = true;
 
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
+
+    let splitVariables = [...new Set([
+        ...problem.predictors, ...problem.targets, ...problem.tags.indexes
+    ])];
 
     let compiled = queryMongo.buildPipeline(
         [
-            ...app.workspace.raven_config.hardManipulations,
-            ...problem.manipulations,
             problem.task === 'objectDetection' && {
                 type: 'aggregate',
                 measuresUnit: problem.tags.indexes.map(index => ({"subset": "discrete", "column": index})),
@@ -2086,6 +2205,19 @@ export let loadDataSample = async (problem, split) => {
                     {'subset': 'first', 'column': 'image'}
                 ]
             },
+            indices && {
+                type: "subset",
+                abstractQuery: [
+                    {
+                        children: indices.map(index => ({value: index})),
+                        column: "d3mIndex",
+                        negate: "false",
+                        operation: "and",
+                        subset: "discrete",
+                        type: "rule"
+                    }
+                ]
+            },
             {
                 type: 'menu',
                 metadata: {
@@ -2093,34 +2225,37 @@ export let loadDataSample = async (problem, split) => {
                     sample: resultsPreferences.recordLimit
                 }
             },
-        ].filter(_ => _),
-        app.workspace.raven_config.variablesInitial)['pipeline'];
+        ].filter(_ => _), splitVariables)['pipeline'];
 
     let response;
+    let splitPath = problem.results.datasetPaths[split];
     try {
         response = await app.getData({
             method: 'aggregate',
-            datafile: problem.results.datasetPaths[split],
-            collection_name: `${app.workspace.d3m_config.name}_${problem.problemId}_${split}`,
-            reload: true,
+            datafile: splitPath,
+            collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
+            reload: false,
             query: JSON.stringify(compiled)
         })
     } catch (err) {
         console.warn("retrieve data sample error");
         console.log(err);
-        app.alertWarn('Dependent variables have not been loaded. Some plots will not load.')
+        app.alertWarn('Data sample from splits has failed to load. Some plots will not load.')
         return;
     }
 
     // don't accept if query changed
-    if (JSON.stringify(resultsData[problem.problemId].id.query) !== tempQuery)
+    if (JSON.stringify(resultsCache[problem.problemId].id.query) !== tempQuery)
         return;
 
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    resultsData[problem.problemId].dataSample[split] = response;
-    resultsData[problem.problemId].dataSampleLoading[split] = false;
+    if (resultsCache[problem.problemId].dataSampleIndices[split] !== dataSampleIndices)
+        return;
+
+    resultsCache[problem.problemId].dataSample[split] = response;
+    resultsCache[problem.problemId].dataSampleLoading[split] = false;
 
     m.redraw()
 };
@@ -2135,31 +2270,31 @@ export let loadFittedData = async (problem, adapter, split) => {
         return;
 
     // indices from dataSample must be loaded first
-    if (!(split in resultsData[problem.problemId].dataSample))
+    if (!(split in resultsCache[problem.problemId].dataSample))
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].fittedLoading?.[adapter.getSolutionId()]?.[split])
+    if (resultsCache[problem.problemId].fittedLoading?.[adapter.getSolutionId()]?.[split])
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId].fitted?.[adapter.getSolutionId()]?.[split])
+    if (resultsCache[problem.problemId].fitted?.[adapter.getSolutionId()]?.[split])
         return;
 
     // begin blocking additional requests to load
-    app.setRecursive(resultsData[problem.problemId].fittedLoading, [
+    setRecursive(resultsCache[problem.problemId].fittedLoading, [
         [adapter.getSolutionId(), {}],
         [split, true]
     ]);
 
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
     let response;
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
             method: 'POST',
             body: {
                 data_pointer: dataPointer,
-                indices: resultsData[problem.problemId].dataSample[split].map(obs => obs.d3mIndex)
+                indices: resultsCache[problem.problemId].dataSample[split].map(obs => obs.d3mIndex)
             }
         });
 
@@ -2177,11 +2312,11 @@ export let loadFittedData = async (problem, adapter, split) => {
     // don't accept response if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
     // attempt to parse all data into floats
-    let nominals = app.getNominalVariables(problem);
+    let nominals = getNominalVariables(problem);
     response.data.forEach(row => problem.targets
         .filter(target => !nominals.includes(target))
         .forEach(target => {
@@ -2191,9 +2326,9 @@ export let loadFittedData = async (problem, adapter, split) => {
             if (!isNaN(parsed)) row[target] = parsed
         }));
 
-    app.setRecursive(resultsData[problem.problemId].fitted,
+    setRecursive(resultsCache[problem.problemId].fitted,
         [[adapter.getSolutionId(), {}], [split, response.data]]);
-    app.setRecursive(resultsData[problem.problemId].fittedLoading,
+    setRecursive(resultsCache[problem.problemId].fittedLoading,
         [[adapter.getSolutionId(), {}], [split, false]]);
 
     // apply state changes to the page
@@ -2211,17 +2346,17 @@ export let loadInterpretationPartialsFittedData = async (problem, adapter) => {
     if (!dataPointer) return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].interpretationPartialsFittedLoading[adapter.getSolutionId()])
+    if (resultsCache[problem.problemId].interpretationPartialsFittedLoading[adapter.getSolutionId()])
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()])
+    if (resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()])
         return;
 
     // begin blocking additional requests to load
-    resultsData[problem.problemId].interpretationPartialsFittedLoading[adapter.getSolutionId()] = true;
+    resultsCache[problem.problemId].interpretationPartialsFittedLoading[adapter.getSolutionId()] = true;
 
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
     let response;
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-data`, {
@@ -2242,12 +2377,12 @@ export let loadInterpretationPartialsFittedData = async (problem, adapter) => {
     // don't accept if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
     // convert unlabeled string table to predictor format
     let offset = 0;
-    resultsData[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()] = Object.keys(problem.domains).reduce((out, predictor) => {
+    resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()] = Object.keys(problem.domains).reduce((out, predictor) => {
         let nextOffset = offset + problem.domains[predictor].length;
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
@@ -2258,7 +2393,7 @@ export let loadInterpretationPartialsFittedData = async (problem, adapter) => {
         offset = nextOffset;
         return out;
     }, {});
-    resultsData[problem.problemId].interpretationPartialsFittedLoading[adapter.getSolutionId()] = false;
+    resultsCache[problem.problemId].interpretationPartialsFittedLoading[adapter.getSolutionId()] = false;
 
     m.redraw();
 };
@@ -2275,27 +2410,26 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].interpretationEFDLoading)
+    if (resultsCache[problem.problemId].interpretationEFDLoading)
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId].interpretationEFD)
+    if (resultsCache[problem.problemId].interpretationEFD)
         return;
 
     // begin blocking additional requests to load
-    resultsData[problem.problemId].interpretationEFDLoading = true;
+    resultsCache[problem.problemId].interpretationEFDLoading = true;
 
     // how to construct actual values after manipulation
-    let compiled = queryMongo.buildPipeline([
-        ...app.workspace.raven_config.hardManipulations,
-        ...problem.manipulations,
-        ...resultsQuery
-    ], app.workspace.raven_config.variablesInitial)['pipeline'];
+    let compiled = queryMongo.buildPipeline(
+        [...resultsQuery],
+        app.workspace.raven_config.variablesInitial)['pipeline'];
 
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
-    let produceId = app.generateID(dataPointer);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
+    let produceId = generateID(dataPointer);
     let response;
 
+    let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
             method: 'POST',
@@ -2304,10 +2438,10 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
                 metadata: {
                     produceId,
                     targets: problem.targets,
-                    predictors: app.getPredictorVariables(problem),
-                    categoricals: app.getNominalVariables(problem),
-                    collectionName: app.workspace.d3m_config.name,
-                    collectionPath: app.workspace.datasetPath,
+                    predictors: getPredictorVariables(problem),
+                    categoricals: getNominalVariables(problem),
+                    datafile: splitPath, // location of the dataset csv
+                    collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
                     query: compiled
                 }
             }
@@ -2325,16 +2459,16 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
     // don't accept if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    let nominals = app.getNominalVariables(problem);
+    let nominals = getNominalVariables(problem);
 
     // melt predictor data once, opposed to on every redraw
     Object.keys(response.data)
-        .forEach(predictor => response.data[predictor] = app.melt(
+        .forEach(predictor => response.data[predictor] = melt(
             nominals.includes(predictor)
-                ? app.sample(response.data[predictor], 20, false, true)
+                ? sample(response.data[predictor], 20, false, true)
                 : response.data[predictor],
             ["predictor"], valueLabel, variableLabel));
 
@@ -2346,8 +2480,8 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
                 point.level = point[variableLabel].split('-').pop();
             }));
 
-    resultsData[problem.problemId].interpretationEFD = response.data;
-    resultsData[problem.problemId].interpretationEFDLoading = false;
+    resultsCache[problem.problemId].interpretationEFD = response.data;
+    resultsCache[problem.problemId].interpretationEFDLoading = false;
 
     // apply state changes to the page
     m.redraw();
@@ -2367,17 +2501,17 @@ export let loadInterpretationICEFittedData = async (problem, adapter, predictor)
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId].interpretationICEFittedLoading[predictor])
+    if (resultsCache[problem.problemId].interpretationICEFittedLoading[predictor])
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId].interpretationICEFitted[predictor])
+    if (resultsCache[problem.problemId].interpretationICEFitted[predictor])
         return;
 
     // begin blocking additional requests to load
-    resultsData[problem.problemId].interpretationICEFittedLoading[predictor] = true;
+    resultsCache[problem.problemId].interpretationICEFittedLoading[predictor] = true;
 
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
 
     let response;
     try {
@@ -2402,11 +2536,11 @@ export let loadInterpretationICEFittedData = async (problem, adapter, predictor)
     // don't accept if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    resultsData[problem.problemId].interpretationICEFitted[predictor] = response.data;
-    resultsData[problem.problemId].interpretationICEFittedLoading[predictor] = false;
+    resultsCache[problem.problemId].interpretationICEFitted[predictor] = response.data;
+    resultsCache[problem.problemId].interpretationICEFittedLoading[predictor] = false;
 
     // apply state changes to the page
     m.redraw();
@@ -2425,7 +2559,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     if (mode === 'Partials')
         dataPointers = {'Partials': adapter.getDataPointer('partials')};
     if (mode === 'PDP/ICE')
-        dataPointers = app.getPredictorVariables(problem).reduce((out, predictor) => Object.assign(out, {
+        dataPointers = getPredictorVariables(problem).reduce((out, predictor) => Object.assign(out, {
             [predictor]: adapter.getDataPointer('ICE_synthetic_' + predictor)
         }), {});
 
@@ -2434,32 +2568,31 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         return;
 
     // don't load if systems are already in loading state
-    if (resultsData[problem.problemId]?.importanceScoresLoading?.[adapter.getSolutionId()]?.[mode])
+    if (resultsCache[problem.problemId]?.importanceScoresLoading?.[adapter.getSolutionId()]?.[mode])
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId]?.importanceScores?.[adapter.getSolutionId()]?.[mode])
+    if (resultsCache[problem.problemId]?.importanceScores?.[adapter.getSolutionId()]?.[mode])
         return;
 
     // begin blocking additional requests to load
-    app.setRecursive(resultsData, [
+    setRecursive(resultsCache, [
         ['importanceScoresLoading', {}],
         [adapter.getSolutionId(), {}],
         [mode, true]]);
 
-    let tempQuery = JSON.stringify(resultsData[problem.problemId].id.query);
+    let tempQuery = JSON.stringify(resultsCache[problem.problemId].id.query);
     let response;
     if (mode === 'EFD') {
         // how to construct actual values after manipulation
         let dataPointer = dataPointers['EFD'];
-        let compiled = queryMongo.buildPipeline([
-            ...app.workspace.raven_config.hardManipulations,
-            ...problem.manipulations,
-            ...resultsQuery
-        ], app.workspace.raven_config.variablesInitial)['pipeline'];
+        let compiled = queryMongo.buildPipeline(
+            [...resultsQuery],
+            app.workspace.raven_config.variablesInitial)['pipeline'];
 
-        let produceId = app.generateID(dataPointer);
+        let produceId = generateID(dataPointer);
 
+        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
         try {
             response = await m.request(D3M_SVC_URL + `/retrieve-output-EFD-data`, {
                 method: 'POST',
@@ -2468,10 +2601,10 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                     metadata: {
                         produceId,
                         targets: problem.targets,
-                        predictors: app.getPredictorVariables(problem),
-                        categoricals: app.getNominalVariables(problem),
-                        collectionName: app.workspace.d3m_config.name,
-                        collectionPath: app.workspace.datasetPath,
+                        predictors: getPredictorVariables(problem),
+                        categoricals: getNominalVariables(problem),
+                        datafile: splitPath, // location of the dataset csv
+                        collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
                         query: compiled
                     }
                 }
@@ -2557,7 +2690,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     // don't accept if query changed
     if (JSON.stringify(resultsQuery) !== tempQuery)
         return;
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
     let responseImportance = await m.request(ROOK_SVC_URL + 'variableImportance.app', {
@@ -2565,7 +2698,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         body: {
             efdData: response.data,
             targets: problem.targets,
-            categoricals: app.getNominalVariables(problem),
+            categoricals: getNominalVariables(problem),
             task: problem.task
         }
     });
@@ -2584,7 +2717,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             }), {}));
 
     // save importance scores into cache
-    app.setRecursive(resultsData[problem.problemId], [
+    setRecursive(resultsCache[problem.problemId], [
         ['importanceScores', {}],
         [adapter.getSolutionId(), {}],
         [mode, responseImportance.data.scores]
@@ -2597,10 +2730,10 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     adapters.forEach(adapter => loadFittedData(problem, adapter, split));
 
     // reset image paths if the fitted data for one of the problems is not loaded
-    if (!adapters.every(adapter => adapter.getSolutionId() in resultsData[problem.problemId].fitted)) {
-        resultsData[problem.problemId].boundaryImagePaths = {};
-        resultsData[problem.problemId].boundaryImageColormap = undefined;
-        resultsData[problem.problemId].boundaryImagePathsLoading = {};
+    if (!adapters.every(adapter => adapter.getSolutionId() in resultsCache[problem.problemId].fitted)) {
+        resultsCache[problem.problemId].boundaryImagePaths = {};
+        resultsCache[problem.problemId].boundaryImageColormap = undefined;
+        resultsCache[problem.problemId].boundaryImagePathsLoading = {};
         return;
     }
 
@@ -2609,28 +2742,28 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         return;
 
     // don't load if image is already being loaded
-    if (resultsData[problem.problemId]?.boundaryImagePathsLoading?.[target]?.[split]?.[JSON.stringify(index)])
+    if (resultsCache[problem.problemId]?.boundaryImagePathsLoading?.[target]?.[split]?.[JSON.stringify(index)])
         return;
 
     // don't load if already loaded
-    if (resultsData[problem.problemId]?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)])
+    if (resultsCache[problem.problemId]?.boundaryImagePaths?.[target]?.[split]?.[JSON.stringify(index)])
         return;
 
     // begin blocking additional requests to load
-    app.setRecursive(resultsData[problem.problemId], [
+    setRecursive(resultsCache[problem.problemId], [
         ['boundaryImagePathsLoading', {}],
         [target, {}],
         [split, {}],
         [JSON.stringify(index), true]
     ]);
 
-    let actualPoint = resultsData[problem.problemId].dataSample[split]
+    let actualPoint = resultsCache[problem.problemId].dataSample[split]
         .find(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]));
 
     // collect all fitted data points at the given index for each solution
     // an object of {Actual: [boundary1, ...], solutionId: [boundary1, boundary2], ...}
     let fittedPoints = adapters.reduce((fittedPoints, adapter) => Object.assign(fittedPoints, {
-            [adapter.getSolutionId()]: resultsData[problem.problemId].fitted[adapter.getSolutionId()][split]
+            [adapter.getSolutionId()]: resultsCache[problem.problemId].fitted[adapter.getSolutionId()][split]
                 // all multi-indexes match
                 .filter(point => Object.entries(index).every(pair => point[pair[0]] === pair[1]))
                 // turn all matched points into an array of boundaries
@@ -2638,8 +2771,8 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         }),
         {Actual: actualPoint[target]});
 
-    if (!resultsData[problem.problemId].boundaryImageColormap) {
-        resultsData[problem.problemId].boundaryImageColormap = Object.keys(fittedPoints).reduce((map, solutionName, i) => Object.assign(map, {
+    if (!resultsCache[problem.problemId].boundaryImageColormap) {
+        resultsCache[problem.problemId].boundaryImageColormap = Object.keys(fittedPoints).reduce((map, solutionName, i) => Object.assign(map, {
             [solutionName]: common.colorPalette[i % common.colorPalette.length]
         }), {});
     }
@@ -2651,7 +2784,7 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
             body: {
                 file_path: problem.results.datasetSchemaPaths[split].replace('datasetDoc.json', '') + '/media/' + actualPoint.image,
                 borders: Object.keys(fittedPoints).reduce((borders, solutionName) => Object.assign({
-                    [resultsData[problem.problemId].boundaryImageColormap[solutionName].replace('#', '')]: fittedPoints[solutionName]
+                    [resultsCache[problem.problemId].boundaryImageColormap[solutionName].replace('#', '')]: fittedPoints[solutionName]
                 }), {})
             }
         });
@@ -2667,17 +2800,17 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         return;
     }
 
-    if (resultsPreferences.dataSplit !== resultsData[problem.problemId].id.dataSplit)
+    if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    app.setRecursive(resultsData[problem.problemId], [
+    setRecursive(resultsCache[problem.problemId], [
         ['boundaryImagePaths', {}],
         [target, {}],
         [split, {}],
         [JSON.stringify(index), response.data]
     ]);
 
-    app.setRecursive(resultsData[problem.problemId], [
+    setRecursive(resultsCache[problem.problemId], [
         ['boundaryImagePathsLoading', {}],
         [target, {}],
         [split, {}],
@@ -2727,12 +2860,13 @@ export let findProblem = data => {
 };
 
 export let prepareResultsDatasets = async (problem, solverId) => {
+    if (!problem.results.selectedSolutions) return
     // set d3m dataset id to unique value if not defined
     problem.results.d3mDatasetId = problem.results.d3mDatasetId
-        || workspace.datasetDoc.about.datasetID + '_' + Math.abs(app.generateID(String(Math.random())));
+        || workspace.datasetDoc.about.datasetID + '_' + Math.abs(generateID(String(Math.random())));
 
     problem.results.selectedSolutions[solverId] = problem.results.selectedSolutions[solverId] || [];
-    app.setRecursive(problem, [['results', {}], ['solverState', {}], [solverId, {}], ['thinking', true]]);
+    setRecursive(problem, [['results', {}], ['solverState', {}], [solverId, {}], ['thinking', true]]);
 
     problem.results.solverState[solverId].message = 'applying manipulations to data';
     m.redraw();
@@ -2809,7 +2943,7 @@ export let uploadForModelRun = async (file, name, problem) => {
         datasetPath: response.data.new_dataset_doc_path.replace('datasetDoc.json', 'tables/learningData.csv')
     };
 
-    let manipulatedInfo = await buildDatasetUrl(
+    let manipulatedInfo = await buildDatasetPath(
         problem, undefined, customDataset.datasetPath,
         `${workspace.d3m_config.name}_${customDataset.name}`,
         customDataset.datasetDoc);

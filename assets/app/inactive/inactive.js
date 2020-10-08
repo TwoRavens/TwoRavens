@@ -2,8 +2,7 @@ import {
     alertError,
     alertWarn,
     allResults,
-    byId,
-    cdb, d3mMetrics, d3mTaskSubtype, d3mTaskType,
+    d3mMetrics, d3mTaskSubtype, d3mTaskType,
     default as app,
     del,
     downloadIncomplete, getPredictorVariables, getResultsProblem,
@@ -25,7 +24,7 @@ import {
     GRPC_ProduceSolutionRequest,
     GRPC_ScoreSolutionRequest
 } from "./solvers/d3m";
-import {elem, fadeIn, fadeOut, fadeTo, remove, setAttrs} from "./utils";
+import {byId, cdb, elem, fadeIn, fadeOut, fadeTo, remove, setAttrs} from "./utils";
 import * as scatterPE from "./vega-schemas/scatterPE";
 import vegaEmbed from "vega-embed";
 import {locationReload, setModal} from "../common/views/Modal";
@@ -3428,4 +3427,48 @@ export function bars(node, div, priv) {
         .attr("text-anchor", "middle")
         .style("font-size", "12px")
         .text(node.name);
+}
+
+export function elem(selectors) {
+    return document.querySelector(selectors);
+}
+
+export function fadeIn(selectors) {
+    return $(selectors).fadeIn();
+}
+
+export function fadeOut(selectors, duration) {
+    return $(selectors).fadeOut(duration);
+}
+
+export function fadeTo(selectors, duration, complete) {
+    return $(selectors).fadeTo(duration, complete);
+}
+
+export function remove(selectors) {
+    let el = elem(selectors);
+    el.parentNode.removeChild(el);
+}
+
+export function setAttrs(selectors, attrs) {
+    let el = elem(selectors);
+    Object.entries(attrs).forEach(([x, y]) => el.setAttribute(x, y));
+};
+
+export function trigger(selectors, event) {
+    let evt = document.createEvent('HTMLEvents');
+    evt.initEvent(event, true, false);
+    elem(selectors).dispatchEvent(evt);
+}
+
+
+/*
+ *  Check if a nested key exists.
+ *  example:   isKeyDefined(selectedSolution, 'pipeline.id')
+ *   returns object or "undefined"
+ */
+export const isKeyDefined = (obj, key_str) =>{
+    return key_str.split(".").reduce(function(o, x) {
+        return (typeof o == "undefined" || o === null) ? o : o[x];
+    }, obj);
 }

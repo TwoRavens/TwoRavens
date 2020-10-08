@@ -1,6 +1,5 @@
 import m from "mithril";
 import * as d3 from 'd3';
-
 import * as app from '../app';
 
 import aggbar from '../vega-schemas/aggbar.json';
@@ -15,7 +14,6 @@ import box2d from '../vega-schemas/box2d.json';
 import bubbleqqq from '../vega-schemas/trivariate/bubbleqqq.json';
 import bubbletri from '../vega-schemas/trivariate/bubbletri.json';
 import densityschema from '../vega-schemas/univariate/density'
-import densitycdfschema from '../vega-schemas/univariate/densitycdf'
 import dot from '../vega-schemas/univariate/dot.json';
 import dotdashqqn from '../vega-schemas/trivariate/dotdashqqn.json';
 import facetbox from '../vega-schemas/trivariate/facetbox.json';
@@ -60,6 +58,11 @@ import {bold, italicize} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
 import TextField from "../../common/views/TextField";
 import PlotVegaLiteWrapper from "../views/PlotVegaLiteWrapper";
+import {remove, toggle} from "../utils";
+import {getNominalVariables, getPredictorVariables, getSelectedProblem, setSelectedProblem} from "../problem";
+import {getAbstractPipeline} from "../app";
+
+window.timeParse = d3.timeParse;
 
 // adds some padding, sets the size so the content fills nicely in the page
 let wrapCanvas = (...contents) => m('div#canvasExplore', {
@@ -76,7 +79,7 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
 let get_node_label = problemOrVariableName => {
     if (explorePreferences.mode === 'problems') {
         let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[problemOrVariableName];
-        let predictorVariables = app.getPredictorVariables(exploreProblem);
+        let predictorVariables = getPredictorVariables(exploreProblem);
 
         if (exploreProblem.targets.length === 0)
             return
@@ -117,7 +120,7 @@ export class CanvasExplore {
             explorePreferences.go = false;
         }
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         if (!explorePreferences.go) return [wrapCanvas(
             m(ButtonRadio, {
@@ -182,7 +185,7 @@ export class CanvasExplore {
                         : explorePreferences.variables.includes(x);
 
                     let node = app.variableSummaries[x];
-                    let kind = node && node.temporal ? 'temporal' :
+                    let kind = node && node.timeUnit ? 'temporal' :
                         node && node.geographic ? 'geographic' :
                             null;
 
@@ -194,12 +197,12 @@ export class CanvasExplore {
                     let tile = m('span#exploreNodeBox', {
                             onclick: () => {
                                 if (explorePreferences.mode === 'problems') {
-                                    app.setSelectedProblem(x);
+                                    setSelectedProblem(x);
                                     explorePreferences.variables = [x];
                                     return;
                                 }
 
-                                app.toggle(explorePreferences.variables, x);
+                                toggle(explorePreferences.variables, x);
                             },
                             style: {
                                 // border: '1px solid rgba(0, 0, 0, .2)',
@@ -251,19 +254,18 @@ export class CanvasExplore {
         ),
             explorePreferences.mode === 'custom' && m('div', {style: {
                     position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
-                }}, m(PlotVegaLiteWrapper, {
-                getData: app.getData,
-                variables: Object.keys(app.variableSummaries),
-                nominals: new Set(app.getNominalVariables(selectedProblem)),
-                configuration: customConfiguration,
-                abstractQuery: [
-                    ...app.workspace.raven_config.hardManipulations || [],
-                    ...selectedProblem.manipulations || []
-                ],
-                summaries: app.variableSummaries,
-                sampleSize: parseInt(explorePreferences.recordLimit),
-                variablesInitial: app.workspace.raven_config.variablesInitial
-            }))
+                }},
+                m(PlotVegaLiteWrapper, {
+                    getData: app.getData,
+                    variables: Object.keys(app.variableSummaries),
+                    nominals: new Set(getNominalVariables(selectedProblem)),
+                    configuration: customConfiguration,
+                    abstractQuery: getAbstractPipeline(selectedProblem, true),
+                    summaries: app.variableSummaries,
+                    sampleSize: parseInt(explorePreferences.recordLimit),
+                    variablesInitial: app.workspace.raven_config.variablesInitial
+                })
+            )
         ];
 
         let getPlotBar = nodeSummaries => {
@@ -304,7 +306,7 @@ export class CanvasExplore {
         let getPlot = () => {
 
             if (explorePreferences.mode === "problems") {
-                let predictors = app.getPredictorVariables(selectedProblem);
+                let predictors = getPredictorVariables(selectedProblem);
                 if (predictors.length === 0)
                     return "No predictors are selected. Please select some predictors."
 
@@ -412,7 +414,7 @@ export let getRelevantPlots = (nodeSummaries, mode) => {
     // MIKE: the plot returned by inferPlotType is always moved to the front
     let finalOrder = Object.values(plotGroups).flatMap(_ => _);
     let bestPlot = inferPlotType(nodeSummaries)[0];
-    app.remove(finalOrder, bestPlot);
+    remove(finalOrder, bestPlot);
     finalOrder.unshift(bestPlot);
     return finalOrder;
 };
@@ -553,7 +555,7 @@ let inferPlotType = (nodeSummaries, schemaName) => {
         }[natures], natures]
     }
 
-    let isTemporal = nodeSummaries[0].temporal || app.getTemporalVariables(app.getSelectedProblem()).includes(nodeSummaries[0].name);
+    let isTemporal = !!nodeSummaries[0].timeUnit;
 
     if (nodeSummaries.length === 2) {
         if (isTemporal)
@@ -686,12 +688,13 @@ let fillVegaSchema = (schema, data, flip) => {
     return JSON.parse(stringified);
 };
 
+let defaultRecordLimit = 5000;
 let customConfiguration = {};
 window.customConfiguration = customConfiguration;
 export let explorePreferences = {
     go: false,
     mode: 'variables',
-    recordLimit: 5000,
+    recordLimit: defaultRecordLimit,
     schemaName: undefined,
     variate: undefined,
     variables: [],
@@ -718,12 +721,9 @@ function getPlotSpecification() {
 
 export async function loadPlotSpecification() {
 
-    let problem = app.getSelectedProblem();
+    let problem = getSelectedProblem();
     let pendingId = JSON.stringify(Object.assign({
-        manipulations: [
-            ...app.workspace.raven_config.hardManipulations || [],
-            ...problem.manipulations || []
-        ]
+        manipulations: getAbstractPipeline(problem, true)
     }, explorePreferences));
 
     // data is already current
@@ -752,13 +752,13 @@ export async function loadPlotSpecification() {
     let facetSummaries;
 
     if (mode === 'problems') {
-        if (explorePreferences.pageLength * (explorePreferences.page - 1) > app.getPredictorVariables(problem).length)
+        if (explorePreferences.pageLength * (explorePreferences.page - 1) > getPredictorVariables(problem).length)
             explorePreferences.page = 0
 
         if (!(explorePreferences.target in problem.targets))
             explorePreferences.target = problem.targets[0];
 
-        facetSummaries = app.getPredictorVariables(problem).map(predictor => [
+        facetSummaries = getPredictorVariables(problem).map(predictor => [
             app.variableSummaries[predictor],
             app.variableSummaries[explorePreferences.target]
         ]).splice(explorePreferences.page * explorePreferences.pageLength, explorePreferences.pageLength).filter(_ => _)
@@ -776,15 +776,18 @@ export async function loadPlotSpecification() {
         let nodeNames = nodeSummaries.map(i => i?.name);
 
         let compiled = queryMongo.buildPipeline(
-            [...app.workspace.raven_config.hardManipulations || [], ...problem.manipulations || [], {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    variables: nodeNames,
-                    dropNA: nodeNames,
-                    sample: parseInt(explorePreferences.recordLimit) || 5000
+            [
+                ...getAbstractPipeline(selectedProblem, true),
+                {
+                    type: 'menu',
+                    metadata: {
+                        type: 'data',
+                        variables: nodeNames,
+                        dropNA: nodeNames,
+                        sample: parseInt(explorePreferences.recordLimit) || defaultRecordLimit
+                    }
                 }
-            }],
+            ],
             app.workspace.raven_config.variablesInitial)['pipeline'];
 
         let dataPathSampled = await app.getData({
@@ -805,15 +808,17 @@ export async function loadPlotSpecification() {
         console.log(compiled, json);
         if (plotType[0].includes('timeseries')) {
             let plotdata = JSON.parse(json.plotdata[0]);
-            let temporalVariables = app.getTemporalVariables(app.getSelectedProblem())
-                .filter(variable => variable in plotdata[0]);
+            let temporalVariables = Object.values(app.variableSummaries)
+                .filter(summary => summary.timeUnit)
+                .map(summary => summary.name)
+                .filter(variable => variables.includes(variable))
 
             let parsers = temporalVariables.reduce((out, variable) => {
                 let format = variableSummaries[variable].timeUnit
                 return Object.assign(out, {
                     [variable]: format
                         ? d3.timeParse(format)
-                        : text => new Date(Date.parse(text))
+                        : _ => _ // text => new Date(Date.parse(text))
                 })
             }, {})
 

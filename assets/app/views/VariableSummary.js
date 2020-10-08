@@ -1,11 +1,11 @@
 import m from 'mithril';
 import * as d3 from "d3";
 import PlotVegaLite from "./PlotVegaLite";
-import {formatPrecision, saveSystemLogEntry} from "../app";
 import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {italicize} from "../index";
-import * as app from '../app';
+import {formatPrecision} from "../utils";
+import {getNominalVariables, getSelectedProblem} from "../problem";
 
 
 export default class VariableSummary {
@@ -26,12 +26,16 @@ export default class VariableSummary {
             "mark": "area",
             "encoding": {
                 "x": {
-                    "field": "x", "type": "quantitative"
+                    "field": "x", "type": "quantitative", "title": variable.name
                 },
                 "y": {
                     "field": "y", "type": "quantitative",
                     "axis": {"title": "density"}
-                }
+                },
+                "tooltip": [
+                    {"field": "x", "type": "quantitative", "title": variable.name},
+                    {"field": "y", "type": "quantitative", "title": "density"}
+                ]
             }
         };
 
@@ -40,11 +44,15 @@ export default class VariableSummary {
             "mark": "bar",
             "encoding": {
                 "y": {
-                    "field": "x", "type": "ordinal", "sort": "none"
+                    "field": "x", "type": "ordinal", "sort": "none", "title": variable.name
                 },
                 "x": {
-                    "field": "y", "type": "quantitative",
-                }
+                    "field": "y", "type": "quantitative", "title": "count"
+                },
+                "tooltip": [
+                    {"field": "x", "type": "ordinal", "title": variable.name},
+                    {"field": "y", "type": "quantitative", "title": "count"}
+                ]
             }
         };
 
@@ -76,7 +84,7 @@ export default class VariableSummary {
                 specification: continuousSpecification,
                 identifier: 'x'
             });
-            let isCategorical = app.getNominalVariables(app.getSelectedProblem()).includes(variable.name);
+            let isCategorical = getNominalVariables(getSelectedProblem()).includes(variable.name);
             if (!isCategorical && variable.cdfPlotType === 'bar') plot = m(PlotVegaLite, {
                 data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
                 specification: barSpecification,
@@ -100,8 +108,8 @@ export default class VariableSummary {
                 activeSection: this.densityType,
                 onclick: type => this.densityType = type
             }),
-            plot && m('div', {style: {'max-height': '300px', 'text-align': 'center', margin: '1em'}}, plot),
             filteredMessage && italicize(`Only a subset of the ${variable.uniqueCount} unique values are plotted.`),
+            plot && m('div', {style: {'max-height': '300px', 'text-align': 'center', margin: '1em'}}, plot),
             m(Table, {
                 id: 'varSummaryTable',
                 style: {background: 'white'},
@@ -143,7 +151,7 @@ export let formatVariableSummary = variable => {
         'Invalid Count': Math.round(variable.invalidCount),
         'Valid Count': Math.round(variable.validCount),
         'Unique Count': Math.round(variable.uniqueCount),
-        'Herfindahl Index': formatPrecision(variable.herfindahlIndex),
+        // 'Herfindahl Index': formatPrecision(variable.herfindahlIndex),
         'Num/Char': variable.numchar,
         'Nature': variable.nature,
         'Binary': String(variable.binary),
