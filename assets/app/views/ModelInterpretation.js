@@ -42,7 +42,7 @@ export default class ModelInterpretation {
                                 ]
                             }
                         },
-                        predictor in problem.levels ? {
+                        predictor in problem.results.levels ? {
                             'mark': 'rect',
                             'data': {
                                 'values': problem.levels[predictor]
@@ -247,10 +247,10 @@ export default class ModelInterpretation {
                             ]
                         }
                     },
-                    predictor in problem.levels ? {
+                    predictor in problem.results.levels ? {
                         'mark': 'rect',
                         'data': {
-                            'values': problem.levels[predictor]
+                            'values': problem.results.levels[predictor]
                         },
                         'encoding': {
                             'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
@@ -258,7 +258,7 @@ export default class ModelInterpretation {
                                 'field': 'count',
                                 'type': 'quantitative',
                                 'scale': {
-                                    domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                    domain: [0, Math.max(...problem.results.levels[predictor].map(point => point.count))],
                                     range: [0, 1]
                                 },
                                 'legend': false

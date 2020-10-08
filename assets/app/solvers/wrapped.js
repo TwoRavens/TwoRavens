@@ -82,7 +82,7 @@ export let SPEC_problem = problem => {
 
         'time_format': Object.values(app.variableSummaries)
             .filter(summary => summary.timeUnit)
-            .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.timeUnit})),
+            .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.timeUnit}), {}),
 
         // structural variables
         "indexes": problem.tags.indexes,
