@@ -14,23 +14,23 @@ def util_results_real_clustered(data_pointer, metadata):
     GRID_SIZE = 100
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
-        metadata['collectionName'],
-        metadata['collectionPath'])
+        metadata['collection_name'],
+        metadata['datafile'])
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
+    results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     mongo_util_base = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if mongo_util_base.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_base.get_error_message()}
 
     mongo_util_fitted = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if mongo_util_fitted.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_fitted.get_error_message()}
 
@@ -162,17 +162,17 @@ def util_results_confusion_matrix(data_pointer, metadata):
     """
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
-        metadata['collectionName'],
-        metadata['collectionPath'])
+        metadata['collection_name'],
+        metadata['datafile'])
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
+    results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
@@ -301,14 +301,14 @@ def util_results_importance_efd(data_pointer, metadata):
     # make sure the base dataset is loaded
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
-        metadata['collectionName'],
-        data_path=metadata['collectionPath'])
+        metadata['collection_name'],
+        data_path=metadata['datafile'])
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
+    results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
