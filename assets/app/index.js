@@ -41,9 +41,9 @@ import ModalWorkspace from "./views/ModalWorkspace";
 // ALTERNATE WINDOWS
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
-import ButtonLadda from "./views/ButtonLadda";
 import Body_Deploy from "./views/Body_Deploy";
 import {getSelectedProblem} from "./problem";
+import {constraintMenu} from "./manipulations/manipulate";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
@@ -813,9 +813,14 @@ class Body {
      */
 
     static leftpanel(mode, forceData) {
-        if (mode === 'dataset') return manipulate.leftpanel();
-        if (mode === 'results') return results.leftpanel();
-        if (mode === 'model') return model.leftpanel(forceData);
+        if (mode === 'dataset')
+            return manipulate.leftpanel();
+        if (mode === 'model')
+            return model.leftpanel(forceData);
+        if (mode === 'results' && manipulate.constraintMenu)
+            return manipulate.leftpanel()
+        if (mode === 'results')
+            return results.leftpanel();
     }
 
     static rightpanel(mode) {
@@ -824,10 +829,13 @@ class Body {
 
     static manipulations() {
         let selectedProblem = getSelectedProblem();
-        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate')) && manipulate.menu([
-            ...app.workspace.raven_config.hardManipulations,
-            ...(app.isModelMode ? selectedProblem.manipulations : [])
-        ])  // the identifier for which pipeline to edit
+        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate') || app.isResultsMode)
+            && manipulate.menu(app.isResultsMode
+                ? [...getAbstractPipeline(selectedProblem), ...results.resultsQuery]
+                : [
+                    ...app.workspace.raven_config.hardManipulations,
+                    ...(app.isModelMode ? selectedProblem.manipulations : [])
+                ])
     }
 }
 

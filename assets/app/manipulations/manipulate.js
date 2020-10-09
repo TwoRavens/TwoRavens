@@ -115,7 +115,7 @@ function canvas(compoundPipeline) {
     if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
         preferences: app.datamartPreferences,
         dataPath: constraintMenu.step.dataPath,
-        manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations,
+        manipulations: app.workspace.raven_config?.hardManipulations,
         endpoint: app.datamartURL,
         labelWidth: '10em',
     });
@@ -182,7 +182,7 @@ export function leftpanel() {
 export function varList() {
 
     let variables = app.workspace.raven_config.variablesInitial;
-    let selectedVariables = (constraintMetadata || {}).columns || [];
+    let selectedVariables = constraintMetadata?.columns ?? [];
 
     if (constraintMenu) {
         let partialPipeline = constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step));
@@ -271,7 +271,7 @@ export function varList() {
 export class PipelineFlowchart {
     view(vnode) {
         // compoundPipeline is used for queries, pipeline is the array to be edited
-        let {compoundPipeline, pipeline, editable, hard} = vnode.attrs;
+        let {compoundPipeline, pipeline, editable, hard, resultsMode} = vnode.attrs;
 
         let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
@@ -345,7 +345,7 @@ export class PipelineFlowchart {
 
                     if (step.type === 'subset') {
                         content = m('div', {style: {'text-align': 'left'}},
-                            deleteButton,
+                            !resultsMode && deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
                             m(TreeSubset, {step, editable, redraw, setRedraw}),
 
@@ -452,7 +452,7 @@ export class PipelineFlowchart {
                     };
                 })
             }),
-            editable && [
+            !resultsMode && editable && [
                 DISPLAY_DATAMART_UI && m(Button, {
                     id: 'btnAddAugment',
                     title: hard ? 'join columns with another dataset' : 'augment is only available in dataset mode',
@@ -592,7 +592,6 @@ export let setQueryUpdated = async state => {
         app.loadProblemPreprocess(selectedProblem)
             .then(setPreprocess)
             .then(m.redraw)
-            .then(loadDomain);
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...ravenConfig.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
