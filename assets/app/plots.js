@@ -41,47 +41,64 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
                     "Solution Name": {
                         "type": "multi", "fields": [groupName], "bind": "legend"
                     },
-                    "panner": {"type": "interval"}
+                    "panner": {
+                        "type": "interval"
+                    },
+                    "panner_move": {
+                        "type": "interval", "bind": "scales",
+                        "on": "[mousedown[event.shiftKey], mouseup] > mousemove",
+                        "translate": "[mousedown[event.shiftKey], mouseup] > mousemove"
+                    }
                 },
                 "data": {
                     "values": data
                 },
 
                 "mark": "circle",
-                "encoding": {
-                    "color": {
-                        "condition": {
-                            "selection": "panner",
-                            "field": groupName,
-                            "type": "nominal",
-                            "legend": {"symbolOpacity": 1}
+                "encoding": Object.assign({
+                        "color": {
+                            "condition": {
+                                "selection": "panner",
+                                "field": groupName,
+                                "type": "nominal",
+                                "legend": {"symbolOpacity": 1}
+                            },
+                            "value": "gray"
                         },
-                        "value": "gray"
+                        "tooltip": [
+                            {"field": groupName, "type": "nominal"},
+                            {"field": countName, "type": "quantitative"},
+                            {"field": "Fitted Value", "type": "quantitative"},
+                            {"field": "Actual Value", "type": "quantitative"}
+                        ]
                     },
-                    "tooltip": [
-                        {"field": groupName, "type": "nominal"},
-                        {"field": countName, "type": "quantitative"},
-                        {"field": "Fitted Value", "type": "quantitative"},
-                        {"field": "Actual Value", "type": "quantitative"}
-                    ],
-                    "size": {
-                        "field": countName,
-                        "type": "quantitative",
-                        // "bin": {'binned': true, "minstep": 1},
-                        // log scale, with points scaled down when multiple plots are graphed
-                        "scale": {"type": "log", "base": 10, "range": [0, 200 / Math.sqrt(groupCount || 1)]},
-                        "legend": {"symbolOpacity": 1},
-                        "title": "log(count)"
-                    },
-                    "opacity": {
-                        "condition": {
-                            "selection": "Solution Name",
-                            "field": "count",
-                            "scale": {"range": [0.05, 0.9], "type": "log"}
+                    data.some(point => point[countName] > 5) ? {
+                        "size": {
+                            "field": countName,
+                            "type": "quantitative",
+                            // "bin": {'binned': true, "minstep": 1},
+                            // log scale, with points scaled down when multiple plots are graphed
+                            "scale": {"type": "log", "base": 10, "range": [0, 200 / Math.sqrt(groupCount || 1)]},
+                            "legend": {"symbolOpacity": 1},
+                            "title": "log(count)"
                         },
-                        "value": 0.05
-                    }
-                }
+                        "opacity": {
+                            "condition": {
+                                "selection": "Solution Name",
+                                "field": "count",
+                                "scale": {"range": [0.05, 0.9], "type": "log"}
+                            },
+                            "value": 0.05
+                        }
+                    } : {
+                        "opacity": {
+                            "condition": {
+                                "selection": "Solution Name",
+                                "value": 0.9
+                            },
+                            "value": 0.05
+                        }
+                    })
             }
         ]
     });
@@ -100,6 +117,9 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
         "selection": {
             "grid": {
                 "type": "interval", "bind": "scales"
+            },
+            "Solution Name": {
+                "type": "multi", "fields": [groupName], "bind": "legend"
             }
         },
         "data": Object.assign(
@@ -131,7 +151,13 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 "axis": {"title": yName},
                 "scale": {"zero": false}
             },
-            "opacity": {"field": splitName, "type": "nominal"},
+            "opacity": {
+                "condition": {
+                    "selection": "Solution Name",
+                    "value": 0.9
+                },
+                "value": 0.05
+            },
             "detail": {"field": crossSectionName, "type": "nominal"}
         }
     });
@@ -155,7 +181,10 @@ export let vegaLiteForecastConfidence = (
         "selection": {
             "grid": {
                 "type": "interval", "bind": "scales"
-            }
+            },
+            "Solution Name": {
+                "type": "multi", "fields": [groupName], "bind": "legend"
+            },
         },
         "encoding": {
             "color": {"field": groupName, "type": "nominal"},
@@ -178,7 +207,12 @@ export let vegaLiteForecastConfidence = (
                     "extent": "ci"
                 },
                 "encoding": {
-                    "y": {"field": yName, "type": "quantitative", "axis": {"title": yName}, "scale": {"zero": false}}
+                    "y": {
+                        "field": yName,
+                        "type": "quantitative",
+                        "axis": {"title": yName},
+                        "scale": {"zero": false}
+                    }
                 }
             },
             {

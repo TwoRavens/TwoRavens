@@ -314,7 +314,7 @@ export let buildDefaultProblem = problemDoc => {
 
         numClusters: numClusters,
         timeGranularity: workspace.datasetDoc.dataResources
-            .find(resource => resource.resType === 'table')?.columns?.find?.(column => column.timeGranularity)?.timeGranularity,
+            .find(resource => resource.resType === 'table')?.columns?.find?.(column => column.timeGranularity)?.timeGranularity || {},
         forecastingHorizon: problemDoc.inputs.forecastingHorizon?.horizonValue
     };
 };
@@ -776,8 +776,11 @@ export let isProblemValid = problem => {
             valid = false;
         }
     }
+    if (problem.tags.loose.length > 0) {
+        app.alertWarn("This problem has loose variables in the modeling space that will not be used in the model: " + String(problem.tags.loose))
+    }
     if (problem.task === "classification" && app.variableSummaries[problem.targets[0]].uniqueCount > 100) {
-        alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
+        app.alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
     }
     // this triggers the popup
     if (!valid)
