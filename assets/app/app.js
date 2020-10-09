@@ -20,6 +20,7 @@ import {setConstraintMenu} from './manipulations/manipulate';
 import * as results from "./modes/results";
 import * as explore from './modes/explore';
 import {bold, link, linkURLwithText} from "./index";
+import * as utils from "./utils";
 import {
     byId,
     clearWorkpacesAndReloadPage,
@@ -40,7 +41,7 @@ import {
     getPredictorVariables,
     getProblemCopy,
     getSelectedProblem,
-    loadPredictorDomains,
+    needsManipulationRewritePriorToSolve,
     setSelectedProblem,
     standardizeDiscovery
 } from "./problem";
@@ -367,9 +368,12 @@ export function setSelectedMode(mode) {
         if (!isDatasetMode && manipulate.pendingHardManipulation) {
             hopscotch.endTour(true);
             let ravenConfig = workspace.raven_config;
-            let datasetQuery = JSON.stringify(queryMongo.buildPipeline(
-                workspace.raven_config.hardManipulations,
-                workspace.raven_config.variablesInitial)['pipeline']);
+            let datasetQuery = JSON.stringify(queryMongo.buildPipeline([
+                ...workspace.raven_config.hardManipulations,
+                {type: 'menu', metadata: {type: 'data'}}
+            ], workspace.raven_config.variablesInitial)['pipeline']);
+
+            console.log(datasetQuery);
 
             let preprocessPromise = loadPreprocess(datasetQuery).then(setPreprocess).then(m.redraw);
             loadDiscovery(datasetQuery).then(async discovery => {
@@ -413,13 +417,13 @@ export let getAbstractPipeline = (problem, all) => {
     // nominal casts need only be applied to variables retained after subsetting
     if (!all) nominalCasts = nominalCasts.filter(variable => modelVariables.includes(variable))
 
-    let temp = [
+    return [
         // manipulations applied in dataset mode
         ...workspace.raven_config.hardManipulations,
         // manipulations applied in problem mode
         // - including ordinal labeling, imputes, transforms, subsets, etc
         ...problem.manipulations,
-        // if the problem has nominal casting applied to the
+        // if the problem has nominal casting
         nominalCasts.length > 0 && {
             type: 'transform',
             transforms: nominalCasts.map(variable => ({
@@ -438,7 +442,7 @@ export let getAbstractPipeline = (problem, all) => {
         // drop nan target rows and all unused variables
         {
             type: 'menu',
-            metadata: !all && modelVariables.length < Object.keys(variableSummaries).length ? {
+            metadata: !all && (modelVariables.length < Object.keys(variableSummaries).length) ? {
                 type: 'data',
                 variables: modelVariables,
                 // these are also dropped in the train/test split, but why write the data out?
@@ -446,8 +450,6 @@ export let getAbstractPipeline = (problem, all) => {
             } : {type: 'data'}
         }
     ].filter(_=>_);
-    console.log('problem pipeline', temp);
-    return temp;
 }
 
 export async function buildCsvPath(problem, lastStep, dataPath, collectionName) {
@@ -771,8 +773,6 @@ export let setLockToggle = state => {
 };
 export let isLocked = problem => lockToggle || problem.system === 'solved';
 
-export let priv = true;
-
 // if no columns in the datasetDoc, swandive is enabled
 // swandive set to true if task is in failset
 export let swandive = false;
@@ -835,7 +835,10 @@ window.datamartPreferences = datamartPreferences;
 
 if (DISPLAY_DATAMART_UI) setDatamartDefaults(datamartPreferences);
 
-// metrics, tasks, and subtasks as specified in D3M schemas
+/**
+ * metrics, tasks, and subtasks as specified in D3M schemas
+ * @enum {string}
+ */
 export let d3mTaskType = {
     classification: "CLASSIFICATION",
     regression: "REGRESSION",
@@ -850,11 +853,17 @@ export let d3mTaskType = {
     objectDetection: "OBJECT_DETECTION"
 };
 
+/**
+ * @enum {string}
+ */
 export let d3mSupervision = {
     semiSupervised: "SEMI_SUPERVISED",
     unsupervised: "UNSUPERVISED",
 };
 
+/**
+ * @enum {string}
+ */
 export let d3mResourceType = {
     tabular: "TABULAR",
     relational: "RELATIONAL",
@@ -868,6 +877,9 @@ export let d3mResourceType = {
     timeSeries: "TIME_SERIES",
 };
 
+/**
+ * @enum {string}
+ */
 export let d3mTags = {
     grouped: "GROUPED",
     geospatial: "GEOSPATIAL",
@@ -908,6 +920,9 @@ export let keywordDefinitions = {
     "missingMetadata": "indicates that the metadata for dataset is not complete"
 };
 
+/**
+ * @enum {string}
+ */
 export let d3mTaskSubtype = {
     taskSubtypeUndefined: "TASK_SUBTYPE_UNDEFINED",
     subtypeNone: "NONE",
@@ -1311,9 +1326,10 @@ let loadPreprocess = async query => {
 }
 
 export let loadProblemPreprocess = async problem =>
-    loadPreprocess(JSON.stringify(queryMongo.buildPipeline(
-        [...getAbstractPipeline(problem, true), {$sample: {size: preprocessSampleSize}}],
-        workspace.raven_config.variablesInitial)['pipeline']));
+    loadPreprocess(JSON.stringify(queryMongo.buildPipeline([
+            ...getAbstractPipeline(problem, true),
+            {type: 'menu', metadata: {type: 'data', sample: preprocessSampleSize}}
+        ], workspace.raven_config.variablesInitial)['pipeline']));
 
 export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
@@ -1334,7 +1350,13 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
         problems: {}
     };
 
-    let manipulations = getAbstractPipeline(getSelectedProblem(), true);
+    let manipulations = [
+        ...getAbstractPipeline(getSelectedProblem(), true),
+        {type: 'menu', metadata: {type: 'data', sample: preprocessSampleSize}}
+    ];
+
+    let datasetQuery = JSON.stringify(queryMongo.buildPipeline(
+        manipulations, workspace.raven_config.variablesInitial)['pipeline']);
 
     // ~~~~ BEGIN PROMISE GRAPH ~~~~
 
@@ -1363,11 +1385,6 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
             else swandive = true;
         })
         .then(m.redraw);
-
-    let datasetQuery = JSON.stringify([
-        ...queryMongo.buildPipeline(manipulations, workspace.raven_config.variablesInitial)['pipeline'],
-        {$sample: {size: preprocessSampleSize}}
-    ]);
 
     // MONGO LOAD / SAMPLE DATASET PATH
     let promiseSampledDatasetPath = Promise.all([promiseDatasetDoc, promiseDatasetPath])
@@ -1443,7 +1460,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
                 let problemFirst = Object.values(workspace.raven_config.problems)[0];
                 let problemCopy = getProblemCopy(problemFirst);
-                problemCopy.provenanceID = undefined;
+                problemCopy.provenanceId = undefined;
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 setSelectedProblem(problemCopy.problemId);
 
@@ -1684,21 +1701,6 @@ export function helpmaterials(type) {
     console.log(type);
 }
 
-// returns true if the user actions necessitate writing out a new dataset before solving
-export let needsManipulationRewritePriorToSolve = problem => {
-    let newNominalVars = new Set(getNominalVariables(problem));
-    Object.keys(variableSummaries)
-        .filter(variable => variableSummaries[variable].numchar === 'character')
-        .forEach(variable => newNominalVars.delete(variable));
-    let hasNominalCast = [...problem.targets, ...getPredictorVariables(problem)]
-        .some(variable => newNominalVars.has(variable));
-    let hasOrdering = problem.tags.ordering.length > 1;
-
-    let hasManipulation = (workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
-    return hasManipulation || hasNominalCast || hasOrdering;
-};
-
-
 export let materializeManipulationsPromise = {};
 export let materializeManipulations = async problem => {
     problem.results.datasetPaths = {all: workspace.datasetPath};
@@ -1711,106 +1713,16 @@ export let materializeManipulations = async problem => {
     return buildDatasetPath(
         problem, undefined,
         problem.results.datasetPaths.all,
-        `${workspace.d3m_config.name}_${problem.problemId}`,
-        problem.results.datasetSchemas.all
-    )
+        workspace.d3m_config.name,
+        problem.results.datasetSchemas.all)
+
         .then(({data_path, metadata_path, metadata}) => {
             problem.results.datasetPaths = {all: data_path};
             problem.results.datasetSchemaPaths = {all: metadata_path};
             problem.results.datasetSchemas = {all: metadata};
         })
-};
+}
 
-// materializing partials may only happen once per problem, all calls wait for same response
-export let materializePartialsPromise = {};
-export let materializePartials = async problem => {
-
-    console.log('materializing partials');
-    await loadPredictorDomains(problem);
-
-    // BUILD BASE DATASET (one record)
-    let dataset = [Object.keys(variableSummaries)
-        .reduce((record, variable) => Object.assign(record, {
-            [variable]: variable in problem.results.levels
-                ? problem.results.levels[variable][0].level // take most frequent level (first mode)
-                : variableSummaries[variable].median
-        }), {})];
-
-    // BUILD PARTIALS DATASETS
-    let partialsLocationInfo = await m.request({
-        method: 'POST',
-        url: D3M_SVC_URL + '/get-partials-datasets',
-        body: {
-            problem: SPEC_problem(problem),
-            dataset_id: problem.results.d3mDatasetId,
-            domains: problem.results.domains,
-            all_variables: Object.keys(variableSummaries),
-            dataset_schema: problem.results.datasetSchemas.all,
-            dataset,
-            separate_variables: false,
-            name: 'partials'
-        }
-    });
-    if (partialsLocationInfo.success) {
-        problem.results.datasetIndexPartialsPaths = problem.results.datasetIndexPartialsPaths || {};
-        Object.assign(problem.results.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
-        Object.assign(problem.results.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        Object.assign(problem.results.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
-    } else {
-        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
-        throw partialsLocationInfo.message;
-    }
-};
-
-
-// BUILD DOMAINS
-export let ICE_SAMPLE_MAX_SIZE = 50;
-export let ICE_DOMAIN_MAX_SIZE = 20;
-
-export let materializeICEPromise = {};
-export let materializeICE = async problem => {
-    console.log('materializing ICE partials');
-
-    await loadPredictorDomains(problem);
-
-    // TAG: LAZY
-    let abstractPipeline = [...workspace.raven_config.hardManipulations, ...problem.manipulations];
-    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
-
-    // BUILD SAMPLE DATASET
-    let samplePaths = await getData({
-        method: 'aggregate',
-        query: JSON.stringify([...compiled, {$sample: {size: ICE_SAMPLE_MAX_SIZE}}, {$project: {_id: 0}}]),
-        export: 'dataset',
-        metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, problem.results.datasetSchemas.all, problem))
-    });
-
-    // BUILD ICE DATASETS
-    let partialsLocationInfo = await m.request({
-        method: 'POST',
-        url: D3M_SVC_URL + '/get-partials-datasets',
-        body: {
-            problem: SPEC_problem(problem),
-            dataset_schema_path: samplePaths.metadata_path,
-            dataset_path: samplePaths.data_path,
-            all_variables: Object.keys(variableSummaries),
-            dataset_id: problem.results.d3mDatasetId,
-            update_roles: true,
-            domains: problem.results.domains,
-            separate_variables: true,
-            name: 'ICE_synthetic_'
-        }
-    });
-    if (partialsLocationInfo.success) {
-        problem.results.datasetIndexPartialsPaths = problem.results.datasetIndexPartialsPaths || {};
-        Object.assign(problem.results.datasetSchemaPaths, partialsLocationInfo.data.dataset_schemas);
-        Object.assign(problem.results.datasetPaths, partialsLocationInfo.data.dataset_paths);
-        Object.assign(problem.results.datasetIndexPartialsPaths, partialsLocationInfo.data.dataset_index_paths);
-    } else {
-        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
-        throw partialsLocationInfo.message;
-    }
-};
 
 // export let materializeTrainTestIndicesPromise = {};
 // export let materializeTrainTestIndices = async problem => {
@@ -2338,7 +2250,7 @@ export async function handleAugmentDataMessage(msg_data) {
                 priorSelectedProblem.manipulations = [];
 
                 priorSelectedProblem.problemId = priorDatasetName;
-                delete priorSelectedProblem.provenanceID;
+                delete priorSelectedProblem.provenanceId;
                 priorSelectedProblem.pending = false;
                 priorSelectedProblem.unedited = true;
 

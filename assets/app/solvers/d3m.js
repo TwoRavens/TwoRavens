@@ -16,6 +16,7 @@ import {
     getSelectedProblem,
     isProblemValid
 } from "../problem";
+import {setRecursive} from "../utils";
 
 export let getSolverSpecification = async problem => {
 
@@ -34,10 +35,11 @@ export let getSolverSpecification = async problem => {
         searchSolutionParams: GRPC_SearchSolutionsRequest(problem, trainDatasetSchema, trainDatasetSchemaPath),
         fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(trainDatasetSchemaPath),
         scoreSolutionDefaultParams: problem.scoreOptions.userSpecified && GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
-        produceSolutionDefaultParams: Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
-            .reduce((produces, dataSplit) => Object.assign(produces, {
-                [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
-            }), {})
+        produceSolutionDefaultParams: {}
+            // Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
+            //     .reduce((produces, dataSplit) => Object.assign(produces, {
+            //         [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
+            //     }), {})
     };
 
     return allParams;
@@ -886,12 +888,14 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let searchId = response.stored_request.search_id;
+
+    let solvedProblem = findProblem({system: 'd3m', search_id: searchId})
 
     if (!solvedProblem) {
-        results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
-        if (results.otherSearches[response.stored_request.search_id].running === undefined)
-            results.otherSearches[response.stored_request.search_id].running = true;
+        results.otherSearches[searchId] = results.otherSearches[searchId] || {};
+        if (results.otherSearches[searchId].running === undefined)
+            results.otherSearches[searchId].running = true;
         m.redraw();
         return;
     }
@@ -922,13 +926,21 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     let solution = solvedProblem.results.solutions.d3m?.[response.pipelineId];
     if (!solution) return
 
-    // save produce to solution
-    solution.produce = solution.produce || [];
-    solution.produce.push({
-        input: {name: response.produce_dataset_name},
-        configuration: {predict_type: 'RAW'},
-        data_pointer: pointer
-    });
+    results.checkResultsCache(solvedProblem);
+
+    // save produce path to resultsCache
+    setRecursive(results.resultsCache, [
+        [solvedProblem.problemId, {}],
+        ['producePaths', {}],
+        [solution.solutionId, {}],
+        [response.produce_dataset_name, pointer]
+    ])
+    setRecursive(results.resultsCache, [
+        [solvedProblem.problemId, {}],
+        ['producePathsLoading', {}],
+        [solution.solutionId, {}],
+        [response.produce_dataset_name, false]
+    ])
 
     m.redraw();
 }

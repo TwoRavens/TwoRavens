@@ -5,7 +5,7 @@ import * as app from '../app';
 import {alertWarn} from '../app';
 import * as results from "../modes/results";
 import {findProblem, getBestSolution} from "../modes/results";
-import {setDefaultRecursive, setDefault} from "../utils";
+import {setDefaultRecursive, setDefault, setRecursive} from "../utils";
 import {
     getGeographicVariables,
     getNominalVariables,
@@ -24,7 +24,7 @@ export let getSolverSpecification = async (problem, systemId) => {
 
     let allParams = {
         'search': SPEC_search(problem),
-        'produce': SPEC_produce(problem),
+        'produce': [], // SPEC_produce(problem),
         'score': [SPEC_score(problem)].filter(_=>_)
     };
 
@@ -119,10 +119,11 @@ let SPEC_produce = problem => {
 
     let train_split = problem.splitOptions.outOfSampleSplit ? 'train' : 'all';
     let predict_types = ['RAW'];
-    if (problem.task === 'classification') predict_types.push('PROBABILITIES');
+    // TODO: re-add probabilities when there are tools that use them?
+    // if (problem.task === 'classification') predict_types.push('PROBABILITIES');
 
     let dataset_types = problem.splitOptions.outOfSampleSplit ? ['test', 'train'] : ['all'];
-    if (['classification', 'regression'].includes(problem.task) && problem.results.datasetPaths.partials) dataset_types.push('partials');
+    // if (['classification', 'regression'].includes(problem.task) && problem.results.datasetPaths.partials) dataset_types.push('partials');
 
     let produces = [];
 
@@ -164,24 +165,25 @@ let SPEC_produce = problem => {
     }));
 
     // add ice datasets
-    if (problem.task !== 'forecasting') {
-        getPredictorVariables(problem).forEach(predictor => produces.push({
-            'train': {
-                'name': 'all',
-                'resource_uri': 'file://' + problem.results.datasetPaths?.all
-            },
-            'input': {
-                'name': 'ICE_synthetic_' + predictor,
-                'resource_uri': 'file://' + problem.results.datasetPaths['ICE_synthetic_' + predictor]
-            },
-            'configuration': {
-                'predict_type': "RAW"
-            },
-            'output': {
-                'resource_uri': 'file:///ravens_volume/solvers/produce/'
-            }
-        }));
-    }
+    // TODO: remove. This is not done lazily
+    // if (problem.task !== 'forecasting') {
+    //     getPredictorVariables(problem).forEach(predictor => produces.push({
+    //         'train': {
+    //             'name': 'all',
+    //             'resource_uri': 'file://' + problem.results.datasetPaths?.all
+    //         },
+    //         'input': {
+    //             'name': 'ICE_synthetic_' + predictor,
+    //             'resource_uri': 'file://' + problem.results.datasetPaths['ICE_synthetic_' + predictor]
+    //         },
+    //         'configuration': {
+    //             'predict_type': "RAW"
+    //         },
+    //         'output': {
+    //             'resource_uri': 'file:///ravens_volume/solvers/produce/'
+    //         }
+    //     }));
+    // }
 
 
     return produces
@@ -351,13 +353,27 @@ export let handleProduceResponse = response => {
     }
 
     if (response.success) {
+        // save produce path to resultsCache
         setDefaultRecursive(solvedProblem.results, [
-            ['solutions', {}], [data.system, {}], [data.model_id, {}], ['produce', []]]);
+            ['solutions', {}], [data.system, {}], [data.model_id, {}]]);
         let solution = solvedProblem.results.solutions[data.system][data.model_id];
         solution.solutionId = data.model_id;
         solution.systemId = data.system;
-        setDefault(solution, 'produce', []);
-        solution.produce.push(data.produce);
+
+        results.checkResultsCache(solvedProblem);
+
+        setRecursive(results.resultsCache, [
+            [solvedProblem.problemId, {}],
+            ['producePaths', {}],
+            [data.model_id, {}],
+            [data.produce.input.name, data.produce.data_pointer]
+        ])
+        setRecursive(results.resultsCache, [
+            [solvedProblem.problemId, {}],
+            ['producePathsLoading', {}],
+            [data.model_id, {}],
+            [data.produce.input.name, false]
+        ])
         m.redraw()
     }
 };

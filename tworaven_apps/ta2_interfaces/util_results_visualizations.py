@@ -280,9 +280,10 @@ def util_results_confusion_matrix(data_pointer, metadata):
         classes = next(response[1])
 
     finally:
-        EventJobUtil.delete_dataset(
-            settings.TWORAVENS_MONGO_DB_NAME,
-            results_collection_name)
+        pass
+        # EventJobUtil.delete_dataset(
+        #     settings.TWORAVENS_MONGO_DB_NAME,
+        #     results_collection_name)
 
     return {
         KEY_SUCCESS: response[0],
@@ -341,7 +342,7 @@ def util_results_importance_efd(data_pointer, metadata):
         'actual ' + key: levels[key] for key in levels
     })
 
-    # print('metadata levels', levels)
+    print('metadata levels', levels)
 
     def is_categorical(variable, levels):
         return variable in levels

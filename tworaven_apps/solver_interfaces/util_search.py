@@ -541,7 +541,7 @@ class SearchTwoRavens(Search):
         #     imputed_dataframe_dir = os.path.join(self.specification['temp_directory'], self.search_id)
         #     imputed_dataframe_path = os.path.join(imputed_dataframe_dir, 'trainData.csv')
         #     os.makedirs(imputed_dataframe_dir, exist_ok=True)
-        #     dataframe.to_csv(imputed_dataframe_path)
+        #     dataframe.to_csv(imputed_dataframe_path, quoting=csv.QUOTE_NONNUMERIC)
         #
         #     # update specification to point to new time series
         #     self.specification['input'] = {

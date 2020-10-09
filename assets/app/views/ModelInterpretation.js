@@ -7,7 +7,7 @@ let axisLabels = false;
 export default class ModelInterpretation {
     plotEFD(vnode) {
         // target doesn't matter, all are plotted together
-        let {problem, data, predictor, target, summary} = vnode.attrs;
+        let {problem, data, predictor, target, summary, levels} = vnode.attrs;
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
@@ -42,10 +42,10 @@ export default class ModelInterpretation {
                                 ]
                             }
                         },
-                        predictor in problem.results.levels ? {
+                        predictor in levels ? {
                             'mark': 'rect',
                             'data': {
-                                'values': problem.levels[predictor]
+                                'values': levels[predictor]
                             },
                             'encoding': {
                                 'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
@@ -53,7 +53,7 @@ export default class ModelInterpretation {
                                     'field': 'count',
                                     'type': 'quantitative',
                                     'scale': {
-                                        domain: [0, Math.max(0, ...problem.levels[predictor].map(point => point.count))],
+                                        domain: [0, Math.max(0, ...levels[predictor].map(point => point.count))],
                                         range: [0, 1]
                                     },
                                     'legend': false
@@ -214,7 +214,7 @@ export default class ModelInterpretation {
 
     plotPartials(vnode) {
         // target doesn't matter, all are plotted together
-        let {problem, data, predictor, target, summary} = vnode.attrs;
+        let {problem, data, predictor, target, summary, levels} = vnode.attrs;
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
@@ -247,10 +247,10 @@ export default class ModelInterpretation {
                             ]
                         }
                     },
-                    predictor in problem.results.levels ? {
+                    predictor in levels ? {
                         'mark': 'rect',
                         'data': {
-                            'values': problem.results.levels[predictor]
+                            'values': levels[predictor]
                         },
                         'encoding': {
                             'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
@@ -258,7 +258,7 @@ export default class ModelInterpretation {
                                 'field': 'count',
                                 'type': 'quantitative',
                                 'scale': {
-                                    domain: [0, Math.max(...problem.results.levels[predictor].map(point => point.count))],
+                                    domain: [0, Math.max(...levels[predictor].map(point => point.count))],
                                     range: [0, 1]
                                 },
                                 'legend': false

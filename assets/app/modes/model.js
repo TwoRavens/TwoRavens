@@ -149,7 +149,7 @@ export class CanvasModel {
                             alertEditCopy();
                             return;
                         }
-                        erase()
+                        erase(selectedProblem)
                     },
                     title: 'wipe all variables from the modeling space'
                 }, m(Icon, {name: 'trashcan'}))),
@@ -614,8 +614,8 @@ export let leftpanel = forceData => {
                         headers: discoveryHeaders(),
                         data: problemPartition[partition].map(formatProblem),
                         rowClasses: {
-                            'discovery-table-highlight': selectedProblem.provenanceID
-                                ? [selectedProblem.provenanceID] : []
+                            'discovery-table-highlight': selectedProblem.provenanceId
+                                ? [selectedProblem.provenanceId] : []
                         },
                         onclick: problemId => {
 

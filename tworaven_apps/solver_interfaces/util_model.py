@@ -1,4 +1,5 @@
 import abc
+import csv
 import uuid
 import json
 import os
@@ -302,7 +303,7 @@ class ModelSklearn(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predictions.to_csv(output_path, index=False)
+            predictions.to_csv(output_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
         finally:
             os.chdir(cwd)
 
@@ -535,7 +536,7 @@ class ModelH2O(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predictions.to_csv(output_path, index=False)
+            predictions.to_csv(output_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
         finally:
             os.chdir(cwd)
 
@@ -641,7 +642,7 @@ class ModelLudwig(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predictions.to_csv(output_path, index=False)
+            predictions.to_csv(output_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
         finally:
             os.chdir(cwd)
 
@@ -797,7 +798,7 @@ class ModelTwoRavens(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predicted.to_csv(output_path, index=False)
+            predicted.to_csv(output_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
         finally:
             os.chdir(cwd)
 

@@ -6,7 +6,7 @@ import {heightHeader} from "../../common/common";
 import * as app from '../app';
 import {generateProblemID} from '../app';
 import * as results from '../modes/results';
-import {customDatasets, resultsPreferences, uploadForModelRun} from '../modes/results';
+import {customDatasets, getSolutionAdapter, resultsPreferences, uploadForModelRun} from '../modes/results';
 
 import TextField from "../../common/views/TextField";
 import Button from "../../common/views/Button";
@@ -101,7 +101,11 @@ export default class Body_Dataset {
                             ).then(({customDataset, manipulatedInfo}) => {
                                 // clear form, upload was successful
                                 resultsPreferences.upload = {};
-                                results.produceOnSolution(customDataset, manipulatedInfo, problem, solution)
+                                results.produceOnSolution(
+                                    getSolutionAdapter(problem, solution),
+                                    customDataset.name,
+                                    manipulatedInfo.data_path,
+                                    manipulatedInfo.metadata_path)
                             })
                         },
                         disabled: !resultsPreferences.upload.file || resultsPreferences.upload.name.length === 0
@@ -112,7 +116,7 @@ export default class Body_Dataset {
                         "Set the current data split from the top of the left panel, or via the 'Select' button below. If your dataset contains actual values for the target variable, the Prediction Summary, Variable Importance, and Empirical First Differences will update to reflect the new dataset. Predictions are produced for all known solutions when your dataset is uploaded.",
                         m(Table, {
                             data: Object.keys(customDatasets).map(evaluationId => {
-                                let dataPointer = adapter.getDataPointer(customDatasets[evaluationId].name);
+                                let dataPointer = adapter.getProduceDataPath(customDatasets[evaluationId].name);
                                 return [
                                     customDatasets[evaluationId].name,
                                     m(Button, {

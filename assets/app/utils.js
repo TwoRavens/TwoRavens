@@ -164,3 +164,5 @@ export function minutesToString(minutes) {
 
     return (strDays + strHours + strMinutes).replace("  ", " ");
 }
+
+export let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
