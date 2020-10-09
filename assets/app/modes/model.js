@@ -3,7 +3,7 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
-import {isExploreMode, setVariableSummaryAttr, workspace} from "../app";
+import {isExploreMode, loadProblemPreprocess, setPreprocess, setVariableSummaryAttr, workspace} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -53,7 +53,7 @@ export class CanvasModel {
 
     view(vnode) {
         let {drawForceDiagram, forceData} = vnode.attrs;
-        let selectedP1roblem = getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         if (Object.keys(app.variableSummaries).length === 0)
             return m('div[style=height:100%;position:relative]',
@@ -805,7 +805,7 @@ export let rightpanel = () => {
                     m('label', 'Time Granularity (optional). Specify the gap between observations.'),
                     m(TextField, {
                         id: 'timeGranularityValueTextField',
-                        value: selectedProblem.timeGranularity.value || '',
+                        value: selectedProblem.timeGranularity?.value || '',
                         oninput: value => selectedProblem.timeGranularity.value =
                             value.replace(/[^\d.-]/g, ''),
                         onblur: value => selectedProblem.timeGranularity.value =
@@ -1163,6 +1163,10 @@ export let rightpanel = () => {
                                             m(ListTags, {
                                                 tags: selectedProblem.tags.ordering,
                                                 reorderable: true,
+                                                onreorder: () =>     // update preprocess
+                                                    loadProblemPreprocess(selectedProblem)
+                                                        .then(setPreprocess)
+                                                        .then(m.redraw),
                                                 onclick: setSelectedPebble
                                             })
                                         ],
@@ -1183,7 +1187,11 @@ export let rightpanel = () => {
                                                 onblur: value => {
                                                     if (value === selectedProblem.tags.ordering.join("-") || !value)
                                                         delete selectedProblem.orderingName
-                                                    else selectedProblem.orderingName = value
+                                                    else selectedProblem.orderingName = value;
+
+                                                    loadProblemPreprocess(selectedProblem)
+                                                        .then(setPreprocess)
+                                                        .then(m.redraw)
                                                 }
                                             })
                                         ]
@@ -1429,6 +1437,9 @@ export let setGroup = (problem, group, name) => {
         remove(problem.targets, name);
         remove(problem.tags.loose, name);
         add(problem.tags.ordering, name);
+        app.loadProblemPreprocess(problem)
+            .then(app.setPreprocess)
+            .then(m.redraw)
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_ORDERING';
     } else if (group === 'Predictors') {
         add(problem.predictors, name);
@@ -1820,6 +1831,21 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
 ].filter(_ => _);
 
 let setLabel = (problem, label, name) => {
+    if (problem.system === 'solved') {
+        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+            style: 'margin:1em',
+            onclick: () => {
+                let problemCopy = getProblemCopy(problem);
+                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                app.setShowModalAlerts(false);
+                setSelectedProblem(problemCopy.problemId);
+                setLabel(problemCopy, label, name);
+            }
+        }, 'Edit Copy')));
+        m.redraw();
+        return;
+    }
+
     if (label === 'nominal') {
         // if we are going to add the tag
         if (!getNominalVariables(problem).includes(name)) {
@@ -1832,7 +1858,7 @@ let setLabel = (problem, label, name) => {
         // we are going to remove
         else {
             // if the tag is at the dataset level
-            if (variableSummaries[name].nature === 'nominal') {
+            if (app.variableSummaries[name].nature === 'nominal') {
                 if (confirm("Do you want to remove the dataset-level nominal annotation?")) {
                     setVariableSummaryAttr(name, 'nature', 'nominal')
                 }
@@ -1845,6 +1871,9 @@ let setLabel = (problem, label, name) => {
                 remove(problem.tags.nominal, name);
             }
         }
+        app.loadProblemPreprocess(problem)
+            .then(app.setPreprocess)
+            .then(m.redraw)
     }
 
     delete problem.unedited;
@@ -1912,7 +1941,7 @@ let setLabel = (problem, label, name) => {
         // we are going to remove
         else {
             // if the tag is at the dataset level
-            if (variableSummaries[name].geographic) {
+            if (app.variableSummaries[name].geographic) {
                 if (confirm("Do you want to remove the dataset-level geographic annotation?")) {
                     setVariableSummaryAttr(name, 'geographic', false)
                 }

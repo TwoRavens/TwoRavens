@@ -164,7 +164,7 @@ export let resultsPreferences = {
     factor: undefined,
     plotScores: 'all',
     selectedMetric: undefined,
-    timeSeriesPlotConfig: 'Cross sections',
+    timeSeriesPlotConfig: undefined,
     dataSplit: 'test',
     recordLimit: 10000,
     crossSection: 'unset',
@@ -585,7 +585,12 @@ export class CanvasSolutions {
                 common.loader('ForecastSummary')
             ];
 
-            let crossSectionsUnique = ['unset', ...new Set(crossSectionSummary[plotSplits[0]])];
+            let crossSectionsUnique = [...new Set(crossSectionSummary[plotSplits[0]])];
+
+            if (!resultsPreferences.timeSeriesPlotConfig) {
+                resultsPreferences.timeSeriesPlotConfig = crossSectionals.length
+                    ? 'Confidence Interval' : 'Cross Sections'
+            }
 
             response.push(
                 plotSplits[0] in crossSectionSummary && crossSectionsUnique.length > 1 && [
@@ -594,39 +599,41 @@ export class CanvasSolutions {
                         onclick: state => resultsPreferences.timeSeriesPlotConfig = state,
                         activeSection: resultsPreferences.timeSeriesPlotConfig,
                         sections: [
-                            {value: 'Confidence interval'},
-                            {value: 'Cross sections'}
+                            {value: 'Confidence Interval'},
+                            {value: 'Cross Sections'}
                         ]
                     }),
-                    m('div[style=margin:.5em]', 'Subset to cross section:'),
-                    (crossSectionsUnique.length > 20 ? m(TextFieldSuggestion, {
-                        value: resultsPreferences.crossSectionTemp,
-                        suggestions: crossSectionsUnique,
-                        enforce: true,
-                        oninput: val => resultsPreferences.crossSectionTemp = val,
-                        onblur: val => {
-                            resultsPreferences.crossSectionTemp = val;
-                            resultsPreferences.crossSection = val
-                        }
-                    }) : m(Dropdown, {
-                        id: 'crossSectionDropdown',
-                        items: ['unset', ...crossSectionsUnique],
-                        activeItem: resultsPreferences.crossSection,
-                        onclickChild: value => resultsPreferences.crossSection = value,
-                        style: {'margin-left': '1em'}
-                    }))
+                    resultsPreferences.timeSeriesPlotConfig === "Cross Sections" && [
+                        m('div[style=margin:.5em]', 'Subset to cross section:'),
+                        (crossSectionsUnique.length > 20 ? m(TextFieldSuggestion, {
+                            value: resultsPreferences.crossSectionTemp,
+                            suggestions: crossSectionsUnique,
+                            enforce: true,
+                            oninput: val => resultsPreferences.crossSectionTemp = val,
+                            onblur: val => {
+                                resultsPreferences.crossSectionTemp = val;
+                                resultsPreferences.crossSection = val
+                            }
+                        }) : m(Dropdown, {
+                            id: 'crossSectionDropdown',
+                            items: ['unset', ...crossSectionsUnique],
+                            activeItem: resultsPreferences.crossSection,
+                            onclickChild: value => resultsPreferences.crossSection = value,
+                            style: {'margin-left': '1em'}
+                        }))
+                    ]
                 ],
                 m('div', {
-                    style: {'height': '500px', 'max-width': '600px'}
+                    style: {'margin-top': '1em', 'height': '500px', 'max-width': '700px'}
                 }, m(PlotVegaLite, {
-                    specification: (resultsPreferences.timeSeriesPlotConfig === 'Confidence interval'
+                    specification: (resultsPreferences.timeSeriesPlotConfig === 'Confidence Interval'
                         ? plots.vegaLiteForecastConfidence : plots.vegaLiteForecast)(
                         plotData, xName, yName, dataSplit,
                         groupName, crossSectionName, title, getOrderingTimeUnit(problem))
                 })))
         }
 
-        if (problem.task.toLowerCase().includes('regression')) {
+        if (problem.task.toLowerCase().includes('regression') || problem.task.toLowerCase() === "forecasting") {
             let summaries = adapters.map(adapter => ({
                 name: adapter.getSolutionId(),
                 fittedVsActual: adapter.getFittedVsActuals(resultsPreferences.target),
@@ -805,7 +812,7 @@ export class CanvasSolutions {
             let predictorData;
             if (problem.task === 'forecasting') {
                 indices = new Set(indices);
-                predictorData = adapters[0].getDataSample(resultsPreferences.dataSplit)
+                predictorData = (adapters[0].getDataSample(resultsPreferences.dataSplit) || [])
                     .filter(point => indices.has(point.d3mIndex));
             } else {
                 predictorData = adapters[0].getDataSample(resultsPreferences.dataSplit, indices.slice(0, observationLimit));
@@ -1067,8 +1074,8 @@ export class CanvasSolutions {
                 sections: [
                     {value: 'EFD', title: 'empirical first differences'},
                     {value: 'Partials', title: 'model prediction as predictor varies over its domain'},
-                    {value: 'PDP/ICE', title: 'partial dependence plot/individual conditional expectation'}
-                ]
+                    problem.task !== "forecasting" && {value: 'PDP/ICE', title: 'partial dependence plot/individual conditional expectation'}
+                ].filter(_=>_)
             }),
             interpretationContent
         ]
@@ -1383,7 +1390,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Scores Summary'] && this.scoresSummary(problem, selectedAdapters));
 
-        let variableImportance = problem.task !== 'forecasting' && m(Subpanel, {
+        let variableImportance = m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Variable Importance',
             shown: resultsSubpanels['Variable Importance'],
@@ -1401,7 +1408,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Variable Importance'] && this.variableImportance(problem, selectedAdapters));
 
-        let modelInterpretation = problem.task !== 'forecasting' && selectedAdapters.length === 1 && m(Subpanel, {
+        let modelInterpretation = selectedAdapters.length === 1 && m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Model Interpretation',
             shown: resultsSubpanels['Model Interpretation'],
