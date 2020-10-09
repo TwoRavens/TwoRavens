@@ -80,8 +80,11 @@ export function buildPipeline(pipeline, variables = new Set()) {
             labels = aggPrepped['labels'];
         } else [units, accumulators, labels] = [undefined, undefined, undefined];
 
-        if (step.type === 'menu')
-            compiled.push(...buildMenu(step))
+        if (step.type === 'menu') {
+            let menuPrepped = buildMenu(step);
+            compiled.push(...menuPrepped['pipeline'])
+            if (menuPrepped['variables']) variables = menuPrepped['variables']
+        }
 
     });
 
@@ -836,7 +839,7 @@ export function buildMenu(step) {
 
     if (metadata.type === 'dyadSearch') {
         let branch = {tab: metadata.currentTab, type: 'full', column: metadata.tabs[metadata.currentTab].full};
-        return makeBranches([branch])
+        return {pipeline: makeBranches([branch])}
     }
 
     if (metadata.type === 'dyad') {
@@ -851,10 +854,10 @@ export function buildMenu(step) {
             }));
         });
 
-        return makeBranches([...branches]);
+        return {pipeline: makeBranches([...branches])};
     }
 
-    if (metadata.type === 'date') return [
+    if (metadata.type === 'date') return {pipeline: [
         {
             $group: {
                 _id: {year: {$year: '$' + metadata.columns[0]}, month: {$month: '$' + metadata.columns[0]}},
@@ -864,18 +867,18 @@ export function buildMenu(step) {
         {$project: {year: '$_id\\.year', month: '$_id\\.month', _id: 0, total: 1}},
         {$match: {year: {$exists: true}, month: {$exists: true}}},
         {$sort: {year: 1, month: 1}}
-    ];
+    ], variables: ['year', 'month', 'total']};
 
-    if (['discrete', 'discrete_grouped'].includes(metadata.type)) return [
+    if (['discrete', 'discrete_grouped'].includes(metadata.type)) return {pipeline: [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
         {$project: {[metadata.columns[0]]: '$_id\\.' + metadata.columns[0], _id: 0, total: 1}},
         {$limit: 1000}
-    ];
+    ], variables: [metadata.columns[0], 'total']};
 
     if (metadata.type === 'continuous') {
         let boundaries = Array(metadata.buckets + 1).fill(0).map((arr, i) => metadata.min + i * (metadata.max - metadata.min) / metadata.buckets);
         boundaries[boundaries.length - 1] += 1; // the upper bound is exclusive
-        return [
+        return {pipeline: [
             {
                 $bucket: {
                     boundaries,
@@ -895,7 +898,7 @@ export function buildMenu(step) {
                 }
             },
             {$sort: {Label: 1}}
-        ];
+        ], variables: ['Label', 'Freq']};
     }
 
     if (metadata.type === 'data') {
@@ -909,7 +912,7 @@ export function buildMenu(step) {
         if (metadata.limit) subset.push({$limit: metadata.limit});
         if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
 
-        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return [
+        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return {pipeline: [
             ...subset,
             {
                 $addFields: metadata.nominal.reduce((out, entry) => {
@@ -918,9 +921,9 @@ export function buildMenu(step) {
                 }, {})
             },
             {$project: {_id: 0}}
-        ];
+        ]};
 
-        return [
+        return {pipeline: [
             ...subset,
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
@@ -928,15 +931,15 @@ export function buildMenu(step) {
                     return out;
                 }, {_id: 0})
             }
-        ];
+        ], variables: metadata?.variables?.length > 0 && [...new Set(metadata.variables)]};
 
     }
 
-    if (metadata.type === 'count') return [{
+    if (metadata.type === 'count') return {pipeline: [{
         $count: 'total'
-    }];
+    }], variables: ['total']};
 
-    if (metadata.type === 'summary') return [
+    if (metadata.type === 'summary') return {pipeline: [
         {
             $group: metadata.variables.reduce((out, variable) => {
                 out[variable + '-mean'] = {$avg: '$' + variable};
@@ -965,7 +968,7 @@ export function buildMenu(step) {
                 return out;
             }, {_id: 0})
         }
-    ];
+    ]};
 
 
     // build steps for subsetting data down for out-of-database splitting
@@ -990,7 +993,7 @@ export function buildMenu(step) {
             }), {})
         });
 
-        return pipeline;
+        return {pipeline, variables: projectionColumns};
     }
 
     if (metadata.type === 'split') {
@@ -1008,7 +1011,7 @@ export function buildMenu(step) {
         let pipeline = [];
 
         // don't filter rows to a split
-        if (splitOptions.outOfSampleSplit || split === 'all') return [];
+        if (splitOptions.outOfSampleSplit || split === 'all') return {pipeline};
 
         // some splitting conditions may be handled without a join
         // when forecasting without cross sections
@@ -1187,7 +1190,7 @@ export function buildMenu(step) {
             $limit: splitOptions.maxRecordCount
         });
 
-        return pipeline;
+        return {pipeline};
 
         // alternate implementation that just takes first categorical observation
         // {

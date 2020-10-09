@@ -63,6 +63,7 @@ import {
     getSubtask,
     setSelectedProblem
 } from "../problem";
+import * as manipulate from "../manipulations/manipulate";
 
 
 /**
@@ -147,7 +148,7 @@ let buildProblemResultsCache = () => ({
     domainsLoading: false,
 
     id: {
-        query: [],
+        query: JSON.stringify(resultsQuery),
         solutionId: undefined,
         dataSplit: undefined,
         target: undefined
@@ -1233,6 +1234,7 @@ export class CanvasSolutions {
     view(vnode) {
         let {problem} = vnode.attrs;
         if (!problem) return;
+        if (manipulate.constraintMenu) return;
 
         // ensure valid state of selected predictor, target
         if (!problem.predictors.includes(resultsPreferences.predictor))
@@ -1256,15 +1258,24 @@ export class CanvasSolutions {
                     app.saveSystemLogEntry(logParams);
                 }
             }
-        }, m(Table, {
-            headers: ['Variable', 'Data'],
-            data: [
-                ['Dependent Variables', problem.targets],
-                ['Predictors', getPredictorVariables(problem)],
-                ['Description', preformatted(getDescription(problem))],
-                ['Task', problem.task]
-            ]
-        }));
+        },
+            m(Table, {
+                headers: ['Variable', 'Data'],
+                data: [
+                    ['Dependent Variables', problem.targets],
+                    ['Predictors', getPredictorVariables(problem)],
+                    ['Description', preformatted(getDescription(problem))],
+                    ['Task', problem.task]
+                ]
+            }),
+            m(manipulate.PipelineFlowchart, {
+                compoundPipeline: [
+                    ...getAbstractPipeline(problem),
+                    ...resultsQuery
+                ],
+                pipeline: resultsQuery,
+                editable: true
+            }));
 
         let selectedAdapters = getSelectedAdapters([problem, ...problemComparison ? getComparableProblems(problem) : []]);
 
@@ -1832,6 +1843,7 @@ export let otherSearches = {};
 let resultsSubpanels = {
     'Prediction Summary': true,
     'Scores Summary': false,
+    'Data Subsetting': false,
     'Variance Inflation': false,
     'ANOVA Tables': false,
     'Coefficients': false,
@@ -2086,7 +2098,15 @@ export let customDatasets = {};
 
 // TODO: just need to add menu element, some debug probably needed
 // manipulations to apply to data after joining predictions
-export let resultsQuery = [];
+export let resultsQuery = [
+    {
+        type: 'subset',
+        id: 0,
+        abstractQuery: [],
+        nodeId: 1,
+        groupId: 1
+    }
+];
 
 /**
  * Invalidate/reset the resultsCache if problem has changed
@@ -2381,6 +2401,7 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
 
     let compiled = queryMongo.buildPipeline(
         [
+            ...resultsCache[problem.problemId].id.query,
             problem.task === 'objectDetection' && {
                 type: 'aggregate',
                 measuresUnit: problem.tags.indexes.map(index => ({"subset": "discrete", "column": index})),
@@ -3235,7 +3256,7 @@ let loadICEDatasetPaths = async problem => {
     let tempQuery = resultsCache[problem.problemId].id.query;
 
     let compiled = buildPipeline(
-        [...resultsQuery], problem.results.variablesInitial)['pipeline']
+        [...resultsQuery, {type: 'menu', metadata: {type: 'data', sample: ICE_SAMPLE_MAX_SIZE}}], problem.results.variablesInitial)['pipeline']
 
     let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
     let splitSchema = problem.results.datasetSchemas[resultsPreferences.dataSplit];
@@ -3249,7 +3270,7 @@ let loadICEDatasetPaths = async problem => {
             collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
             // perform these aggregations
             method: 'aggregate',
-            query: JSON.stringify([...compiled, {$sample: {size: ICE_SAMPLE_MAX_SIZE}}, {$project: {_id: 0}}]),
+            query: JSON.stringify(compiled),
             // export with this dataset schema
             export: 'dataset',
             metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, splitSchema, problem)),

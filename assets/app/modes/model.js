@@ -53,7 +53,7 @@ export class CanvasModel {
 
     view(vnode) {
         let {drawForceDiagram, forceData} = vnode.attrs;
-        let selectedProblem = getSelectedProblem();
+        let selectedP1roblem = getSelectedProblem();
 
         if (Object.keys(app.variableSummaries).length === 0)
             return m('div[style=height:100%;position:relative]',
@@ -334,8 +334,6 @@ export let leftpanel = forceData => {
             ...leftpanelVariables.filter(variable => !matchedVariables.includes(variable))
         ];
 
-        let nominalVariables = getNominalVariables();
-
         sections.push({
             value: 'Variables',
             title: 'Click variable name to add or remove the variable pebble from the modeling space.',
@@ -360,7 +358,7 @@ export let leftpanel = forceData => {
                         },
                         classes: {
                             // keep this order aligned with params in mutateNodes
-                            'item-nominal': nominalVariables,
+                            'item-nominal': getNominalVariables(selectedProblem),
                             'item-geographic': getGeographicVariables(selectedProblem),
                             'item-ordinal': selectedProblem.tags.ordinal,
                             'item-boundary': selectedProblem.tags.boundary,
@@ -888,11 +886,11 @@ export let rightpanel = () => {
                 }),
 
                 // app.workspace.raven_config.advancedMode &&
-                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && [
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && selectedProblem.targets.length > 0 && [
                     m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
                     m(Dropdown, {
                         id: 'positiveClass',
-                        items: Object.keys(app.variableSummaries[selectedProblem.targets[0]].plotValues || {}),
+                        items: Object.keys(app.variableSummaries[selectedProblem.targets[0]]?.plotValues || {}),
                         activeItem: selectedProblem.positiveLabel,
                         onclickChild: label => selectedProblem.positiveLabel = label,
                         style: {'margin': '1em', 'margin-top': '0'},
