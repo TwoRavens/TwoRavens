@@ -1268,6 +1268,7 @@ export class CanvasSolutions {
                     ['Task', problem.task]
                 ]
             }),
+            "Manipulate data that was used to train the model. This can be used to look at prediction summaries, variable importance, EFD, partials and ICE plots from data within specific regions.",
             m(manipulate.PipelineFlowchart, {
                 compoundPipeline: [
                     ...getAbstractPipeline(problem),
@@ -1329,8 +1330,8 @@ export class CanvasSolutions {
             m(Table, {
                 sortable: true,
                 sortHeader: 'name',
-                data: Object.keys(resultsCache[problem.problemId]?.producePaths ?? {}).map(produceName =>
-                    ({
+                data: Object.keys(resultsCache[problem.problemId]?.producePaths[firstSolution.solutionId] ?? {})
+                    .map(produceName => ({
                         'name': produceName,
                         // 'predict type': produce.configuration.predict_type,
                         'input': m(Button, {
