@@ -16,6 +16,7 @@ fi
 
 if [ "$1" == "django" ]; then
   # rename tab; move into repo; set working env; kill django; kill webpack; run django; close tab;
+  DISPLAY_DATAMART_UI=false
   ttab -G '
     echo -ne "\033]0;django\007";
     cd '$install_directory';

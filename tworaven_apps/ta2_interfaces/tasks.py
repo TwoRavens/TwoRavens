@@ -302,11 +302,13 @@ def split_dataset(configuration, workspace):
     #    this is to make it possible to support arbitrarily large datasets
     if problem.get('taskType') == 'FORECASTING' and problem['forecastingHorizon']['column']:
         time_column = problem['forecastingHorizon']['column']
-        dtypes[time_column] = str
+        time_format = problem.get('time_format', {}).get(time_column)
+
+        if time_format:
+            dtypes[time_column] = str
         for cross_section in problem.get('crossSection', []):
             dtypes[cross_section] = str
 
-        time_format = problem.get('time_format', {}).get(time_column)
 
         cross_section_date_limits = {}
         time_buffer = []
@@ -322,8 +324,9 @@ def split_dataset(configuration, workspace):
         infer_count = 0
         for dataframe_chunk in data_file_generator:
 
-            dataframe_chunk[time_column] = dataframe_chunk[time_column].apply(
-                lambda x: get_date(x, time_format=time_format))
+            if time_format:
+                dataframe_chunk[time_column] = dataframe_chunk[time_column].apply(
+                    lambda x: get_date(x, time_format=time_format))
             dataframe_chunk = dataframe_chunk.sort_values(by=[time_column])
 
             for _, row in dataframe_chunk.iterrows():
@@ -348,9 +351,17 @@ def split_dataset(configuration, workspace):
                         # at minimum three time points are needed to infer a date offset frequency
                         if len(time_buffer) == 3:
                             infer_count += 1
-                            candidate_frequency = pd.infer_freq(time_buffer)
-                            if candidate_frequency:
-                                candidate_frequencies.add(candidate_frequency)
+                            if time_format:
+                                try:
+                                    candidate_frequency = pd.infer_freq(time_buffer)
+
+                                    if candidate_frequency:
+                                        candidate_frequencies.add(candidate_frequency)
+                                except Exception:
+                                    # pandas._libs.tslibs.np_datetime.OutOfBoundsDatetime
+                                    pass
+                            else:
+                                candidate_frequencies.add(abs(time_buffer[1] - time_buffer[0]))
 
                 # collect the highest date within each cross section
                 section = tuple(row[col] for col in problem.get('crossSection', []))
@@ -359,9 +370,12 @@ def split_dataset(configuration, workspace):
 
         # if data has a trio of evenly spaced records
         if candidate_frequencies:
-            # sort inferred frequency by approximate time durations, select shortest
-            inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
-            inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
+            if time_format:
+                # sort inferred frequency by approximate time durations, select shortest
+                inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
+                inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
+            else:
+                inferred_freq = min(candidate_frequencies)
 
     # create new directory structure for the data in a role
     def get_dataset_paths(role):
@@ -432,7 +446,7 @@ def split_dataset(configuration, workspace):
 
     # write out blank csv files for each split
     for split_name in ['train', 'test', 'all']:
-        pd.DataFrame(data=[], columns=keep_variables).to_csv(dataset_paths[split_name], index=False)
+        pd.DataFrame(data=[], columns=keep_variables).to_csv(dataset_paths[split_name], index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     # by default, the split is trivially forever None, which exhausts all zips
     splits_file_generator = iter(lambda: None, 1)
@@ -498,7 +512,10 @@ def split_dataset(configuration, workspace):
 
                     def in_test(row):
                         section = tuple(row[col] for col in problem.get('crossSection', []))
-                        date = get_date(row[time_column], time_format)
+                        date = row[time_column]
+                        if time_format:
+                            date = get_date(date, time_format)
+
                         if not date:
                             return False
                         max_date = cross_section_date_limits[section]
@@ -507,7 +524,9 @@ def split_dataset(configuration, workspace):
 
                     def in_train(row):
                         section = tuple(row[col] for col in problem.get('crossSection', []))
-                        date = get_date(row[time_column], time_format)
+                        date = row[time_column]
+                        if time_format:
+                            date = get_date(date, time_format)
                         if not date:
                             return False
                         max_date = cross_section_date_limits[section] - inferred_freq * horizon
@@ -564,7 +583,10 @@ def split_dataset(configuration, workspace):
                     if sample_count < len(splits[split_name]):
                         splits[split_name] = splits[split_name].sample(sample_count)
 
-                splits[split_name].to_csv(dataset_paths[split_name], mode='a', header=False, index=False)
+                splits[split_name].to_csv(
+                    dataset_paths[split_name],
+                    mode='a', header=False, index=False,
+                    quoting=csv.QUOTE_NONNUMERIC)
                 dataset_stratified[split_name] = dataset_stratified[split_name] and splits['stratified']
 
         row_count_chunked += len(dataframe)
@@ -572,7 +594,7 @@ def split_dataset(configuration, workspace):
             if sample_count < chunk_count:
                 dataframe = dataframe.sample(sample_count)
 
-        dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False)
+        dataframe.to_csv(dataset_paths['all'], mode='a', header=False, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     def get_mode(x):
         mode = pd.Series.mode(x)
@@ -604,7 +626,7 @@ def split_dataset(configuration, workspace):
                 aggregated[problem['indexes'][0]] = range(len(aggregated))
 
             aggregated = aggregated.reindex(columns=key_order, copy=False)
-            aggregated.to_csv(dataset_paths[split_name], index=False)
+            aggregated.to_csv(dataset_paths[split_name], index=False, quoting=csv.QUOTE_NONNUMERIC)
 
     return {
         'dataset_schemas': dataset_schemas,
@@ -699,7 +721,7 @@ def create_partials_datasets(configuration, workspace_id):
             json.dump(dataset_schema, dataset_schema_file)
 
         os.remove(csv_path)
-        writable_dataframe.to_csv(csv_path, index=False)
+        writable_dataframe.to_csv(csv_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
 
         return {KEY_SUCCESS: True, KEY_DATA: (path.join(dest_directory, 'datasetDoc.json'), csv_path)}
 

@@ -1,5 +1,4 @@
 // Utilities for working with problem objects
-// get all predictors, including those that only have an arrow to a target
 import {linspace, remove} from "./utils";
 import * as queryMongo from "./manipulations/queryMongo";
 import m from "mithril";
@@ -15,9 +14,8 @@ import {
     d3mTags,
     d3mTaskType,
     defaultMaxRecordCount,
-    generateProblemID, getAbstractPipeline,
-    getData,
-    ICE_DOMAIN_MAX_SIZE,
+    generateProblemID,
+    getAbstractPipeline,
     inferIsCategorical,
     loadProblemPreprocess,
     resetPeek,
@@ -29,6 +27,101 @@ import {
     workspace
 } from "./app";
 
+/**
+ * Problem
+ * @typedef {Object} Problem
+ * @property {string} problemId - Unique indicator for the problem
+ * @property {?string} provenanceId - Unique indicator for the problem this was sourced from
+ * @property {('auto'|'user'|'solved')} system - Indicates the state of a problem.
+ * @property {?boolean} unedited - if true, then the problem may be transiently deleted (when switching away from a temp copy of a discovered problem)
+ * @property {string[]} predictors - Variables in the predictors group
+ * @property {string[]} targets - Variables in the targets group
+ * @property {string} description
+ * @property {string} metric - Primary metric to fit against
+ * @property {string[]} metrics - Secondary metrics to evaluate, but not fit against
+ * @property {d3mTaskType} task
+ * @property {d3mTaskSubtype} subTask
+ * @property {d3mSupervision} supervision
+ * @property {d3mResourceType[]} resourceTypes
+ * @property {d3mTags} d3mTags
+ * @property {SplitOptions} splitOptions
+ * @property {ScoreOptions} scoreOptions
+ * @property {SearchOptions} searchOptions
+ * @property {boolean} meaningful
+ * @property {Object[]} manipulations
+ * @property {ProblemTags} tags
+ * @property {TimeGranularity} timeGranularity
+ * @property {Object[]} pebbleLinks - small black arrows represented in the force diagram
+ * @property {?string} orderingName - explicit name to give to the ordering variable
+ * @property {?ProblemResults} results
+ */
+
+/**
+ * @typedef {Object} SplitOptions
+ * @property {boolean} outOfSampleSplit
+ * @property {number} trainTestRatio
+ * @property {boolean} stratified
+ * @property {boolean} shuffle
+ * @property {?number} randomSeed
+ * @property {?string} splitsFile
+ * @property {?string} splitsDir
+ * @property {number} maxRecordCount
+ */
+
+/**
+ * @typedef {Object} SearchOptions
+ * @property {number} timeBoundSearch
+ * @property {number} timeBoundRun
+ * @property {number} priority
+ * @property {number} solutionsLimit
+ */
+
+/**
+ * @typedef {Object} ScoreOptions
+ * @property {boolean} userSpecified
+ * @property {string} evaluationMethod
+ * @property {?number} folds
+ * @property {number} trainTestRatio
+ * @property {boolean} stratified
+ * @property {boolean} shuffle
+ * @property {?number} randomSeed
+ * @property {?string} splitsFile
+ */
+
+/**
+ * @typedef {Object} ProblemTags
+ * @property {string[]} nominal
+ * @property {string[]} ordinal
+ * @property {string[]} crossSection
+ * @property {string[]} geographic
+ * @property {string[]} boundary
+ * @property {string[]} ordering
+ * @property {string[]} weights
+ * @property {string[]} indexes
+ * @property {string[]} privileged
+ * @property {string[]} exogenous
+ * @property {string[]} transformed
+ * @property {string[]} loose
+ */
+
+/**
+ * @typedef {Object} TimeGranularity
+ * @property {number} [value]
+ * @property {string} [units]
+ */
+
+/**
+ * @typedef {Object} ProblemResults
+ * @property {Object} solutions
+ * @property {Object} selectedSource
+ * @property {Object} selectedSolutions
+ * @property {Object} solverState
+ */
+
+/**
+ * @param {string} problemId
+ * @returns {Problem}
+ */
 export let buildEmptyProblem = problemId => ({
     problemId,
     system: 'auto',
@@ -89,6 +182,11 @@ export let buildEmptyProblem = problemId => ({
 });
 
 
+/**
+ * Build a problem based on the d3m problem doc
+ * @param {Object} problemDoc
+ * @returns {Problem}
+ */
 export let buildDefaultProblem = problemDoc => {
 
     console.log('problemDoc', problemDoc);
@@ -221,60 +319,10 @@ export let buildDefaultProblem = problemDoc => {
     };
 };
 
-// should be equivalent to partials.app
-// loads up linearly spaced observations along domain and non-mangled levels/counts
-export let loadPredictorDomains = async problem => {
-    if (problem.results.levels || problem.results.domain) return;
-
-    let predictors = getPredictorVariables(problem);
-    let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
-
-    let abstractPipeline = getAbstractPipeline(problem, true);
-    let compiled = queryMongo.buildPipeline(abstractPipeline, workspace.raven_config.variablesInitial)['pipeline'];
-
-    let facets = categoricals
-        .filter(variable => variableSummaries[variable].validCount > 0)
-        .reduce((facets, variable) => Object.assign(facets, {
-            [variable]: [
-                {$group: {_id: '$' + variable, count: {$sum: 1}}},
-                {$sort: {count: -1, _id: 1}},
-                {$limit: ICE_DOMAIN_MAX_SIZE},
-                {$project: {'_id': 0, level: '$_id', count: 1}}
-            ]
-        }), {});
-
-    // {[variable]: [{'level': level, 'count': count}, ...]}
-    problem.results.levels = Object.keys(facets).length > 0 ? (await getData({
-        method: 'aggregate',
-        query: JSON.stringify([
-            ...compiled,
-            {$facet: facets}
-        ])
-    }))[0] : {};
-
-    // {[variable]: *samples along domain*}
-    problem.results.domains = predictors.reduce((domains, predictor) => {
-        let summary = variableSummaries[predictor];
-        if (!summary.validCount)
-            domains[predictor] = [];
-        else if (categoricals.includes(predictor))
-            domains[predictor] = problem.results.levels[predictor].map(entry => entry.level);
-        else {
-            if (variableSummaries[predictor].binary)
-                domains[predictor] = [variableSummaries[predictor].min, variableSummaries[predictor].max];
-            else
-                domains[predictor] = linspace(
-                    variableSummaries[predictor].min,
-                    variableSummaries[predictor].max,
-                    ICE_DOMAIN_MAX_SIZE)
-        }
-        return domains;
-    }, {})
-};
-
-// programmatically deselect every selected variable
-export let erase = () => {
-    let problem = getSelectedProblem();
+/**
+ * programmatically deselect every selected variable
+ */
+export let erase = problem => {
     problem.predictors = [];
     problem.pebbleLinks = [];
     problem.targets = [];
@@ -285,7 +333,9 @@ export let erase = () => {
 };
 
 /**
- *  Process problems
+ * Translate the barebones discovery problem descriptions to Problems
+ * @param {Object[]} problems
+ * @returns {Object.<string, Problem>}
  */
 export function standardizeDiscovery(problems) {
     console.log('-------------  Discover!!!  -------------')
@@ -314,7 +364,6 @@ export function standardizeDiscovery(problems) {
 
         // skip if transformations are present, D3M primitives cannot handle
         // if (!IS_D3M_DOMAIN) {
-        console.log(prob);
         prob.transform.forEach(transformObs => {
             // index at zero compensates for poor R json handling
             let [variable, transform] = transformObs[0].split('=').map(_ => _.trim());
@@ -412,13 +461,17 @@ export function standardizeDiscovery(problems) {
     }, {});
 }
 
+/**
+ * @returns {Problem}
+ */
 export let getSelectedProblem = () => {
     let ravenConfig = workspace?.raven_config;
     return ravenConfig?.problems?.[ravenConfig?.selectedProblem]
 };
 
-/*
- *  Return the problem description--or autogenerate one
+/**
+ * Return the problem description--or autogenerate one
+ * @param {Problem} problem
  */
 export function getDescription(problem) {
     if (problem.description) return problem.description;
@@ -427,6 +480,10 @@ export function getDescription(problem) {
     return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 
+/**
+ * @param {d3mTaskType} task
+ * @param {Problem} problem
+ */
 export let setTask = (task, problem) => {
     if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
@@ -445,6 +502,11 @@ export let setTask = (task, problem) => {
     }
     delete problem.unedited;
 };
+
+/**
+ * @param {d3mTaskSubtype} subTask
+ * @param {Problem} problem
+ */
 export let setSubTask = (subTask, problem) => {
     if (subTask === problem.subTask || !Object.keys(applicableMetrics[problem.task]).includes(subTask))
         return;
@@ -453,6 +515,12 @@ export let setSubTask = (subTask, problem) => {
 
     delete problem.unedited;
 };
+
+/**
+ * Sets if the problem is supervised or unsupervised
+ * @param {d3mSupervision} supervision
+ * @param {Problem} problem
+ */
 export let setSupervision = (supervision, problem) => {
     if (supervision === problem.supervision || ![undefined, ...Object.keys(d3mSupervision)].includes(supervision))
         return;
@@ -460,6 +528,11 @@ export let setSupervision = (supervision, problem) => {
 
     delete problem.unedited;
 };
+
+/**
+ * @param {string[]} types
+ * @param {Problem} problem
+ */
 export let setResourceTypes = (types, problem) => {
     types = types.filter(type => Object.keys(d3mResourceType).includes(type));
     if (types.every(type => problem.resourceTypes.includes(type)) && types.length === problem.resourceTypes.length)
@@ -469,6 +542,12 @@ export let setResourceTypes = (types, problem) => {
 
     delete problem.unedited;
 };
+
+/**
+ * Sets the secondary tags that are dropped into keywords sent to the TA2
+ * @param {string[]} tags
+ * @param {Problem} problem
+ */
 export let setD3MTags = (tags, problem) => {
     tags = tags.filter(type => Object.keys(d3mTags).includes(type));
     if (tags.every(tag => problem.d3mTags.includes(tag)) && tags.length === problem.d3mTags.length)
@@ -478,6 +557,12 @@ export let setD3MTags = (tags, problem) => {
 
     delete problem.unedited;
 };
+
+/**
+ * Mutate the problem state if the subtask is invalid, and return the subtask
+ * @param {Problem} problem
+ * @returns {string}
+ */
 export let getSubtask = problem => {
     if (problem.task.toLowerCase() === 'regression')
         return problem.targets.length > 1 ? 'multivariate' : 'univariate';
@@ -494,6 +579,13 @@ export let getSubtask = problem => {
 
     return problem.subTask
 };
+
+/**
+ * Sets the metric, and may update the secondary metric
+ * @param {string} metric
+ * @param {Problem} problem
+ * @param {boolean} all - set all other secondary metrics that also apply to the problem
+ */
 export let setMetric = (metric, problem, all = false) => {
     if (metric === problem.metric || !applicableMetrics[problem.task][getSubtask(problem)].includes(metric))
         return;
@@ -506,6 +598,14 @@ export let setMetric = (metric, problem, all = false) => {
 
     delete problem.unedited;
 };
+
+/**
+ * Retrieve all predictor variables
+ * This includes variables tagged as predictors/in the predictor group,
+ *     as well as variables that are linked to the target group
+ * @param {Problem} problem
+ * @returns {string[]}
+ */
 export let getPredictorVariables = problem => {
     if (!problem) return;
     let arrowPredictors = (problem.pebbleLinks || [])
@@ -515,16 +615,29 @@ export let getPredictorVariables = problem => {
     // union arrow predictors with predictor group
     return [...new Set([...problem.predictors, ...arrowPredictors])]
 };
+
+/**
+ * Retrieve all variables that are nominal/text
+ * This includes variables that were text-based and variables that were tagged as nominal
+ * @param {Problem} problem
+ * @returns {string[]}
+ */
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
         ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].nature === "nominal"),
         ...selectedProblem.tags.nominal,
         // // targets in a classification problem are also nominal
-        // ...selectedProblem.task.toLowerCase() === 'classification'
-        //     ? selectedProblem.targets : []
+        ...selectedProblem.task.toLowerCase() === 'classification'
+            ? selectedProblem.targets : []
     ])];
 };
+
+/**
+ * Gets the name of the problem's ordering variable
+ * @param {Problem} problem
+ * @returns {string}
+ */
 export let getOrderingVariable = problem => {
     if (problem.orderingName)
         return problem.orderingName;
@@ -533,6 +646,12 @@ export let getOrderingVariable = problem => {
     if (problem.tags.indexes.length === 1)
         return problem.tags.indexes[0];
 }
+
+/**
+ * Computes the time unit of the constructed ordering variable
+ * @param {Problem} problem
+ * @returns {(string | undefined)}
+ */
 export let getOrderingTimeUnit = problem => {
     let units = problem.tags.ordering
         .map(variable => variableSummaries[variable]?.timeUnit);
@@ -540,6 +659,12 @@ export let getOrderingTimeUnit = problem => {
         return
     return units.join("-")
 }
+
+/**
+ * Sets the currently selected problem, and updates all relevant page state
+ * @param {Problem} problem
+ * @returns {string[]}
+ */
 export let getGeographicVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
@@ -558,6 +683,10 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     return out;
 }, new Set());
 
+/**
+ * Sets the currently selected problem, and updates all relevant page state
+ * @param {string} problemId
+ */
 export function setSelectedProblem(problemId) {
     let ravenConfig = workspace.raven_config;
 
@@ -604,10 +733,15 @@ export function setSelectedProblem(problemId) {
     window.selectedProblem = problem;
 }
 
+/**
+ * returns a copy of the problem with results stripped, and system/ids adjusted
+ * @param {Problem} problemSource
+ * @returns {Problem}
+ */
 export function getProblemCopy(problemSource) {
     return Object.assign(common.deepCopy(problemSource), {
         problemId: generateProblemID(),
-        provenanceID: problemSource.problemId,
+        provenanceId: problemSource.problemId,
         unedited: true,
         pending: true,
         system: 'user',
@@ -616,6 +750,11 @@ export function getProblemCopy(problemSource) {
     })
 }
 
+/**
+ * returns true if the problem is correctly specified for a solver
+ * @param {Problem} problem
+ * @returns {boolean}
+ */
 export let isProblemValid = problem => {
     let valid = true;
     if (problem.task.toLowerCase() === 'forecasting' && !getOrderingVariable(problem)) {
@@ -644,4 +783,22 @@ export let isProblemValid = problem => {
     if (!valid)
         m.redraw();
     return valid;
+};
+
+/**
+ * returns true if the user actions necessitate writing out a new dataset before solving
+ * @param {Problem} problem
+ * @returns {boolean}
+ */
+export let needsManipulationRewritePriorToSolve = problem => {
+    let newNominalVars = new Set(getNominalVariables(problem));
+    Object.keys(variableSummaries)
+        .filter(variable => variableSummaries[variable].numchar === 'character')
+        .forEach(variable => newNominalVars.delete(variable));
+    let hasNominalCast = [...problem.targets, ...getPredictorVariables(problem)]
+        .some(variable => newNominalVars.has(variable));
+    let hasOrdering = problem.tags.ordering.length > 1;
+
+    let hasManipulation = (workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
+    return hasManipulation || hasNominalCast || hasOrdering;
 };

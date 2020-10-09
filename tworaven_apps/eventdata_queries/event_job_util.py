@@ -863,7 +863,7 @@ class EventJobUtil(object):
         with open(temp_data_filepath, "w", newline="") as output_file:
             dict_writer = csv.DictWriter(
                 output_file,
-                quoting=csv.QUOTE_MINIMAL,
+                quoting=csv.QUOTE_NONNUMERIC,
                 fieldnames=columns,
                 extrasaction="ignore",
             )
