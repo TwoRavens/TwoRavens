@@ -184,11 +184,10 @@ class DatamartJobUtilNYU(DatamartJobUtilBase):
             terms = " ".join(query.get("keywords", []))
             if terms:
                 auctus_query["query"] = terms
-        return ok_resp(
-            {
-                "datamart_url": f"{get_nyu_url()}{session['link_url']}&q={quote(json.dumps(auctus_query))}"
-            }
-        )
+
+        return ok_resp({
+            "datamart_url": f"{session['link_url']}&q={quote(json.dumps(auctus_query))}"
+        })
 
     @staticmethod
     @celery_app.task(ignore_result=True)
