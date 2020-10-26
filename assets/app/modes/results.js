@@ -1,21 +1,14 @@
 import m from 'mithril';
 
 import * as app from "../app";
-import {
-    alertError,
-    alertWarn,
-    buildDatasetPath,
-    getAbstractPipeline,
-    getData,
-    resetPeek,
-    variableSummaries,
-    workspace
-} from "../app";
 import * as plots from "../plots";
+import * as utils from "../utils";
 
 import * as solverWrapped from '../solvers/wrapped';
-import {SPEC_problem} from '../solvers/wrapped';
 import * as solverD3M from '../solvers/d3m';
+
+import * as queryMongo from "../manipulations/queryMongo";
+import * as manipulate from "../manipulations/manipulate";
 
 import * as common from "../../common/common";
 import Table from "../../common/views/Table";
@@ -27,33 +20,20 @@ import Button from "../../common/views/Button";
 import Icon from "../../common/views/Icon";
 import Popper from '../../common/views/Popper';
 import MenuTabbed from "../../common/views/MenuTabbed";
+import ModalVanilla from "../../common/views/ModalVanilla";
+import Paginated from "../../common/views/Paginated";
+import TextField from "../../common/views/TextField";
+import ButtonRadio from "../../common/views/ButtonRadio";
+import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
+import Slider from "../../common/views/slider";
 
-import {bold, italicize, preformatted} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
 import ConfusionMatrix from "../views/ConfusionMatrix";
 import Flowchart from "../views/Flowchart";
-import ButtonRadio from "../../common/views/ButtonRadio";
 import ModelInterpretation from "../views/ModelInterpretation";
-import ModalVanilla from "../../common/views/ModalVanilla";
-import * as queryMongo from "../manipulations/queryMongo";
-import Paginated from "../../common/views/Paginated";
-import TextField from "../../common/views/TextField";
 
-import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
-import Slider from "../../common/views/slider";
 import {
-    formatPrecision,
-    generateID,
-    linspace,
-    melt,
-    minutesToString,
-    omniSort,
-    parseNumeric,
-    remove,
-    sample,
-    setRecursive
-} from "../utils";
-import {
+    getAbstractPipeline,
     getDescription,
     getNominalVariables,
     getOrderingTimeUnit,
@@ -63,7 +43,6 @@ import {
     getSubtask,
     setSelectedProblem
 } from "../problem";
-import * as manipulate from "../manipulations/manipulate";
 
 
 /**
@@ -201,7 +180,7 @@ export let leftpanel = () => {
                     .concat(Object.values(customDatasets).map(dataset => dataset.name)),
                 activeItem: resultsPreferences.dataSplit,
                 onclickChild: value => {
-                    resetPeek();
+                    app.resetPeek();
                     resultsPreferences.dataSplit = value
                 },
                 style: {'margin-left': '1em'}
@@ -241,7 +220,7 @@ export let leftpanel = () => {
                                 selectedProblem.searchOptions.timeBoundSearch = minutes;
                             }
                         })),
-                        minutesToString(selectedProblem.searchOptions.timeBoundSearch || 15),
+                        utils.minutesToString(selectedProblem.searchOptions.timeBoundSearch || 15),
                         // m('br'), m('br'),
                         //
                         // m('label', 'Maximum record count per data split.'),
@@ -826,7 +805,7 @@ export class CanvasSolutions {
                 tableData = [...indices].map(d3mIndex => ({d3mIndex}));
             }
 
-            if (indices.size > observationLimit) response.push(italicize(`Only the first ${observationLimit} observations have been collected.`))
+            if (indices.size > observationLimit) response.push(utils.italicize(`Only the first ${observationLimit} observations have been collected.`))
             response.push(m('div[style=overflow:auto;padding-bottom:1em]', m(Paginated, {
                 data: tableData,
                 makePage: data => m(Table, {data}),
@@ -885,9 +864,9 @@ export class CanvasSolutions {
     }
 
     variableImportance(problem, adapters) {
-        let content = [bold('Importance Scores')]
+        let content = [utils.bold('Importance Scores')]
         if (adapters.length === 0) {
-            content.push(italicize("No solutions are selected"));
+            content.push(utils.italicize("No solutions are selected"));
             return content
         }
 
@@ -906,7 +885,7 @@ export class CanvasSolutions {
 
         if (importanceScores.length === 0) {
             content.push(
-                m('div[style=margin:1em]', italicize("Loading importance scores.")),
+                m('div[style=margin:1em]', utils.italicize("Loading importance scores.")),
                 common.loader("importanceLoader"))
             return content
         }
@@ -927,7 +906,7 @@ export class CanvasSolutions {
         if (resultsPreferences.interpretationMode === 'EFD') {
             let isCategorical = getNominalVariables(problem).includes(resultsPreferences.target);
             interpretationContent.push(m('div[style=margin: 1em]',
-                italicize("Empirical first differences"), ` is a tool to interpret the influence of variables on the model, from the empirical distribution of the data. ` +
+                utils.italicize("Empirical first differences"), ` is a tool to interpret the influence of variables on the model, from the empirical distribution of the data. ` +
                 `The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. ` +
                 `Parts of the domain where the fitted and actual values align indicate high utility from the predictor. ` +
                 `If the fitted and actual values are nearly identical, then the two lines may be indistinguishable.`),);
@@ -958,7 +937,7 @@ export class CanvasSolutions {
                             id: 'resultsFactorDropdown',
                             items: [
                                 'undefined',
-                                ...new Set(Object.values(interpretationData)[0].map(point => point.level).sort(omniSort))
+                                ...new Set(Object.values(interpretationData)[0].map(point => point.level).sort(utils.omniSort))
                             ],
                             activeItem: resultsPreferences.factor,
                             onclickChild: setResultsFactor,
@@ -969,7 +948,7 @@ export class CanvasSolutions {
                         makePage: variablesToPlot => variablesToPlot
                             .filter(predictor => predictor in interpretationData)
                             .map(predictor => [
-                                m('br'), bold(predictor),
+                                m('br'), utils.bold(predictor),
                                 m(ModelInterpretation, {
                                     mode: resultsPreferences.interpretationMode,
                                     data: interpretationData[predictor]
@@ -999,11 +978,11 @@ export class CanvasSolutions {
             })).filter(predictorEntry => predictorEntry.data);
 
             if (interpretationPartialsData.length > 0) interpretationContent = [
-                m('div[style=margin: 1em]', italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
+                m('div[style=margin: 1em]', utils.italicize("Partials"), ` shows the prediction of the model as one predictor is varied, and the other predictors are held at their mean.`),
                 m('div', {style: 'overflow:auto'}, m(Paginated, {
                     data: interpretationPartialsData,
                     makePage: data => data.map(predictorEntry => m('div',
-                        bold(predictorEntry.predictor),
+                        utils.bold(predictorEntry.predictor),
                         m(ModelInterpretation, {
                             mode: 'Partials',
                             data: predictorEntry.data,
@@ -1032,7 +1011,7 @@ export class CanvasSolutions {
 
             interpretationContent = [
                 m('div[style=margin: 1em]',
-                    italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. `
+                    utils.italicize("Individual conditional expectations"), ` draws one line for each individual in the data, as the selected predictor is varied. `
                     + `A random sample of individuals are chosen from the dataset. `
                     + (isCategorical
                         ? 'The thickness of the lines is relative to the number of observations present at each level.'
@@ -1043,7 +1022,7 @@ export class CanvasSolutions {
                     makePage: predictors => predictors.map(predictor => {
                         let interpretationData = adapter.getInterpretationICE(predictor);
 
-                        let predictorContent = [bold(predictor)];
+                        let predictorContent = [utils.bold(predictor)];
                         if (interpretationData) predictorContent.push(m('div', {style: 'overflow:auto'}, m(ModelInterpretation, {
                             mode: 'ICE',
                             data: interpretationData,
@@ -1271,7 +1250,7 @@ export class CanvasSolutions {
                 data: [
                     ['Dependent Variables', problem.targets],
                     ['Predictors', getPredictorVariables(problem)],
-                    ['Description', preformatted(getDescription(problem))],
+                    ['Description', utils.preformatted(getDescription(problem))],
                     ['Task', problem.task]
                 ]
             }),
@@ -1333,7 +1312,7 @@ export class CanvasSolutions {
                 style: {background: 'white'}
             }),
 
-            bold("Downloads"),
+            utils.bold("Downloads"),
             m(Table, {
                 sortable: true,
                 sortHeader: 'name',
@@ -1663,7 +1642,7 @@ export let getSolutionAdapter = (problem, solution) => ({
 
         if (!resultsCache?.[problem.problemId]?.interpretationPartialsFitted?.[adapter.getSolutionId()]) return;
 
-        return melt(
+        return utils.melt(
             resultsCache[problem.problemId].domains[predictor]
                 .map((x, i) => Object.assign({[predictor]: x},
                     resultsCache[problem.problemId].interpretationPartialsFitted[adapter.getSolutionId()][predictor][i])),
@@ -1787,7 +1766,7 @@ let getSolutionTable = (problems, systemId) => {
             {solver: adapter.getSystemId(), solution: adapter.getName()},
             [problem.metric, ...problem.metrics]
                 .reduce((out, metric) => Object.assign(out, {
-                    [metric]: formatPrecision(adapter.getScore(metric))
+                    [metric]: utils.formatPrecision(adapter.getScore(metric))
                 }), {})));
 
     return m(Table, {
@@ -1891,7 +1870,7 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
     if (modelComparison) {
 
         problem.results.selectedSolutions[systemId].includes(solutionId)
-            ? remove(problem.results.selectedSolutions[systemId], solutionId)
+            ? utils.remove(problem.results.selectedSolutions[systemId], solutionId)
             : problem.results.selectedSolutions[systemId].push(solutionId);
 
         // set behavioral logging
@@ -2210,7 +2189,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
         [...resultsQuery],
         problem.results.variablesInitial)['pipeline'];
 
-    let produceId = generateID(producePointer);
+    let produceId = utils.generateID(producePointer);
     let tempQuery = resultsCache[problem.problemId].id.query;
     let response;
     let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
@@ -2221,7 +2200,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
                 data_pointer: producePointer,
                 metadata: {
                     targets: problem.targets,
-                    collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
+                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`,
                     datafile: splitPath,
                     query: compiled,
                     produceId
@@ -2303,7 +2282,7 @@ export let loadConfusionData = async (problem, adapter) => {
         [...resultsQuery],
         problem.results.variablesInitial)['pipeline'];
 
-    let produceId = generateID(producePointer);
+    let produceId = utils.generateID(producePointer);
     let tempQuery = resultsCache[problem.problemId].id.query;
     let response;
 
@@ -2315,7 +2294,7 @@ export let loadConfusionData = async (problem, adapter) => {
                 data_pointer: producePointer,
                 metadata: {
                     targets: problem.targets,
-                    collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`,
+                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`,
                     datafile: splitPath,
                     query: compiled,
                     produceId
@@ -2343,7 +2322,7 @@ export let loadConfusionData = async (problem, adapter) => {
     Object.keys(response.data).forEach(variable => {
         if (response.data[variable].classes.length <= 15) {
             response.data[variable].classes = response.data[variable].classes
-                .sort(omniSort);
+                .sort(utils.omniSort);
 
             let extraPoints = [];
             response.data[variable].classes.forEach(levelActual =>
@@ -2379,15 +2358,9 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
 
     let dataSampleIndices = JSON.stringify(indices);
     if (resultsCache[problem.problemId].dataSampleIndices?.[split] !== dataSampleIndices) {
-        setRecursive(resultsCache[problem.problemId], [
-            ['dataSampleIndices', {}],
-            [split, dataSampleIndices]])
-        setRecursive(resultsCache[problem.problemId], [
-            ['dataSample', {}],
-            [split, undefined]])
-        setRecursive(resultsCache[problem.problemId], [
-            ['dataSampleLoading', {}],
-            [split, false]])
+        utils.setDeep(resultsCache, [problem.problemId, 'dataSampleIndices', split], dataSampleIndices)
+        utils.setDeep(resultsCache, [problem.problemId, 'dataSample', split], undefined)
+        utils.setDeep(resultsCache, [problem.problemId, 'dataSampleLoading', split], false)
     }
     // don't load if systems are already in loading state
     if (resultsCache[problem.problemId].dataSampleLoading[split])
@@ -2448,7 +2421,7 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
         response = await app.getData({
             method: 'aggregate',
             datafile: splitPath,
-            collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
+            collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
             reload: false,
             query: JSON.stringify(compiled)
         })
@@ -2518,10 +2491,7 @@ export let loadFittedData = async (problem, adapter, split) => {
         return;
 
     // begin blocking additional requests to load
-    setRecursive(resultsCache[problem.problemId].fittedLoading, [
-        [adapter.getSolutionId(), {}],
-        [split, true]
-    ]);
+    utils.setDeep(resultsCache, [problem.problemId, 'fittedLoading', adapter.getSolutionId(), split], true);
     m.redraw()
 
     let tempQuery = resultsCache[problem.problemId].id.query;
@@ -2563,10 +2533,8 @@ export let loadFittedData = async (problem, adapter, split) => {
             if (!isNaN(parsed)) row[target] = parsed
         }));
 
-    setRecursive(resultsCache[problem.problemId].fitted,
-        [[adapter.getSolutionId(), {}], [split, response.data]]);
-    setRecursive(resultsCache[problem.problemId].fittedLoading,
-        [[adapter.getSolutionId(), {}], [split, false]]);
+    utils.setDeep(resultsCache, [problem.problemId, 'fitted', adapter.getSolutionId(), split], response.data);
+    utils.setDeep(resultsCache, [problem.problemId, 'fittedLoading', adapter.getSolutionId(), split], false);
 
     // apply state changes to the page
     m.redraw();
@@ -2646,7 +2614,7 @@ export let loadInterpretationPartialsFittedData = async (adapter) => {
         out[predictor] = response.data.slice(offset, nextOffset)
             // for each target specified in the problem
             .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
-                [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
+                [target]: app.inferIsCategorical(target) ? point[target] : utils.parseNumeric(point[target])
             }), {}));
         offset = nextOffset;
         return out;
@@ -2692,7 +2660,7 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
         problem.results.variablesInitial)['pipeline'];
 
     let tempQuery = resultsCache[problem.problemId].id.query;
-    let produceId = generateID(dataPointer);
+    let produceId = utils.generateID(dataPointer);
     let response;
 
     let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
@@ -2709,7 +2677,7 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
                     categoricals: [...getNominalVariables(problem)
                         .filter(variable => problem.results.variablesInitial.includes(variable))],
                     datafile: splitPath, // location of the dataset csv
-                    collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
+                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
                     query: compiled
                 }
             }
@@ -2734,9 +2702,9 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
 
     // melt predictor data once, opposed to on every redraw
     Object.keys(response.data)
-        .forEach(predictor => response.data[predictor] = melt(
+        .forEach(predictor => response.data[predictor] = utils.melt(
             nominals.includes(predictor)
-                ? sample(response.data[predictor], 20, false, true)
+                ? utils.sample(response.data[predictor], 20, false, true)
                 : response.data[predictor],
             ["predictor"], valueLabel, variableLabel));
 
@@ -2872,11 +2840,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         return;
 
     // begin blocking additional requests to load
-    setRecursive(resultsCache, [
-        [problem.problemId, {}],
-        ['importanceScoresLoading', {}],
-        [adapter.getSolutionId(), {}],
-        [mode, true]]);
+    utils.setDeep(resultsCache, [problem.problemId, 'importanceScoresLoading', adapter.getSolutionId(), mode], true);
     m.redraw()
 
     let tempQuery = resultsCache[problem.problemId].id.query;
@@ -2888,7 +2852,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             [...resultsQuery],
             problem.results.variablesInitial)['pipeline'];
 
-        let produceId = generateID(dataPointer);
+        let produceId = utils.generateID(dataPointer);
 
         let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
         try {
@@ -2902,7 +2866,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                         predictors: getPredictorVariables(problem),
                         categoricals: getNominalVariables(problem),
                         datafile: splitPath, // location of the dataset csv
-                        collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
+                        collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
                         query: compiled
                     }
                 }
@@ -2942,7 +2906,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     //         out[predictor] = response.data.slice(offset, nextOffset)
     //             // for each target specified in the problem
     //             .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
-    //                 [target]: app.inferIsCategorical(target) ? point[target] : parseNumeric(point[target])
+    //                 [target]: app.inferIsCategorical(target) ? point[target] : utils.parseNumeric(point[target])
     //             }), {}));
     //         offset = nextOffset;
     //         return out;
@@ -3015,16 +2979,10 @@ let loadImportanceScore = async (problem, adapter, mode) => {
             }), {}));
 
     // save importance scores into cache
-    setRecursive(resultsCache[problem.problemId], [
-        ['importanceScores', {}],
-        [adapter.getSolutionId(), {}],
-        [mode, responseImportance.data.scores]
-    ]);
-    setRecursive(resultsCache, [
-        [problem.problemId, {}],
-        ['importanceScoresLoading', {}],
-        [adapter.getSolutionId(), {}],
-        [mode, false]]);
+    utils.setDeep(resultsCache,
+        [problem.problemId, 'importanceScores', adapter.getSolutionId(), mode], responseImportance.data.scores);
+    utils.setDeep(resultsCache,
+        [problem.problemId, 'importanceScoresLoading', adapter.getSolutionId(), mode], false);
 
     m.redraw();
 };
@@ -3045,9 +3003,8 @@ export let loadProducePath = async (adapter, name, dataPath, metadataPath) => {
     if (resultsCache[problem.problemId].producePathsLoading?.[adapter.getSolutionId()]?.[name])
         return;
 
-    setRecursive(resultsCache[problem.problemId], [
-        ['producePathsLoading', {}], [adapter.getSolutionId(), {}], [name, true]
-    ]);
+    utils.setDeep(resultsCache,
+        [problem.problemId, 'producePathsLoading', adapter.getSolutionId(), name], true);
     m.redraw()
 
     await produceOnSolution(adapter, name, dataPath, metadataPath)
@@ -3088,12 +3045,8 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
         return;
 
     // begin blocking additional requests to load
-    setRecursive(resultsCache[problem.problemId], [
-        ['boundaryImagePathsLoading', {}],
-        [target, {}],
-        [split, {}],
-        [JSON.stringify(index), true]
-    ]);
+    utils.setDeep(resultsCache,
+        [problem.problemId, 'boundaryImagePathsLoading', target, split, JSON.stringify(index)], true);
     m.redraw()
 
     let actualPoint = resultsCache[problem.problemId].dataSample[split]
@@ -3143,19 +3096,11 @@ let loadObjectBoundaryImagePath = async (problem, adapters, target, split, index
     if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    setRecursive(resultsCache[problem.problemId], [
-        ['boundaryImagePaths', {}],
-        [target, {}],
-        [split, {}],
-        [JSON.stringify(index), response.data]
-    ]);
+    utils.setDeep(resultsCache,
+        [problem.problemId, 'boundaryImagePaths', target, split, JSON.stringify(index)], response.data);
 
-    setRecursive(resultsCache[problem.problemId], [
-        ['boundaryImagePathsLoading', {}],
-        [target, {}],
-        [split, {}],
-        [JSON.stringify(index), false]
-    ]);
+    utils.setDeep(resultsCache,
+        [problem.problemId, 'boundaryImagePathsLoading', target, split, JSON.stringify(index)], false);
 
     // apply state changes to the page
     m.redraw();
@@ -3187,7 +3132,7 @@ let loadPredictorDomains = async problem => {
         problem.results.variablesInitial)['pipeline'];
 
     let facets = categoricals
-        .filter(variable => variableSummaries[variable].validCount > 0)
+        .filter(variable => app.variableSummaries[variable].validCount > 0)
         .reduce((facets, variable) => Object.assign(facets, {
             [variable]: [
                 {$group: {_id: '$' + variable, count: {$sum: 1}}},
@@ -3198,30 +3143,30 @@ let loadPredictorDomains = async problem => {
         }), {});
 
     // {[variable]: [{'level': level, 'count': count}, ...]}
-    resultsCache[problem.problemId].levels = Object.keys(facets).length > 0 ? (await getData({
+    resultsCache[problem.problemId].levels = Object.keys(facets).length > 0 ? (await app.getData({
         method: 'aggregate',
         query: JSON.stringify([
             ...compiled,
             {$facet: facets}
         ]),
         datafile: problem.results.datasetPaths[resultsPreferences.dataSplit],
-        collection_name: `${workspace.d3m_config.name}_split_${resultsPreferences.dataSplit}`, // collection/dataset name
+        collection_name: `${app.workspace.d3m_config.name}_split_${resultsPreferences.dataSplit}`, // collection/dataset name
     }))[0] : {};
 
     // {[variable]: *samples along domain*}
     resultsCache[problem.problemId].domains = predictors.reduce((domains, predictor) => {
-        let summary = variableSummaries[predictor];
+        let summary = app.variableSummaries[predictor];
         if (!summary.validCount)
             domains[predictor] = [];
         else if (categoricals.includes(predictor))
             domains[predictor] = resultsCache[problem.problemId].levels[predictor].map(entry => entry.level);
         else {
-            if (variableSummaries[predictor].binary)
-                domains[predictor] = [variableSummaries[predictor].min, variableSummaries[predictor].max];
+            if (app.variableSummaries[predictor].binary)
+                domains[predictor] = [app.variableSummaries[predictor].min, app.variableSummaries[predictor].max];
             else
-                domains[predictor] = linspace(
-                    variableSummaries[predictor].min,
-                    variableSummaries[predictor].max,
+                domains[predictor] = utils.linspace(
+                    app.variableSummaries[predictor].min,
+                    app.variableSummaries[predictor].max,
                     ICE_DOMAIN_MAX_SIZE)
         }
         return domains;
@@ -3272,10 +3217,10 @@ let loadICEDatasetPaths = async problem => {
     let partialsLocationInfo;
     try {
         // BUILD SAMPLE DATASET
-        let samplePaths = await getData({
+        let samplePaths = await app.getData({
             // run on this dataset
             datafile: splitPath,
-            collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}`, // collection/dataset name
+            collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
             // perform these aggregations
             method: 'aggregate',
             query: JSON.stringify(compiled),
@@ -3293,7 +3238,7 @@ let loadICEDatasetPaths = async problem => {
                 dataset_schema_path: samplePaths.metadata_path,
                 dataset_path: samplePaths.data_path,
                 // use this metadata to construct synthetic data
-                problem: SPEC_problem(problem),
+                problem: solverWrapped.SPEC_problem(problem),
                 all_variables: problem.results.variablesInitial,
                 domains: resultsCache[problem.problemId].domains,
                 // export with this metadata
@@ -3316,7 +3261,7 @@ let loadICEDatasetPaths = async problem => {
         return;
 
     if (!partialsLocationInfo?.success) {
-        alertWarn('Call for ICE data failed. ' + partialsLocationInfo.message);
+        app.alertWarn('Call for ICE data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     }
 
@@ -3349,10 +3294,10 @@ let loadPartialsDatasetPath = async problem => {
     m.redraw();
 
     // BUILD BASE DATASET (one record)
-    let dataset = [Object.keys(variableSummaries)
+    let dataset = [Object.keys(app.variableSummaries)
         .reduce((record, variable) => Object.assign(record, {
             [variable]: resultsCache[problem.problemId].levels?.[variable]?.[0]?.level
-                ?? variableSummaries[variable].median // take most frequent level (first mode)
+                ?? app.variableSummaries[variable].median // take most frequent level (first mode)
         }), {})];
 
     let tempQuery = resultsCache[problem.problemId].id.query;
@@ -3370,7 +3315,7 @@ let loadPartialsDatasetPath = async problem => {
                 dataset_schema: splitSchema,
                 dataset,
                 // user this metadata to construct synthetic data
-                problem: SPEC_problem(problem),
+                problem: solverWrapped.SPEC_problem(problem),
                 all_variables: problem.results.variablesInitial,
                 domains: resultsCache[problem.problemId].domains,
                 // export with this metadata
@@ -3392,7 +3337,7 @@ let loadPartialsDatasetPath = async problem => {
         return;
 
     if (!partialsLocationInfo?.success) {
-        alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
+        app.alertWarn('Call for partials data failed. ' + partialsLocationInfo.message);
         throw partialsLocationInfo.message;
     }
 
@@ -3450,26 +3395,26 @@ export let findProblem = data => {
 };
 
 export let prepareResultsDatasets = async (problem, solverId) => {
-    if (!problem.results.selectedSolutions) return
     // set d3m dataset id to unique value if not defined
-    problem.results.d3mDatasetId = problem.results.d3mDatasetId
-        || workspace.datasetDoc.about.datasetID + '_' + Math.abs(generateID(String(Math.random())));
+    utils.setDefault(problem.results, 'd3mDatasetId',
+        app.workspace.datasetDoc.about.datasetID + '_' + Math.abs(utils.generateID(String(Math.random()))));
 
-    problem.results.selectedSolutions[solverId] = problem.results.selectedSolutions[solverId] || [];
-    setRecursive(problem, [['results', {}], ['solverState', {}], [solverId, {}], ['thinking', true]]);
+    utils.setDefaultDeep(problem, ['results', 'selectedSolutions', solverId], []);
+    let solverState = utils.setStructure(problem, ['results', 'solverState', solverId]);
+    solverState.thinking = true;
+    solverState.message = 'applying manipulations to data';
 
-    problem.results.solverState[solverId].message = 'applying manipulations to data';
     m.redraw();
     try {
         if (!app.materializeManipulationsPromise[problem.problemId])
             app.materializeManipulationsPromise[problem.problemId] = app.materializeManipulations(problem);
         await app.materializeManipulationsPromise[problem.problemId];
     } catch (err) {
-        alertError(`Applying data manipulations failed: ${err}`);
+        app.alertError(`Applying data manipulations failed: ${err}`);
         throw err
     }
 
-    problem.results.solverState[solverId].message = 'preparing train/test splits';
+    solverState.message = 'preparing train/test splits';
     m.redraw();
     try {
         if (!app.materializeTrainTestPromise[problem.problemId])
@@ -3485,7 +3430,7 @@ export let prepareResultsDatasets = async (problem, solverId) => {
         getAbstractPipeline(problem), app.workspace.raven_config.variablesInitial
     )['variables']]
 
-    problem.results.solverState[solverId].message = 'initiating the search for solutions';
+    solverState.message = 'initiating the search for solutions';
     m.redraw();
 };
 
@@ -3513,9 +3458,9 @@ export let uploadForModelRun = async (file, name, problem) => {
         datasetPath: response.data.new_dataset_doc_path.replace('datasetDoc.json', 'tables/learningData.csv')
     };
 
-    let manipulatedInfo = await buildDatasetPath(
+    let manipulatedInfo = await app.buildDatasetPath(
         problem, undefined, customDataset.datasetPath,
-        `${workspace.d3m_config.name}_${customDataset.name}`,
+        `${app.workspace.d3m_config.name}_${customDataset.name}`,
         customDataset.datasetDoc);
 
     problem.results.datasetSchemas[customDataset.name] = customDataset.datasetDoc;

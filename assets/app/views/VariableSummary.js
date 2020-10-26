@@ -3,8 +3,7 @@ import * as d3 from "d3";
 import PlotVegaLite from "./PlotVegaLite";
 import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
-import {italicize} from "../index";
-import {formatPrecision} from "../utils";
+import {formatPrecision, italicize} from "../utils";
 import {getNominalVariables, getSelectedProblem} from "../problem";
 
 

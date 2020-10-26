@@ -1,31 +1,12 @@
 // Utilities for working with problem objects
-import {linspace, remove} from "./utils";
-import * as queryMongo from "./manipulations/queryMongo";
 import m from "mithril";
+
+import * as queryMongo from "./manipulations/queryMongo";
 import * as common from "../common/common";
 import * as manipulate from "./manipulations/manipulate";
 import * as results from "./modes/results";
 import * as app from "./app";
-import {
-    alertError,
-    applicableMetrics,
-    d3mResourceType,
-    d3mSupervision,
-    d3mTags,
-    d3mTaskType,
-    defaultMaxRecordCount,
-    generateProblemID,
-    getAbstractPipeline,
-    inferIsCategorical,
-    loadProblemPreprocess,
-    resetPeek,
-    saveSystemLogEntry,
-    setPreprocess,
-    swandive,
-    updateRightPanelWidth,
-    variableSummaries,
-    workspace
-} from "./app";
+import * as utils from './utils';
 
 /**
  * Problem
@@ -143,7 +124,7 @@ export let buildEmptyProblem = problemId => ({
         randomSeed: undefined,
         splitsFile: undefined,
         splitsDir: undefined,
-        maxRecordCount: defaultMaxRecordCount
+        maxRecordCount: app.defaultMaxRecordCount
     },
     searchOptions: {
         timeBoundSearch: 15,
@@ -196,25 +177,25 @@ export let buildDefaultProblem = problemDoc => {
         problemDoc.inputs.dataSplits = {};
 
     // UTILITY FUNCTIONS
-    let findTask = keywords => Object.keys(d3mTaskType)
+    let findTask = keywords => Object.keys(app.d3mTaskType)
         .find(key => keywords.includes(key)) || 'regression';
-    let findSupervision = keywords => Object.keys(d3mSupervision)
+    let findSupervision = keywords => Object.keys(app.d3mSupervision)
         .find(key => keywords.includes(key));
 
     let findSubtask = keywords => {
         let task = findTask(keywords);
-        let subTask = keywords.find(keyword => Object.keys(applicableMetrics[task]).includes(keyword))
-        if (!subTask) subTask = Object.keys(applicableMetrics[task])[0];
+        let subTask = keywords.find(keyword => Object.keys(app.applicableMetrics[task]).includes(keyword))
+        if (!subTask) subTask = Object.keys(app.applicableMetrics[task])[0];
         return subTask;
     };
 
-    let filterResourceType = keywords => Object.keys(d3mResourceType)
+    let filterResourceType = keywords => Object.keys(app.d3mResourceType)
         .filter(key => keywords.includes(key));
-    let filterD3MTags = keywords => Object.keys(d3mResourceType)
+    let filterD3MTags = keywords => Object.keys(app.d3mResourceType)
         .filter(key => keywords.includes(key));
 
     // extract a list of tagged variables from the datasetDoc's roles
-    let getTagsByRole = role => swandive ? [] : workspace.datasetDoc.dataResources
+    let getTagsByRole = role => app.swandive ? [] : app.workspace.datasetDoc.dataResources
         .filter(resource => resource.resType === 'table')
         .flatMap(resource => resource.columns
             .filter(column => column.role.includes(role))
@@ -230,17 +211,17 @@ export let buildDefaultProblem = problemDoc => {
 
     let indexes = [...getTagsByRole('index'), ...getTagsByRole('multiIndex')];
 
-    let predictors = swandive
-        ? Object.keys(variableSummaries)
+    let predictors = app.swandive
+        ? Object.keys(app.variableSummaries)
             .filter(column => column !== 'd3mIndex' && !targets.includes(column))
-        : workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
+        : app.workspace.datasetDoc.dataResources // if swandive false, then datadoc has column labeling
             .filter(resource => resource.resType === 'table')
             .flatMap(resource => resource.columns
                 .filter(column => !column.role.includes('index') && !targets.includes(column.colName))
                 .map(column => column.colName));
 
     if (predictors.length === 0) {
-        predictors = Object.keys(variableSummaries).filter(v => !targets.includes(v) && !indexes.includes(v));
+        predictors = Object.keys(app.variableSummaries).filter(v => !targets.includes(v) && !indexes.includes(v));
     }
 
     // defaultProblem
@@ -272,7 +253,7 @@ export let buildDefaultProblem = problemDoc => {
             randomSeed: problemDoc.inputs.dataSplits.randomSeed,
             splitsFile: undefined,
             splitsDir: undefined,
-            maxRecordCount: defaultMaxRecordCount
+            maxRecordCount: app.defaultMaxRecordCount
         }, problemDoc.splitOptions || {}),
 
         searchOptions: Object.assign({
@@ -294,7 +275,7 @@ export let buildDefaultProblem = problemDoc => {
         meaningful: false,
         manipulations: [],
         tags: {
-            nominal: swandive ? [] : workspace.datasetDoc.dataResources
+            nominal: app.swandive ? [] : app.workspace.datasetDoc.dataResources
                 .filter(resource => resource.resType === 'table')
                 .flatMap(resource => resource.columns
                     .filter(column => column.colType === 'categorical')
@@ -313,7 +294,7 @@ export let buildDefaultProblem = problemDoc => {
         },
 
         numClusters: numClusters,
-        timeGranularity: workspace.datasetDoc.dataResources
+        timeGranularity: app.workspace.datasetDoc.dataResources
             .find(resource => resource.resType === 'table')?.columns?.find?.(column => column.timeGranularity)?.timeGranularity || {},
         forecastingHorizon: problemDoc.inputs.forecastingHorizon?.horizonValue
     };
@@ -332,6 +313,8 @@ export let erase = problem => {
         problem.tags.indexes = ['d3mIndex'];
 };
 
+export let generateProblemID = () => 'problem ' + app.workspace.raven_config.problemCount++;
+
 /**
  * Translate the barebones discovery problem descriptions to Problems
  * @param {Object[]} problems
@@ -342,7 +325,7 @@ export function standardizeDiscovery(problems) {
     // filter out problems with target of null
     // e.g. [{"target":null, "predictors":null,"transform":0, ...},]
     //
-    problems = problems.filter(problem => problem.targets && problem.targets.every(target => target in variableSummaries));
+    problems = problems.filter(problem => problem.targets && problem.targets.every(target => target in app.variableSummaries));
 
     return problems.reduce((out, prob) => {
         let problemId = generateProblemID();
@@ -381,13 +364,13 @@ export function standardizeDiscovery(problems) {
         });
         // }
 
-        // console.log('variableSummaries:' + JSON.stringify(variableSummaries))
+        // console.log('variableSummaries:' + JSON.stringify(app.variableSummaries))
         // console.log('>> prob:' +  JSON.stringify(prob))
 
         let predictors = [...prob.predictors, ...getTransformVariables(manips)]
             .filter(variable => !prob.targets.includes(variable));
 
-        let ordering = predictors.filter(variable => variableSummaries[variable]?.timeUnit);
+        let ordering = predictors.filter(variable => app.variableSummaries[variable]?.timeUnit);
         predictors = predictors.filter(predictor => !ordering.includes(predictor));
 
         out[problemId] = {
@@ -415,7 +398,7 @@ export function standardizeDiscovery(problems) {
                 randomSeed: undefined,
                 splitsFile: undefined,
                 splitsDir: undefined,
-                maxRecordCount: defaultMaxRecordCount
+                maxRecordCount: app.defaultMaxRecordCount
             },
             searchOptions: {
                 timeBoundSearch: 15,
@@ -452,7 +435,7 @@ export function standardizeDiscovery(problems) {
             timeGranularity: {}
         };
         setTask(
-            inferIsCategorical(variableSummaries[prob.targets[0]])
+            app.inferIsCategorical(app.variableSummaries[prob.targets[0]])
                 ? 'classification' : ordering.length > 0
                 ? 'forecasting'
                 : 'regression',
@@ -465,7 +448,7 @@ export function standardizeDiscovery(problems) {
  * @returns {Problem}
  */
 export let getSelectedProblem = () => {
-    let ravenConfig = workspace?.raven_config;
+    let ravenConfig = app.workspace?.raven_config;
     return ravenConfig?.problems?.[ravenConfig?.selectedProblem]
 };
 
@@ -488,15 +471,15 @@ export let setTask = (task, problem) => {
     if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
     if (task.toLowerCase() === 'classification')
-        setSubTask(variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass', problem);
+        setSubTask(app.variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass', problem);
     else if (task.toLowerCase() === 'regression')
         setSubTask(problem.targets.length > 1 ? 'multivariate' : 'univariate', problem);
-    else if (!(problem.subTask in applicableMetrics[task]))
-        setSubTask(Object.keys(applicableMetrics[task])[0], problem);
+    else if (!(problem.subTask in app.applicableMetrics[task]))
+        setSubTask(Object.keys(app.applicableMetrics[task])[0], problem);
 
     if (problem.task === 'forecasting' && problem.tags.ordering.length === 0) {
         problem.tags.ordering = getPredictorVariables(problem)
-            .filter(variable => variableSummaries[variable].timeUnit)
+            .filter(variable => app.variableSummaries[variable].timeUnit)
         problem.predictors = problem.predictors
             .filter(predictor => !problem.tags.ordering.includes(predictor))
     }
@@ -508,10 +491,10 @@ export let setTask = (task, problem) => {
  * @param {Problem} problem
  */
 export let setSubTask = (subTask, problem) => {
-    if (subTask === problem.subTask || !Object.keys(applicableMetrics[problem.task]).includes(subTask))
+    if (subTask === problem.subTask || !Object.keys(app.applicableMetrics[problem.task]).includes(subTask))
         return;
     problem.subTask = subTask;
-    setMetric(applicableMetrics[problem.task][getSubtask(problem)][0], problem, true);
+    setMetric(app.applicableMetrics[problem.task][getSubtask(problem)][0], problem, true);
 
     delete problem.unedited;
 };
@@ -522,7 +505,7 @@ export let setSubTask = (subTask, problem) => {
  * @param {Problem} problem
  */
 export let setSupervision = (supervision, problem) => {
-    if (supervision === problem.supervision || ![undefined, ...Object.keys(d3mSupervision)].includes(supervision))
+    if (supervision === problem.supervision || ![undefined, ...Object.keys(app.d3mSupervision)].includes(supervision))
         return;
     problem.supervision = supervision;
 
@@ -534,7 +517,7 @@ export let setSupervision = (supervision, problem) => {
  * @param {Problem} problem
  */
 export let setResourceTypes = (types, problem) => {
-    types = types.filter(type => Object.keys(d3mResourceType).includes(type));
+    types = types.filter(type => Object.keys(app.d3mResourceType).includes(type));
     if (types.every(type => problem.resourceTypes.includes(type)) && types.length === problem.resourceTypes.length)
         return;
 
@@ -549,7 +532,7 @@ export let setResourceTypes = (types, problem) => {
  * @param {Problem} problem
  */
 export let setD3MTags = (tags, problem) => {
-    tags = tags.filter(type => Object.keys(d3mTags).includes(type));
+    tags = tags.filter(type => Object.keys(app.d3mTags).includes(type));
     if (tags.every(tag => problem.d3mTags.includes(tag)) && tags.length === problem.d3mTags.length)
         return;
 
@@ -567,15 +550,15 @@ export let getSubtask = problem => {
     if (problem.task.toLowerCase() === 'regression')
         return problem.targets.length > 1 ? 'multivariate' : 'univariate';
 
-    if (!problem.subTask && variableSummaries[problem.targets[0]]) {
+    if (!problem.subTask && app.variableSummaries[problem.targets[0]]) {
         if (problem.task.toLowerCase() === 'classification')
-            problem.subTask = variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass';
+            problem.subTask = app.variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass';
         else if (problem.task.toLowerCase() === 'regression')
             problem.subTask = problem.targets.length > 1 ? 'multivariate' : 'univariate';
         else
-            problem.subTask = Object.keys(applicableMetrics[problem.task])[0]
-    } else if (!problem.subTask && !variableSummaries[problem.targets[0]])
-        return Object.keys(applicableMetrics[problem.task])[0];
+            problem.subTask = Object.keys(app.applicableMetrics[problem.task])[0]
+    } else if (!problem.subTask && !app.variableSummaries[problem.targets[0]])
+        return Object.keys(app.applicableMetrics[problem.task])[0];
 
     return problem.subTask
 };
@@ -587,13 +570,13 @@ export let getSubtask = problem => {
  * @param {boolean} all - set all other secondary metrics that also apply to the problem
  */
 export let setMetric = (metric, problem, all = false) => {
-    if (metric === problem.metric || !applicableMetrics[problem.task][getSubtask(problem)].includes(metric))
+    if (metric === problem.metric || !app.applicableMetrics[problem.task][getSubtask(problem)].includes(metric))
         return;
     if (problem.metrics.includes(metric)) problem.metrics.push(problem.metric);
     problem.metric = metric;
-    remove(problem.metrics, metric);
+    utils.remove(problem.metrics, metric);
 
-    if (all) problem.metrics = applicableMetrics[problem.task][getSubtask(problem)]
+    if (all) problem.metrics = app.applicableMetrics[problem.task][getSubtask(problem)]
         .filter(elem => elem !== metric).sort();
 
     delete problem.unedited;
@@ -625,7 +608,7 @@ export let getPredictorVariables = problem => {
 export let getNominalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
-        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].nature === "nominal"),
+        ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].nature === "nominal"),
         ...selectedProblem.tags.nominal,
         // // targets in a classification problem are also nominal
         ...selectedProblem.task.toLowerCase() === 'classification'
@@ -654,7 +637,7 @@ export let getOrderingVariable = problem => {
  */
 export let getOrderingTimeUnit = problem => {
     let units = problem.tags.ordering
-        .map(variable => variableSummaries[variable]?.timeUnit);
+        .map(variable => app.variableSummaries[variable]?.timeUnit);
     if (units.some(unit => unit === undefined))
         return
     return units.join("-")
@@ -668,7 +651,7 @@ export let getOrderingTimeUnit = problem => {
 export let getGeographicVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
-        ...Object.keys(variableSummaries).filter(variable => variableSummaries[variable].geographic),
+        ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].geographic),
         ...selectedProblem.tags.geographic
     ])];
 }
@@ -683,12 +666,68 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     return out;
 }, new Set());
 
+// build a description of all computations the user has specified
+// typically omit 'all' when calling, unless you want to keep all variables (like in explore mode)
+export let getAbstractPipeline = (problem, all) => {
+    if (!problem) return [...app.workspace.raven_config.hardManipulations]
+
+    let modelVariables = [
+        ...problem.tags.indexes,
+        ...getPredictorVariables(problem),
+        getOrderingVariable(problem),
+        ...problem.targets
+    ].filter(_ => _);
+    let nominalCasts = problem.tags.nominals || [];
+    // nominal casts need only be applied to variables retained after subsetting
+    if (!all) nominalCasts = nominalCasts.filter(variable => modelVariables.includes(variable))
+
+    return [
+        // manipulations applied in dataset mode
+        ...app.workspace.raven_config.hardManipulations,
+        // manipulations applied in problem mode
+        // - including ordinal labeling, imputes, transforms, subsets, etc
+        ...problem.manipulations,
+        // if the problem has nominal casting
+        nominalCasts.length > 0 && {
+            type: 'transform',
+            transforms: nominalCasts.map(variable => ({
+                equation: `toString(${variable})`,
+                name: variable
+            }))
+        },
+        // combine the temporal ordering variables
+        problem.tags.ordering.length > 1 && {
+            type: 'transform',
+            transforms: [{
+                equation: "concat(" + problem.tags.ordering.map(variable => `toString(${variable})`).join(", \"-\", ") + ")",
+                name: problem.orderingName || getOrderingVariable(problem)
+            }]
+        },
+        // drop nan target rows and all unused variables
+        {
+            type: 'menu',
+            metadata: !all && (modelVariables.length < Object.keys(app.variableSummaries).length) ? {
+                type: 'data',
+                variables: modelVariables,
+                // these are also dropped in the train/test split, but why write the data out?
+                dropNA: problem.targets
+            } : {type: 'data'}
+        }
+    ].filter(_ => _);
+}
+
+export let loadProblemPreprocess = async problem =>
+    app.loadPreprocess(JSON.stringify(queryMongo.buildPipeline([
+        ...getAbstractPipeline(problem, true),
+        {type: 'menu', metadata: {type: 'data', sample: app.preprocessSampleSize}}
+    ], app.workspace.raven_config.variablesInitial)['pipeline']));
+
 /**
  * Sets the currently selected problem, and updates all relevant page state
  * @param {string} problemId
  */
 export function setSelectedProblem(problemId) {
-    let ravenConfig = workspace.raven_config;
+    let ravenConfig = app.workspace.raven_config;
 
     if (!problemId || ravenConfig.selectedProblem === problemId) return;
     if (!(problemId in ravenConfig.problems)) return;
@@ -704,10 +743,10 @@ export function setSelectedProblem(problemId) {
         activity_l2: 'PROBLEM_DEFINITION',
         other: {problem: problem}
     };
-    saveSystemLogEntry(logParams);
+    app.saveSystemLogEntry(logParams);
 
 
-    updateRightPanelWidth();
+    app.updateRightPanelWidth();
 
     // if a constraint is being staged, delete it
     manipulate.setConstraintMenu(undefined);
@@ -722,10 +761,10 @@ export function setSelectedProblem(problemId) {
 
     // update preprocess
     loadProblemPreprocess(problem)
-        .then(setPreprocess)
+        .then(app.setPreprocess)
         .then(m.redraw);
 
-    resetPeek();
+    app.resetPeek();
 
     if (results.resultsPreferences.dataSplit !== 'all' && !problem.splitOptions.outOfSampleSplit)
         results.resultsPreferences.dataSplit = 'all';
@@ -758,21 +797,21 @@ export function getProblemCopy(problemSource) {
 export let isProblemValid = problem => {
     let valid = true;
     if (problem.task.toLowerCase() === 'forecasting' && !getOrderingVariable(problem)) {
-        alertError('One variable (even an index) must be tagged as an ordering to solve a time series forecasting problem. ')
+        app.alertError('One variable (even an index) must be tagged as an ordering to solve a time series forecasting problem. ')
         valid = false;
     }
     if (problem.predictors.length === 0) {
-        alertError('At least one predictor is required.');
+        app.alertError('At least one predictor is required.');
         valid = false;
     }
     if (problem.task !== "clustering") {
         if (problem.targets.length === 0) {
-            alertError('At least one target is required.');
+            app.alertError('At least one target is required.');
             valid = false;
         }
 
         if (problem.targets.length > 1) {
-            alertError("Only one target variable may be specified at a time.");
+            app.alertError("Only one target variable may be specified at a time.");
             valid = false;
         }
     }
@@ -795,13 +834,13 @@ export let isProblemValid = problem => {
  */
 export let needsManipulationRewritePriorToSolve = problem => {
     let newNominalVars = new Set(getNominalVariables(problem));
-    Object.keys(variableSummaries)
-        .filter(variable => variableSummaries[variable].numchar === 'character')
+    Object.keys(app.variableSummaries)
+        .filter(variable => app.variableSummaries[variable].numchar === 'character')
         .forEach(variable => newNominalVars.delete(variable));
     let hasNominalCast = [...problem.targets, ...getPredictorVariables(problem)]
         .some(variable => newNominalVars.has(variable));
     let hasOrdering = problem.tags.ordering.length > 1;
 
-    let hasManipulation = (workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
+    let hasManipulation = (app.workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
     return hasManipulation || hasNominalCast || hasOrdering;
 };

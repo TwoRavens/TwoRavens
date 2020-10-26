@@ -552,7 +552,9 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
     border-radius: .2rem;
 }
 
-#modalBoxdatamartModal table.table tr td,
-#modalBoxdatamartModal table.table tr th{
-  text-align: left;
+.geo-point {
+    height: 10px;
+    width: 10px;
+    background-color: #4da5de;
+    border-radius: 50%;
 }

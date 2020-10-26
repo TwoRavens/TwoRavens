@@ -12,32 +12,21 @@ import {locationReload, setModal} from '../common/views/Modal';
 import * as queryMongo from "./manipulations/queryMongo";
 import * as solverD3M from './solvers/d3m';
 import * as solverWrapped from './solvers/wrapped';
-import {SPEC_problem} from './solvers/wrapped';
 
 import * as model from './modes/model';
 import * as manipulate from './manipulations/manipulate';
-import {setConstraintMenu} from './manipulations/manipulate';
 import * as results from "./modes/results";
 import * as explore from './modes/explore';
-import {bold, link, linkURLwithText} from "./index";
 import * as utils from "./utils";
-import {
-    byId,
-    clearWorkpacesAndReloadPage,
-    formatPrecision,
-    generateID,
-    getClearWorkspacesLink,
-    omniSort,
-    setRecursive
-} from "./utils";
 
 import {setDatamartDefaults} from "./datamart/Datamart";
 import Subpanel from "../common/views/Subpanel";
 import {
     buildDefaultProblem,
     buildEmptyProblem,
+    generateProblemID,
+    getAbstractPipeline,
     getNominalVariables,
-    getOrderingVariable,
     getPredictorVariables,
     getProblemCopy,
     getSelectedProblem,
@@ -45,6 +34,31 @@ import {
     setSelectedProblem,
     standardizeDiscovery
 } from "./problem";
+
+/**
+ * @typedef {object} Workspace
+ * @member {string} name
+ * @member {RavenConfig} raven_config
+ * @member {object} d3m_config
+ * @member {object} datasetDoc - dataset doc of the un-manipulated dataset
+ * @member {string} datasetPath - path to the un-manipulated dataset
+ */
+
+/** @type {?Workspace} */
+export let workspace;
+
+/**
+ * @typedef {object} RavenConfig
+ * @member {object.<string, Problem>} problems
+ * @member {string} selectedProblem - problemId of selected problem
+ * @member {number} problemCount - monotonically increasing count of number of problems, used to assign problem ids to new problems
+ * @member {ManipulationStep[]} hardManipulations - manipulations to apply to the base dataset
+ * @member {string[]} variablesInitial - variables in the original dataset. Manipulations are closed under these starting variables
+ * @member {object.<string, Problem>} problems
+ * @member {object} datasetSummariesDiffs - user-specified values to merge into the dataset summary
+ * @member {object} variableSummariesDiffs - user-specified values to merge into the variable summary
+ */
+
 
 //-------------------------------------------------
 // NOTE: global variables are now set in the index.html file.
@@ -77,7 +91,7 @@ export let peekMouseMove = (e) => {
     if (!peekInlineIsResizing) return;
 
     let menuId = isDatasetMode || (rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'canvas' : 'main';
-    let percent = (1 - e.clientY / byId(menuId).clientHeight) * 100;
+    let percent = (1 - e.clientY / utils.byId(menuId).clientHeight) * 100;
 
     setPeekInlineHeight(`calc(${Math.max(percent, 0)}% + ${common.heightFooter})`);
     m.redraw();
@@ -183,7 +197,7 @@ export async function updatePeek(pipeline) {
         if (splitPath) {
             datasetDetails = {
                 datafile: splitPath, // location of the dataset csv
-                collection_name: `${workspace.d3m_config.name}_split_${generateID(splitPath)}` // collection/dataset name
+                collection_name: `${workspace.d3m_config.name}_split_${utils.generateID(splitPath)}` // collection/dataset name
             }
             peekLabel = `Data from the ${dataSplit} split.`;
         }
@@ -212,7 +226,7 @@ export async function updatePeek(pipeline) {
 
     data = data.map(record => Object.keys(record).reduce((out, entry) => {
         if (typeof record[entry] === 'number')
-            out[entry] = formatPrecision(record[entry]);
+            out[entry] = utils.formatPrecision(record[entry]);
         else if (typeof record[entry] === 'string')
             out[entry] = `"${record[entry]}"`;
         else if (typeof record[entry] === 'boolean')
@@ -278,8 +292,6 @@ export let isExploreMode = false;
 export let isResultsMode = false;
 export let isDatasetMode = false;
 
-export let generateProblemID = () => 'problem ' + workspace.raven_config.problemCount++;
-
 export function setSelectedMode(mode) {
 
     mode = mode ? mode.toLowerCase() : 'model';
@@ -325,7 +337,7 @@ export function setSelectedMode(mode) {
 
     // remove the constraint menu if the mode bar is clicked while modifying constraints
     if (manipulate.constraintMenu) {
-        setConstraintMenu(undefined);
+        manipulate.setConstraintMenu(undefined);
         updateRightPanelWidth();
         updateLeftPanelWidth();
         common.setPanelOpen('right');
@@ -375,7 +387,10 @@ export function setSelectedMode(mode) {
 
             console.log(datasetQuery);
 
-            let preprocessPromise = loadPreprocess(datasetQuery).then(setPreprocess).then(m.redraw);
+            let preprocessPromise = loadPreprocess(datasetQuery)
+                .then(setPreprocess)
+                .then(m.redraw);
+
             loadDiscovery(datasetQuery).then(async discovery => {
                 if (!discovery) return
                 await preprocessPromise;
@@ -401,56 +416,6 @@ export function setSelectedMode(mode) {
     resetPeek();
 }
 
-
-// build a description of all computations the user has specified
-// typically omit 'all' when calling, unless you want to keep all variables (like in explore mode)
-export let getAbstractPipeline = (problem, all) => {
-    if (!problem) return [...workspace.raven_config.hardManipulations]
-
-    let modelVariables = [
-        ...problem.tags.indexes,
-        ...getPredictorVariables(problem),
-        getOrderingVariable(problem),
-        ...problem.targets
-    ].filter(_=>_);
-    let nominalCasts = problem.tags.nominals || [];
-    // nominal casts need only be applied to variables retained after subsetting
-    if (!all) nominalCasts = nominalCasts.filter(variable => modelVariables.includes(variable))
-
-    return [
-        // manipulations applied in dataset mode
-        ...workspace.raven_config.hardManipulations,
-        // manipulations applied in problem mode
-        // - including ordinal labeling, imputes, transforms, subsets, etc
-        ...problem.manipulations,
-        // if the problem has nominal casting
-        nominalCasts.length > 0 && {
-            type: 'transform',
-            transforms: nominalCasts.map(variable => ({
-                equation: `toString(${variable})`,
-                name: variable
-            }))
-        },
-        // combine the temporal ordering variables
-        problem.tags.ordering.length > 1 && {
-            type: 'transform',
-            transforms: [{
-                equation: "concat(" + problem.tags.ordering.map(variable => `toString(${variable})`).join(", \"-\", ") + ")",
-                name: problem.orderingName || getOrderingVariable(problem)
-            }]
-        },
-        // drop nan target rows and all unused variables
-        {
-            type: 'menu',
-            metadata: !all && (modelVariables.length < Object.keys(variableSummaries).length) ? {
-                type: 'data',
-                variables: modelVariables,
-                // these are also dropped in the train/test split, but why write the data out?
-                dropNA: problem.targets
-            } : {type: 'data'}
-        }
-    ].filter(_=>_);
-}
 
 export async function buildCsvPath(problem, lastStep, dataPath, collectionName) {
 
@@ -1059,9 +1024,6 @@ export let applicableSolvers = {
     collaborativeFiltering: {subTypeNone: []},
     objectDetection: {subTypeNone: []}
 };
-
-// export let byId = id => {console.log(id); return document.getElementById(id);}
-
 export const reset = async function reloadPage() {
     solverD3M.endAllSearches();
     location.reload();
@@ -1153,8 +1115,6 @@ export let lockTour = () => ({
  b. Read the d3m problem schema and add to problems
  */
 
-export let workspace;
-
 export let getCurrentWorkspaceName = () => workspace?.name ?? '(no workspace name)'
 export let getCurrentWorkspaceId = () => workspace?.user_workspace_id ?? '(no id)'
 
@@ -1175,11 +1135,11 @@ let getDatasetDoc = async dataset_schema_url => {
 
         setModal(m('div', {}, [
                 m('p', datasetDocFailMsg),
-                m('p', 'Please try to ', linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces'), ' or ', linkURLwithText(switch_dataset_url, 'Load a Different Dataset')),
+                m('p', 'Please try to ', utils.linkURLwithText(getClearWorkspacesLink(), 'Reset Workspaces'), ' or ', utils.linkURLwithText(switch_dataset_url, 'Load a Different Dataset')),
                 //' or ', linkURLwithText(window.location.origin, 'Reload the Page')),
                 m('hr'),
-                m('p', bold('Technical info. Error: '), datasetDocInfo.message),
-                m('p', 'Url: ', link(datasetDocLink))]),
+                m('p', utils.bold('Technical info. Error: '), datasetDocInfo.message),
+                m('p', 'Url: ', utils.link(datasetDocLink))]),
             "Failed to load datasetDoc.json!",
             true,
             "Reset Workspaces",
@@ -1199,6 +1159,21 @@ let getDatasetDoc = async dataset_schema_url => {
 
     return datasetDocInfo.data;
 };
+
+
+const getClearWorkspacesLink = _ => {
+    return window.location.origin + clear_user_workspaces_url;
+    // '/user-workspaces/clear-user-workspaces';
+}
+
+
+/*
+ * Clear workspace and return to the pebbles page
+ */
+const clearWorkpacesAndReloadPage = _ => {
+    document.location = getClearWorkspacesLink();
+    // return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
 /*
  * Set the workspace.datasetUrl using the workspace's d3m_config
@@ -1304,7 +1279,7 @@ let loadDiscovery = async query => {
     return samplingCache.discoveryPromise
 }
 
-let loadPreprocess = async query => {
+export let loadPreprocess = async query => {
     setSamplingCacheId(query);
     if (!samplingCache.preprocessPromise)
         samplingCache.preprocessPromise = loadSampledDatasetPath(query)
@@ -1324,12 +1299,6 @@ let loadPreprocess = async query => {
 
     return samplingCache.preprocessPromise
 }
-
-export let loadProblemPreprocess = async problem =>
-    loadPreprocess(JSON.stringify(queryMongo.buildPipeline([
-            ...getAbstractPipeline(problem, true),
-            {type: 'menu', metadata: {type: 'data', sample: preprocessSampleSize}}
-        ], workspace.raven_config.variablesInitial)['pipeline']));
 
 export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
@@ -1379,7 +1348,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
             if ('columns' in learningResource)
                 workspace.raven_config.variablesInitial = learningResource.columns
-                    .sort((a, b) => omniSort(a.colIndex, b.colIndex))
+                    .sort((a, b) => utils.omniSort(a.colIndex, b.colIndex))
                     .map(column => column.colName);
             // TODO: endpoint to retrieve column names if columns not present in datasetDoc
             else swandive = true;
@@ -1593,9 +1562,9 @@ export async function load({awaitPreprocess} = {}) {
     // ------------------------------------
     // Find the current workspace in the list
     // ------------------------------------
-    let workspace = config_result.data.find(config => config.is_current_workspace);
+    let tempWorkspace = config_result.data.find(config => config.is_current_workspace);
 
-    if (!workspace) {
+    if (!tempWorkspace) {
         setModal('No current workspace config in list!', "Error retrieving User Workspace configuration.", true, "Reset", false, locationReload);
     }
 
@@ -1604,7 +1573,7 @@ export async function load({awaitPreprocess} = {}) {
     // ---------------------------------------
     console.groupCollapsed('2. Load workspace');
 
-    let success = await loadWorkspace(workspace, {awaitPreprocess});
+    let success = await loadWorkspace(tempWorkspace, {awaitPreprocess});
     console.groupEnd();
     if (!success) {
         // alertError('Failed to load workspace');
@@ -1766,7 +1735,7 @@ export let materializeTrainTest = async problem => {
             split_options: problem.splitOptions,
             dataset_schema: problem.results.datasetSchemaPaths.all,
             dataset_path: problem.results.datasetPaths.all,
-            problem: SPEC_problem(problem)
+            problem: solverWrapped.SPEC_problem(problem)
         }
     });
 
@@ -1817,29 +1786,21 @@ export let setVariableSummaries = state => {
     // TODO: replace usages of .name with already existing .variableName
     Object.keys(variableSummaries).forEach(variable => variableSummaries[variable].name = variable);
 
-    common.deepMerge(variableSummaries, workspace.raven_config.variableSummariesDiffs);
+    // merge user-applied dataset annotations over the new variable summary
+    // don't re-introduce variables that no longer exist
+    Object.entries(workspace.raven_config.variableSummariesDiffs)
+        .filter(([key, _]) => key in variableSummaries)
+        .forEach(([key, value]) => common.deepMerge(variableSummaries[key], value));
     window.variableSummaries = variableSummaries;
 };
 
 export let setVariableSummaryAttr = (variable, attr, value) => {
-    setRecursive(workspace, [
-        ['raven_config', {}],
-        ['variableSummariesDiffs', {}],
-        [variable, {}],
-        [attr, value]
-    ]);
-    setRecursive(variableSummaries, [
-        [variable, {}],
-        [attr, value]
-    ]);
+    utils.setDeep(workspace, ['raven_config', 'variableSummariesDiffs', variable, attr], value);
+    utils.setDeep(variableSummaries, [variable, attr], value);
 };
 
 export let setDatasetSummaryAttr = (attr, value) => {
-    setRecursive(workspace, [
-        ['raven_config', {}],
-        ['datasetSummaryDiffs', {}],
-        [attr, value]
-    ]);
+    utils.setDeep(workspace, ['raven_config', 'datasetSummaryDiffs', attr], value);
     datasetSummary[attr] = value;
 }
 export let variableSummaries = {};

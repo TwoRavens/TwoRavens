@@ -322,10 +322,7 @@ export default class PlotVegaLiteEditor {
                                     this.pendingSecondaryVariable = '';
                                     if (!variables.includes(value)) return;
 
-                                    if (['bar', 'area'].includes(configuration.mark))
-                                        channel.variables = [value]
-                                    else
-                                        channel.variables.push(value)
+                                    channel.variables.push(value)
 
                                     if (channel.variables.length > 1) {
                                         let colorChannel = configuration.channels.find(channel => channel.name === 'color');

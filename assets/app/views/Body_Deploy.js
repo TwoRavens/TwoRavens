@@ -4,13 +4,12 @@ import Header from "../../common/views/Header";
 import Canvas from "../../common/views/Canvas";
 import {heightHeader} from "../../common/common";
 import * as app from '../app';
-import {generateProblemID} from '../app';
 import * as results from '../modes/results';
 import {customDatasets, getSolutionAdapter, resultsPreferences, uploadForModelRun} from '../modes/results';
 
 import TextField from "../../common/views/TextField";
 import Button from "../../common/views/Button";
-import {setSelectedProblem} from "../problem";
+import {generateProblemID, setSelectedProblem} from "../problem";
 
 export default class Body_Dataset {
     async oninit(vnode) {

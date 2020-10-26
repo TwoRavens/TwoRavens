@@ -4,23 +4,22 @@
 */
 import m from 'mithril';
 
+import * as app from "../app";
+import * as explore from "./explore";
+import * as manipulate from "../manipulations/manipulate";
+import * as schema from '../../preprocess-schemas/1-2-0';
+import * as utils from "../utils";
+
 import * as common from "../../common/common";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import TextField from "../../common/views/TextField";
 import Button from "../../common/views/Button";
-
-import * as app from "../app";
-import * as explore from "./explore";
-import * as manipulate from "../manipulations/manipulate";
 import Table from "../../common/views/Table";
-import {bold, preformatted} from "../index";
 import Paginated from "../../common/views/Paginated";
 import MenuHeaders from "../../common/views/MenuHeaders";
-
-
-import * as schema from '../../preprocess-schemas/1-2-0';
-import ButtonLadda from "../views/ButtonLadda";
 import Subpanel from "../../common/views/Subpanel";
+
+import ButtonLadda from "../views/ButtonLadda";
 
 
 // ------------------------------------------
@@ -146,7 +145,7 @@ export class CanvasDataset {
                 m(Table, {
                     style: {width: 'calc(100% + 2em)', 'margin-left': '-1em'},
                     data: Object.entries(app.workspace.datasetDoc.about)
-                        .map(row => [row[0], preformatted(row[1])])
+                        .map(row => [row[0], utils.preformatted(row[1])])
                 })
             ],
             // ------------------------------------------------
@@ -276,7 +275,7 @@ export class CanvasDataset {
                     attrsCells: {style: {"vertical-align": 'middle'}},
                     data: [
                         [
-                            bold("URL"),
+                            utils.bold("URL"),
                             m(TextField, {
                                 placeholder: 'https://...',
                                 id: 'datasetUrlTextfield',
@@ -310,7 +309,7 @@ export class CanvasDataset {
                             }, "Upload URL")
                         ],
                         [
-                            bold("OpenML ID"),
+                            utils.bold("OpenML ID"),
                             m(TextField, {
                                 placeholder: 'https://www.openml.org/d/[ID]',
                                 id: 'datasetOpenmlTextfield',

@@ -11,9 +11,7 @@ import 'core-js';
 import 'regenerator-runtime/runtime';
 
 import * as app from './app';
-import {alertWarn, buildCsvPath, getAbstractPipeline} from './app';
 import * as dataset from "./modes/dataset";
-import {datasetPreferences} from "./modes/dataset";
 import * as model from './modes/model';
 import * as explore from './modes/explore';
 import * as results from './modes/results';
@@ -21,6 +19,7 @@ import * as results from './modes/results';
 import * as manipulate from './manipulations/manipulate';
 
 import * as solverD3M from "./solvers/d3m";
+import * as utils from "./utils";
 
 import * as common from '../common/common';
 import ButtonRadio from '../common/views/ButtonRadio';
@@ -43,18 +42,7 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 import Body_Deploy from "./views/Body_Deploy";
-import {getSelectedProblem} from "./problem";
-
-export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-export let boldPlain = value => m('b', value);
-export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
-export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
-export let linkURL = url => m('a', {href: url, style: {color: 'blue'}, }, url);
-export let linkURLwithText = (url, text) => m('a', {href: url, style: {color: 'blue'}, target: '_blank'}, text);
-export let preformatted = text => m('pre', text);
-export let abbreviate = (text, length) => text.length > length
-    ? m('div', {'data-toggle': 'tooltip', title: text}, text.substring(0, length - 3).trim() + '...')
-    : text;
+import {getAbstractPipeline, getSelectedProblem} from "./problem";
 
 
 class Body {
@@ -155,7 +143,7 @@ class Body {
                             style: {display: 'inline-block', margin: '.25em 1em'},
                             onclick: () => {
                                 app.setSelectedMode('dataset')
-                                datasetPreferences.datasourceMode = "Current"
+                                dataset.datasetPreferences.datasourceMode = "Current"
                             }
                         },
                         app.workspace.d3m_config.name || 'Dataset Name', m('br'),
@@ -366,7 +354,7 @@ class Body {
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
-            app.peekInlineShown && italicize(app.peekLabel),
+            app.peekInlineShown && utils.italicize(app.peekLabel),
 
             m('div.btn-group', {style: 'float: right; padding: 0px;margin:5px;margin-top:7px'},
 
@@ -432,8 +420,8 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildCsvPath(problem, manipulate.constraintMenu.step);
-                                    if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
+                                    let datasetUrl = await app.buildCsvPath(problem, manipulate.constraintMenu.step);
+                                    if (!datasetUrl) app.alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl)
                                 }
                             }, 'Download'),
@@ -445,8 +433,8 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildCsvPath(problem);
-                                    if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
+                                    let datasetUrl = await app.buildCsvPath(problem);
+                                    if (!datasetUrl) app.alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl);
                                 }
                             }, 'Download'),

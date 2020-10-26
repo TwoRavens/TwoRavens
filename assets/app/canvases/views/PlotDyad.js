@@ -48,11 +48,11 @@ export default class PlotDyad {
 
         let that = this;
         this.node_drag = d3.drag()
-            .on("start", function (d) {
+            .on("start", function (_, d) {
                 that.dragstart(this, d)
             })
-            .on("drag", (d) => this.dragmove(vnode, d))
-            .on("end", () => this.dragend(vnode));
+            .on("drag", (e, d) => this.dragmove(vnode, e, d))
+            .on("end", e => this.dragend(vnode, e));
 
         this.dragStarted = false; //determines if dragging
         this.dragSelect = null; //node that has started the drag
@@ -88,8 +88,8 @@ export default class PlotDyad {
             .style('fill', '#000');
 
         //define SVG mouse actions
-        this.svg.on("mouseup", () => this.lineMouseup(vnode)).on("contextmenu", function () {  //prevent right click on svg
-            d3.event.preventDefault();
+        this.svg.on("mouseup", () => this.lineMouseup(vnode)).on("contextmenu", function (e) {  //prevent right click on svg
+            e.preventDefault();
         });
 
         this.linkGroup = this.svg.append("svg:g").attr("class", "allLinksGroup").selectAll("path");
@@ -149,15 +149,15 @@ export default class PlotDyad {
     }
 
     //function called while dragging, binds (x, y) within SVG and boundaries
-    dragmove(vnode, d) {
+    dragmove(vnode, e, d) {
         let bound = this.svg.node().getBoundingClientRect();
-        d.x = Math.max(dyadNodeRadius, Math.min(bound.width - dyadNodeRadius, d3.event.x));
-        d.y = Math.max(dyadNodeRadius, Math.min(bound.height - dyadNodeRadius, d3.event.y));
+        d.x = Math.max(dyadNodeRadius, Math.min(bound.width - dyadNodeRadius, e.x));
+        d.y = Math.max(dyadNodeRadius, Math.min(bound.height - dyadNodeRadius, e.y));
         this.dyadTick(vnode);
     }
 
     //function called at end of drag, merges dragSelect and dragTarget if dragTarget exists
-    dragend(vnode) {
+    dragend(vnode, e) {
         let {preferences} = vnode.attrs;
         //merge dragSel and dragTarg
         if (this.dragTarget) {
@@ -240,7 +240,7 @@ export default class PlotDyad {
             .style('stroke', function (d) {
                 return d.rev ? '#00cc00' : '#000';
             })
-            .on('mousedown', (d) => {       //delete link
+            .on('mousedown', (_, d) => {       //delete link
                 preferences['edges'].forEach((edge, i) => {
                     if (edge.source !== d.source || edge.target !== d.target) return;
                     if (d.dup) edge.dup = false;
@@ -278,9 +278,9 @@ export default class PlotDyad {
                     .style('opacity', "0.5")
                     .style('stroke', pebbleBorderColor)
                     .style("pointer-events", "all")
-                    .on("contextmenu", function (d) {  //begins drag line drawing for linking nodes
-                        d3.event.preventDefault();
-                        d3.event.stopPropagation(); //prevents mouseup on node
+                    .on("contextmenu", function (e, d) {  //begins drag line drawing for linking nodes
+                        e.preventDefault();
+                        e.stopPropagation(); //prevents mouseup on node
 
                         that.originNode = d;
 
@@ -295,16 +295,16 @@ export default class PlotDyad {
                             that.lineMousemove(this)
                         });
                     })
-                    .on("mouseup", function (d) {			//creates link		//for some reason, this no longer fires
-                        d3.event.stopPropagation();		//prevents mouseup on svg
-                        createLink(d);
+                    .on("mouseup", function (e, d) {			//creates link		//for some reason, this no longer fires
+                        e.stopPropagation();		//prevents mouseup on svg
+                        createLink(e, d);
                         nodeClick(d);
                     })
-                    .on("mousedown", (d) => {  //creates link if mouseup did not catch
-                        createLink(d);
+                    .on("mousedown", (e, d) => {  //creates link if mouseup did not catch
+                        createLink(e, d);
                         nodeClick(d);
                     })
-                    .on("mouseover", function (d) {  //displays animation for visual indication of mouseover while dragging and sets tooltip
+                    .on("mouseover", function (e, d) {  //displays animation for visual indication of mouseover while dragging and sets tooltip
                         if (that.dragSelect && that.dragSelect !== d && that.dragSelect.tab === d.tab) {
                             d3.select(this).transition().attr("r", dyadNodeRadius + 10);
                             that.dragTarget = d;
@@ -323,7 +323,7 @@ export default class PlotDyad {
 
                         that.tooltipSVG.transition().duration(200).style("opacity", 0).style("display", "none"); //reset tooltip
                     })
-                    .on("mousemove", function (d) {  //display tooltip
+                    .on("mousemove", function (_, d) {  //display tooltip
                         if (!that.dragStarted) {
                             that.tooltipSVG.style("display", "block")
                                 .style("left", 'calc(' + (d.x + 320) + 'px + ' + common.panelOcclusion['left'] + ')')
@@ -346,9 +346,9 @@ export default class PlotDyad {
         }
 
         //creates link between nodes
-        let createLink = (d) => {
+        let createLink = (e, d) => {
             // mouse button was right click, so interpret as user wants to create another line instead
-            if (d3.event.which === 3) return;
+            if (e.which === 3) return;
 
             //if no origin node is selected then return
             if (!this.originNode) return;
@@ -481,7 +481,7 @@ export default class PlotDyad {
         if (!this.originNode) return;
 
         // update drag line
-        this.drag_line.attr('d', 'M' + this.originNode.x + ',' + this.originNode.y + 'L' + d3.mouse(context)[0] + ',' + d3.mouse(context)[1]);
+        this.drag_line.attr('d', 'M' + this.originNode.x + ',' + this.originNode.y + 'L' + d3.pointer(context)[0] + ',' + d3.pointer(context)[1]);
     }
 
     //if dragging hide line, called on mouseup on SVG

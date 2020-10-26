@@ -2,7 +2,7 @@ import m from 'mithril';
 import vegaEmbed from "vega-embed";
 
 import * as vega from 'vega';
-import {setDefaultRecursive} from "../utils";
+import {setDefaultDeep} from "../utils";
 
 // m(PlotVegaLite, {
 //     specification: {...}, // an instance of this spec: https://vega.github.io/vega-lite/docs/spec.html,
@@ -65,11 +65,7 @@ export default class PlotVegaLite {
             }
 
             // by default, make sure labels on all plots are limited to 50 pixels
-            ['axisX', 'axisY'].forEach(axis => setDefaultRecursive(specification, [
-                ['config', {}],
-                [axis, {}],
-                ['labelLimit', 100]
-            ]));
+            ['axisX', 'axisY'].forEach(axis => setDefaultDeep(specification, ['config', axis, 'labelLimit'], 100));
             // setDefaultRecursive(specification, [['config', {}], ['background', 'transparent']]);
 
             vegaEmbed(vnode.dom, specification, options).then(result => {

@@ -54,13 +54,18 @@ import * as queryMongo from "../manipulations/queryMongo";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from "../../common/views/Popper";
 import Paginated from "../../common/views/Paginated";
-import {bold, italicize} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
 import TextField from "../../common/views/TextField";
 import PlotVegaLiteWrapper from "../views/PlotVegaLiteWrapper";
-import {remove, toggle} from "../utils";
-import {getNominalVariables, getPredictorVariables, getSelectedProblem, setSelectedProblem} from "../problem";
-import {getAbstractPipeline} from "../app";
+import {bold, italicize, remove, toggle} from "../utils";
+import {
+    getAbstractPipeline,
+    getNominalVariables,
+    getPredictorVariables,
+    getSelectedProblem,
+    setSelectedProblem
+} from "../problem";
+import PlotMapboxWrapper from "../views/PlotMapboxWrapper";
 
 window.timeParse = d3.timeParse;
 
@@ -125,19 +130,20 @@ export class CanvasExplore {
         if (!explorePreferences.go) return [wrapCanvas(
             m(ButtonRadio, {
                 id: 'problemVariateButtonRadio',
-                attrsAll: {style: {width: '300px', margin: '.5em', position: 'fixed'}},
+                attrsAll: {style: {width: '330px', margin: '.5em', position: 'fixed'}},
                 activeSection: explorePreferences.mode,
                 onclick: value => explorePreferences.mode = value.toLowerCase(),
                 sections: [
                     {value: 'Variables'},
                     {value: 'Problems'},
-                    {value: 'Custom'}
+                    {value: 'Custom'},
+                    {value: 'Mapping'}
                 ]
             }),
             explorePreferences.mode !== 'custom' && m(Button, {
                 id: 'exploreGo',
                 class: 'btn-success',
-                style: {margin: '.5em', 'margin-left': 'calc(300px + 1.5em)', position: 'fixed'},
+                style: {margin: '.5em', 'margin-left': 'calc(330px + 1.5em)', position: 'fixed'},
                 onclick: () => {
                     let selected = explorePreferences.mode === 'problems'
                         ? [app.workspace.raven_config.selectedProblem]
@@ -157,25 +163,29 @@ export class CanvasExplore {
                 }
             }, 'go'),
 
-            m(Popper, {
-                content: () => `Up to ${explorePreferences.recordLimit} records are sampled from the dataset.`
-            }, m('label', {
-                style: {
-                    margin: '20px 0',
-                    'margin-left': 'calc(460px + 1.5em)',
-                    position: 'fixed'
-                }
-            }, bold('Record Limit'))),
-            m(TextField, {
-                id: 'recordLimit',
-                value: explorePreferences.recordLimit || '',
-                oninput: value => explorePreferences.recordLimit = value.replace(/[^\d.-]/g, ''),
-                onblur: value => explorePreferences.recordLimit = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined,
-                style: {margin: '.5em', 'margin-left': 'calc(570px + 1.5em)', position: 'fixed', width: "200px"}
-            }),
+            m('div', {
+                    style: {
+                        'margin-left': 'calc(460px + 1.5em)',
+                        'margin-top': '0.5em',
+                        position: 'fixed',
+                        background: '#fff',
+                        'border-radius': '3px',
+                        'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)'
+                    }
+                },
+                m('div', {style: {display: 'inline-block'}}, m(Popper, {
+                    content: () => explorePreferences.recordLimit ? `Up to ${explorePreferences.recordLimit} records are sampled from the dataset.` : 'An unlimited number of records are included in the plots.'
+                }, m('label', {style: {margin: '0 1em'}}, bold('Record Limit')))),
+                m(TextField, {
+                    id: 'recordLimit',
+                    value: explorePreferences.recordLimit || '',
+                    oninput: value => explorePreferences.recordLimit = value.replace(/[^\d.-]/g, ''),
+                    onblur: value => explorePreferences.recordLimit = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined,
+                    style: {margin: 0, width: "200px", display: 'inline-block'}
+                })),
 
             m('br'),
-            explorePreferences.mode === 'custom'
+            explorePreferences.mode === 'custom' || explorePreferences.mode === 'mapping'
                 ? ''
                 : m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
                 // x could either be a problemId or a variable name
@@ -252,6 +262,20 @@ export class CanvasExplore {
                     return tile;
                 }))
         ),
+            explorePreferences.mode === 'mapping' && m('div', {style: {
+                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
+                    }
+                },
+                m(PlotMapboxWrapper, {
+                    getData: app.getData,
+                    variables: Object.keys(app.variableSummaries),
+                    nominals: new Set(getNominalVariables(selectedProblem)),
+                    configuration: mappingConfiguration,
+                    abstractQuery: getAbstractPipeline(selectedProblem, true),
+                    summaries: app.variableSummaries,
+                    sampleSize: parseInt(explorePreferences.recordLimit),
+                    variablesInitial: app.workspace.raven_config.variablesInitial
+                })),
             explorePreferences.mode === 'custom' && m('div', {style: {
                     position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
                 }},
@@ -690,6 +714,11 @@ let fillVegaSchema = (schema, data, flip) => {
 
 let defaultRecordLimit = 5000;
 let customConfiguration = {};
+let mappingConfiguration = {
+    mark: 'point',
+    latitude: "pgd_xcoord",
+    longitude: "pgd_ycoord"
+};
 window.customConfiguration = customConfiguration;
 export let explorePreferences = {
     go: false,

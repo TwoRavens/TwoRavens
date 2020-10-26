@@ -1,9 +1,8 @@
 import m from "mithril";
 
 import * as app from '../app.js';
-import {resetPeek} from '../app.js';
 import * as results from "../modes/results";
-import {findProblem, getBestSolution} from "../modes/results";
+import * as utils from '../utils';
 
 import {alertError, alertWarn, debugLog, swandive} from "../app";
 
@@ -16,7 +15,7 @@ import {
     getSelectedProblem,
     isProblemValid
 } from "../problem";
-import {setRecursive} from "../utils";
+
 
 export let getSolverSpecification = async problem => {
 
@@ -107,7 +106,7 @@ export let getD3MAdapter = problem => ({
         problem.results.selectedSolutions.d3m = problem.results.selectedSolutions.d3m || [];
         problem.results.solutions.d3m = problem.results.solutions.d3m || {};
         m.redraw();
-        resetPeek();
+        app.resetPeek();
     },
     search: () => {
         throw 'Search not implemented for D3M.';
@@ -158,7 +157,7 @@ let handleCompletedSearch = searchId => response => {
         m.redraw();
         return;
     }
-    let solvedProblem = findProblem({search_id: String(searchId), system: 'd3m'});
+    let solvedProblem = results.findProblem({search_id: String(searchId), system: 'd3m'});
     if (!solvedProblem) return
     solvedProblem.results.solverState.d3m.thinking = false;
     solvedProblem.results.solverState.d3m.message = 'search complete';
@@ -701,7 +700,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
@@ -736,7 +735,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // set the selected solution if none have been selected yet
     // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
     if (!solvedProblem.results.userSelectedSolution) {
-        let bestSolution = getBestSolution(solvedProblem);
+        let bestSolution = results.getBestSolution(solvedProblem);
         if (bestSolution) {
             results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
         }
@@ -768,7 +767,7 @@ export async function handleDescribeSolutionResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.searchId})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.searchId})
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
@@ -813,7 +812,7 @@ export async function handleGetFitSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -848,7 +847,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -890,7 +889,7 @@ export async function handleGetProduceSolutionResultsResponse(response) {
 
     let searchId = response.stored_request.search_id;
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: searchId})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: searchId})
 
     if (!solvedProblem) {
         results.otherSearches[searchId] = results.otherSearches[searchId] || {};
@@ -918,7 +917,7 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let firstOutput = Object.values(response.response.exposedOutputs)?.[0]?.csvUri;
+    let firstOutput = Object.values(response?.response?.exposedOutputs || {})?.[0]?.csvUri;
 
     if (!firstOutput) return;
     let pointer = firstOutput.replace('file://', '');
@@ -929,18 +928,10 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     results.checkResultsCache(solvedProblem);
 
     // save produce path to resultsCache
-    setRecursive(results.resultsCache, [
-        [solvedProblem.problemId, {}],
-        ['producePaths', {}],
-        [solution.solutionId, {}],
-        [response.produce_dataset_name, pointer]
-    ])
-    setRecursive(results.resultsCache, [
-        [solvedProblem.problemId, {}],
-        ['producePathsLoading', {}],
-        [solution.solutionId, {}],
-        [response.produce_dataset_name, false]
-    ])
+    utils.setDeep(results.resultsCache,
+        [solvedProblem.problemId, 'producePaths', solution.solutionId, response.produce_dataset_name], pointer)
+    utils.setDeep(results.resultsCache,
+        [solvedProblem.problemId, 'producePathsLoading', solution.solutionId, response.produce_dataset_name], false)
 
     m.redraw();
 }

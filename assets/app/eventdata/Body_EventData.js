@@ -41,8 +41,8 @@ import CanvasResults from "./canvases/CanvasResults";
 import SaveQuery from "./SaveQuery";
 import {TreeAggregate, TreeSubset, TreeVariables} from "../views/QueryTrees";
 import Icon from "../../common/views/Icon";
-import {italicize} from "../index";
 import CanvasContinuous from "../canvases/CanvasContinuous";
+import {italicize} from "../utils";
 
 export default class Body_EventData {
 

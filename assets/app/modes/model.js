@@ -3,7 +3,6 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
-import {hexToRgba, isExploreMode, loadProblemPreprocess, setPreprocess, setVariableSummaryAttr, workspace} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -29,9 +28,8 @@ import VariableSummary, {formatVariableSummary} from "../views/VariableSummary";
 import ButtonLadda from "../views/ButtonLadda";
 import Flowchart from "../views/Flowchart";
 
-import {bold, boldPlain, italicize, linkURLwithText} from "../index";
 import {setModal} from "../../common/views/Modal";
-import {add, generateID, omniSort, remove, toggle} from "../utils";
+import {add, bold, boldPlain, generateID, italicize, linkURLwithText, omniSort, remove, toggle} from "../utils";
 import {
     erase,
     getDescription,
@@ -42,6 +40,7 @@ import {
     getProblemCopy,
     getSelectedProblem,
     getSubtask,
+    loadProblemPreprocess,
     setMetric,
     setSelectedProblem,
     setSubTask,
@@ -720,8 +719,8 @@ export let leftpanel = forceData => {
                 m(TextField, {
                     id: 'timeFormatTextField',
                     value: app.variableSummaries[variableName].timeUnit,
-                    oninput: value => setVariableSummaryAttr(variableName, 'timeUnit', value),
-                    onblur: value => setVariableSummaryAttr(variableName, 'timeUnit', value),
+                    oninput: value => app.setVariableSummaryAttr(variableName, 'timeUnit', value),
+                    onblur: value => app.setVariableSummaryAttr(variableName, 'timeUnit', value),
                 })),
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
@@ -742,7 +741,7 @@ export let leftpanel = forceData => {
             onclick: () => app.setFocusedPanel('left'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'left'),
-                background: hexToRgba(common.menuColor, .9),
+                background: app.hexToRgba(common.menuColor, .9),
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
@@ -1177,7 +1176,7 @@ export let rightpanel = () => {
                                                 reorderable: true,
                                                 onreorder: () =>     // update preprocess
                                                     loadProblemPreprocess(selectedProblem)
-                                                        .then(setPreprocess)
+                                                        .then(app.setPreprocess)
                                                         .then(m.redraw),
                                                 onclick: setSelectedPebble
                                             })
@@ -1202,7 +1201,7 @@ export let rightpanel = () => {
                                                     else selectedProblem.orderingName = value;
 
                                                     loadProblemPreprocess(selectedProblem)
-                                                        .then(setPreprocess)
+                                                        .then(app.setPreprocess)
                                                         .then(m.redraw)
                                                 }
                                             })
@@ -1220,7 +1219,7 @@ export let rightpanel = () => {
     return m(Panel, {
             side: 'right',
             label: 'Problem Configuration',
-            hover: isExploreMode,
+            hover: app.isExploreMode,
             width: rightPanelWidths[app.rightTab],
             attrsAll: {
                 onclick: () => app.setFocusedPanel('right'),
@@ -1243,7 +1242,7 @@ export let rightpanel = () => {
 // initial color scale used to establish the initial colors of nodes
 // allNodes.push() below establishes a field for the master node array allNodes called "nodeCol" and assigns a color from this scale to that field
 // everything there after should refer to the nodeCol and not the color scale, this enables us to update colors and pass the variable type to R based on its coloring
-export let colors = d3.scaleOrdinal(d3.schemeCategory20);
+export let colors = d3.scaleOrdinal(d3.schemeCategory10);
 
 const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
 
@@ -1419,7 +1418,7 @@ export let setGroup = (problem, group, name) => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = getProblemCopy(problem);
-                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                app.workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
                 setSelectedProblem(problemCopy.problemId);
                 setGroup(problemCopy, group, name);
@@ -1456,7 +1455,7 @@ export let setGroup = (problem, group, name) => {
         remove(problem.targets, name);
         remove(problem.tags.loose, name);
         add(problem.tags.ordering, name);
-        app.loadProblemPreprocess(problem)
+        loadProblemPreprocess(problem)
             .then(app.setPreprocess)
             .then(m.redraw)
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_ORDERING';
@@ -1505,7 +1504,7 @@ export let forceDiagramState = {
     arcGap: 1
 };
 
-let setContextPebble = pebble => {
+let setContextPebble = (e, pebble) => {
     let selectedProblem = getSelectedProblem();
     if (selectedProblem.system === 'solved') {
         alertEditCopy();
@@ -1513,8 +1512,7 @@ let setContextPebble = pebble => {
     }
 
     delete selectedProblem.unedited;
-    if (d3.event)
-        d3.event.preventDefault(); // block browser context menu
+    if (e) e.preventDefault(); // block browser context menu
     if (forceDiagramState.contextPebble) {
 
         if (forceDiagramState.contextPebble !== pebble) {
@@ -1553,11 +1551,12 @@ let setSelectedPebble = pebble => {
 Object.assign(forceDiagramState, {
     setSelectedPebble,
     pebbleEvents: {
-        click: pebble => {
-            if (forceDiagramState.contextPebble) setContextPebble(pebble);
+        click: (e, pebble) => {
+            if (forceDiagramState.contextPebble) setContextPebble(e, pebble);
             else setSelectedPebble(pebble)
         },
-        mouseover: pebble => {
+        mouseover: (e, pebble) => {
+            console.log(e);
             if (firstSummaryMouseover && app.tutorial_mode && !hopscotch.getCurrTour())
                 hopscotch.startTour(summaryTour());
             clearTimeout(forceDiagramState.hoverTimeout);
@@ -1862,7 +1861,7 @@ let setLabel = (problem, label, name) => {
             style: 'margin:1em',
             onclick: () => {
                 let problemCopy = getProblemCopy(problem);
-                workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                app.workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
                 app.setShowModalAlerts(false);
                 setSelectedProblem(problemCopy.problemId);
                 setLabel(problemCopy, label, name);
@@ -1886,7 +1885,7 @@ let setLabel = (problem, label, name) => {
             // if the tag is at the dataset level
             if (app.variableSummaries[name].nature === 'nominal') {
                 if (confirm("Do you want to remove the dataset-level nominal annotation?")) {
-                    setVariableSummaryAttr(name, 'nature', 'nominal')
+                    app.setVariableSummaryAttr(name, 'nature', 'nominal')
                 }
             } else {
                 remove(problem.tags.crossSection, name);
@@ -1897,7 +1896,7 @@ let setLabel = (problem, label, name) => {
                 remove(problem.tags.nominal, name);
             }
         }
-        app.loadProblemPreprocess(problem)
+        loadProblemPreprocess(problem)
             .then(app.setPreprocess)
             .then(m.redraw)
     }
@@ -1969,7 +1968,7 @@ let setLabel = (problem, label, name) => {
             // if the tag is at the dataset level
             if (app.variableSummaries[name].geographic) {
                 if (confirm("Do you want to remove the dataset-level geographic annotation?")) {
-                    setVariableSummaryAttr(name, 'geographic', false)
+                    app.setVariableSummaryAttr(name, 'geographic', false)
                 }
             } else {
                 remove(problem.tags.geographic, name);
@@ -2175,7 +2174,7 @@ let alertEditCopy = () => {
         onclick: () => {
             let selectedProblem = getSelectedProblem();
             let problemCopy = getProblemCopy(selectedProblem);
-            workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+            app.workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
             app.setShowModalAlerts(false);
             setSelectedProblem(problemCopy.problemId);
         }

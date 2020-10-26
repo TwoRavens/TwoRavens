@@ -3,6 +3,8 @@
  */
 import m from 'mithril';
 
+import * as utils from '../utils';
+import {setDefault} from '../utils';
 import * as app from "../app";
 import * as common from "../../common/common";
 import JSONSchema from "../../common/views/JSONSchema";
@@ -23,13 +25,9 @@ import Popper from "../../common/views/Popper";
 import * as queryMongo from '../manipulations/queryMongo';
 
 import ButtonLadda from "../views/ButtonLadda";
-import {numberWithCommas} from '../utils';
-import {bold} from "../index";
 
 import {datamartDatasetIndexSchema} from "./dataset_schema_2019_01";
 
-
-let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = value => m('[style=color:#dc3545;display:inline-block;margin-right:1em;]', value);
 
 let makeCard = ({key, color, summary, labelWidth}) => m('table', {
@@ -52,7 +50,7 @@ let makeCard = ({key, color, summary, labelWidth}) => m('table', {
                 'word-break': 'break-word',
                 'border-right': common.borderColor
             }
-        }, bold(key)),
+        }, utils.bold(key)),
         m('td', {style: {width: 'calc(100% - 2em)'}}, summary))
 );
 
@@ -185,7 +183,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
                         'Description', getData(result, 'description')
                     ],
                     getData(result, 'size') && [
-                        'Size (bytes)', numberWithCommas(getData(result, 'size'))
+                        'Size (bytes)', utils.numberWithCommas(getData(result, 'size'))
                     ],
                     getData(result, 'row count') && [
                         'Size (rows)', getData(result, 'row count')
@@ -433,7 +431,7 @@ export class Datamart {
 
                     ],
                     preferences.datamartMode === 'Index' && [
-                        m('div', {style: {margin: '1em'}}, 'Indexing is for adding your own datasets to datamart. You may provide a ', bold('link'), ' to a file, or ', bold('scrape'), ' datasets from a website.'), // You may upload a file or extract data from a link.
+                        m('div', {style: {margin: '1em'}}, 'Indexing is for adding your own datasets to datamart. You may provide a ', utils.bold('link'), ' to a file, or ', utils.bold('scrape'), ' datasets from a website.'), // You may upload a file or extract data from a link.
                         m(ButtonRadio, {
                             id: 'datamartIndexMode',
                             onclick: state => preferences.datamartIndexMode = state,
@@ -677,7 +675,7 @@ export class ModalDatamart {
                 m('div',
                     !preferences.joinPairs.length && m('div',
                     m('p', 'Clicking "Augment" will join your dataset with the found dataset.'),
-                    m('p', bold('First'), ' please choose variables from each dataset to connect them. See ', bold("Variable Pairs"), ' below.'),
+                    m('p', utils.bold('First'), ' please choose variables from each dataset to connect them. See ', utils.bold("Variable Pairs"), ' below.'),
                     ),
 
                     preferences.joinPairs.length > 0 && m('div',
@@ -813,10 +811,10 @@ export class ModalDatamart {
                             m('p', 'Please connect the datasets using variables:')],
                         preferences.joinPairs.length > 0 && m('p', '(Optional) To add another Variable Pair:'),
                         m('ol', [
-                            m('li', 'Click on a variable from the ', bold("Your Dataset Variables"), ' column.'),
-                            m('li', 'Select a variable from the ', bold("Found Dataset Variables"), ' column.'),
-                            m('li', 'Click ', bold("Add Pairing"), '.  If desired, add additional pairings.'),
-                            m('li', 'Click ', bold("Augment")),
+                            m('li', 'Click on a variable from the ', utils.bold("Your Dataset Variables"), ' column.'),
+                            m('li', 'Select a variable from the ', utils.bold("Found Dataset Variables"), ' column.'),
+                            m('li', 'Click ', utils.bold("Add Pairing"), '.  If desired, add additional pairings.'),
+                            m('li', 'Click ', utils.bold("Augment")),
                         ]),
                     ]),
 

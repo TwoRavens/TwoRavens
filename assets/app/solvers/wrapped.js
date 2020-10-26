@@ -2,10 +2,8 @@ import * as jStat from "jstat";
 import m from 'mithril';
 
 import * as app from '../app';
-import {alertWarn} from '../app';
 import * as results from "../modes/results";
-import {findProblem, getBestSolution} from "../modes/results";
-import {setDefaultRecursive, setDefault, setRecursive} from "../utils";
+import * as utils from '../utils';
 import {
     getGeographicVariables,
     getNominalVariables,
@@ -308,7 +306,7 @@ let endStopWrappedSearch = (problem, systemId) => searchId => {
 // TODO: determine why django sometimes fails to provide a model id
 export let handleDescribeResponse = response => {
     let data = response.data;
-    let solvedProblem = findProblem(data);
+    let solvedProblem = results.findProblem(data);
     if (!solvedProblem) {
         console.warn('description arrived for unknown problem', data);
         return;
@@ -320,8 +318,7 @@ export let handleDescribeResponse = response => {
             return;
         }
 
-        setDefaultRecursive(solvedProblem.results.solutions, [
-            [data.system, {}], [data.model_id, {}]]);
+        utils.setStructure(solvedProblem.results.solutions, [data.system, data.model_id]);
         Object.assign(solvedProblem.results.solutions[data.system][data.model_id], {
             name: data.model,
             all_parameters: data.all_parameters,
@@ -334,7 +331,7 @@ export let handleDescribeResponse = response => {
         // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
         // if (selectedSolutions.length === 0) results.setSelectedSolution(solvedProblem, data.system, data.model_id);
         if (!solvedProblem.results.userSelectedSolution) {
-            let bestSolution = getBestSolution(solvedProblem);
+            let bestSolution = results.getBestSolution(solvedProblem);
             if (bestSolution) {
                 results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
             }
@@ -346,7 +343,7 @@ export let handleDescribeResponse = response => {
 
 export let handleProduceResponse = response => {
     let data = response.data;
-    let solvedProblem = findProblem(data);
+    let solvedProblem = results.findProblem(data);
     if (!solvedProblem) {
         console.warn('produce arrived for unknown problem', data);
         return;
@@ -354,41 +351,31 @@ export let handleProduceResponse = response => {
 
     if (response.success) {
         // save produce path to resultsCache
-        setDefaultRecursive(solvedProblem.results, [
-            ['solutions', {}], [data.system, {}], [data.model_id, {}]]);
+        utils.setStructure(solvedProblem.results, ['solutions', data.system, data.model_id]);
         let solution = solvedProblem.results.solutions[data.system][data.model_id];
         solution.solutionId = data.model_id;
         solution.systemId = data.system;
 
         results.checkResultsCache(solvedProblem);
 
-        setRecursive(results.resultsCache, [
-            [solvedProblem.problemId, {}],
-            ['producePaths', {}],
-            [data.model_id, {}],
-            [data.produce.input.name, data.produce.data_pointer]
-        ])
-        setRecursive(results.resultsCache, [
-            [solvedProblem.problemId, {}],
-            ['producePathsLoading', {}],
-            [data.model_id, {}],
-            [data.produce.input.name, false]
-        ])
+        utils.setDeep(results.resultsCache,
+            [solvedProblem.problemId, 'producePaths', data.model_id, data.produce.input.name], data.produce.data_pointer)
+        utils.setDeep(results.resultsCache,
+            [solvedProblem.problemId, 'producePathsLoading', data.model_id, data.produce.input.name], false)
         m.redraw()
     }
 };
 
 export let handleScoreResponse = response => {
     let data = response.data;
-    let solvedProblem = findProblem(data);
+    let solvedProblem = results.findProblem(data);
     if (!solvedProblem) {
         console.warn('scores arrived for unknown problem', data);
         return;
     }
 
     if (response.success) {
-        setDefaultRecursive(solvedProblem.results, [
-            ['solutions', {}], [data.system, {}], [data.model_id, {}], ['scores', []]]);
+        utils.setDefaultDeep(solvedProblem.results, ['solutions', data.system, data.model_id, 'scores'], []);
         let solution = solvedProblem.results.solutions[data.system][data.model_id];
         solution.solutionId = data.model_id;
         solution.systemId = data.system;
@@ -399,7 +386,7 @@ export let handleScoreResponse = response => {
 
 export let handleSolveCompleteResponse = response => {
     let data = response.data;
-    let solvedProblem = findProblem(data);
+    let solvedProblem = results.findProblem(data);
     if (!solvedProblem) {
         console.warn('solve complete arrived for unknown problem', data);
         return;
@@ -417,7 +404,7 @@ export let downloadModel = async solution => m.request(SOLVER_SVC_URL + 'Downloa
     body: {model_id: solution.solutionId}
 }).then(response => {
     if (!response.success) {
-        alertWarn("Unable to prepare model for downloading.");
+        app.alertWarn("Unable to prepare model for downloading.");
         console.warn(response.message);
         return;
     }

@@ -4,9 +4,7 @@ import {getData} from "../app";
 import TextField from "../../common/views/TextField";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Table from "../../common/views/Table";
-
-
-let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
+import {setDefault} from '../utils';
 
 let labelOffset = '15em';
 let mongoTypes = {

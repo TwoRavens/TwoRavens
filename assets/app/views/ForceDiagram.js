@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import 'd3-selection-multi';
+// import 'd3-selection-multi';
 
 import * as jStat from 'jstat';
 
@@ -244,7 +244,7 @@ export default class ForceDiagram {
             this.force.alphaTarget(0).restart();
         }, 1000);
 
-        let updatePosition = () => this.position = {x: d3.event.pageX - x, y: d3.event.pageY - y};
+        let updatePosition = e => this.position = {x: e.pageX - x, y: e.pageY - y};
         // track mouse position for dragging, remove arrow on click
         d3.select(dom)
             .on('mousemove', attrs.contextPebble && updatePosition)
@@ -254,32 +254,32 @@ export default class ForceDiagram {
         d3.select(dom)
             .call(d3.drag()
                 .container(dom)
-                .subject(() => this.force.find(d3.event.x, d3.event.y))
-                .on("start", () => {
+                .subject(e => this.force.find(e.x, e.y))
+                .on("start", e => {
                     let {x: offsetX, y: offsetY} = dom.getBoundingClientRect();
-                    if (Math.sqrt(Math.pow(d3.event.sourceEvent.x - d3.event.subject.x - offsetX, 2) + Math.pow(d3.event.sourceEvent.y - d3.event.subject.y - offsetY, 2)) > d3.event.subject.radius * 2) {
+                    if (Math.sqrt(Math.pow(e.sourceEvent.x - e.subject.x - offsetX, 2) + Math.pow(e.sourceEvent.y - e.subject.y - offsetY, 2)) > e.subject.radius * 2) {
                         setSelectedPebble(undefined);
                         return;
                     }
                     this.isDragging = true;
-                    if (!d3.event.active) this.force.alphaTarget(1).restart();
-                    if (d3.event.subject.x !== undefined)
-                        d3.event.subject.fx = d3.event.subject.x;
-                    if (d3.event.subject.y !== undefined)
-                        d3.event.subject.fy = d3.event.subject.y;
-                    this.startDragLocation = [d3.event.subject.x, d3.event.subject.y];
+                    if (!e.active) this.force.alphaTarget(1).restart();
+                    if (e.subject.x !== undefined)
+                        e.subject.fx = e.subject.x;
+                    if (e.subject.y !== undefined)
+                        e.subject.fy = e.subject.y;
+                    this.startDragLocation = [e.subject.x, e.subject.y];
                     m.redraw()
                 })
-                .on("drag", () => {
+                .on("drag", e => {
                     if (!this.isDragging) return;
-                    d3.event.subject.fx = d3.event.x;
-                    d3.event.subject.fy = d3.event.y;
+                    e.subject.fx = e.x;
+                    e.subject.fy = e.y;
 
                     if (onDragOver) {
 
-                        let dragCoord = this.selectedPebble === d3.event.subject
-                            ? [d3.event.subject.fx, d3.event.subject.fy]
-                            : [d3.event.subject.x, d3.event.subject.y];
+                        let dragCoord = this.selectedPebble === e.subject
+                            ? [e.subject.fx, e.subject.fy]
+                            : [e.subject.x, e.subject.y];
 
                         let groupCoords = groups
                             .reduce((out, group) => Object.assign(out, {
@@ -293,7 +293,7 @@ export default class ForceDiagram {
 
                         // don't freeze own group
                         groups
-                            .filter(group => group.nodes.has(d3.event.subject.name))
+                            .filter(group => group.nodes.has(e.subject.name))
                             .forEach(group => delete hullCoords[group.name]);
 
                         Object.keys(hullCoords)
@@ -316,10 +316,10 @@ export default class ForceDiagram {
                             });
                     }
                 })
-                .on("end", () => {
+                .on("end", e => {
                     if (!this.isDragging) return;
                     this.isDragging = false;
-                    if (!d3.event.active) this.force.alphaTarget(0);
+                    if (!e.active) this.force.alphaTarget(0);
 
                     !this.isPinned && Object.keys(this.frozenGroups).forEach(groupId => {
                         let nodeNames = [...groups.find(group => group.name === groupId).nodes];
@@ -331,14 +331,14 @@ export default class ForceDiagram {
                     });
 
                     if (onDragOut) // hook for when a node is dragged out of the scene
-                        if (d3.event.subject.fx < 0 || d3.event.subject.fx > width || d3.event.subject.fy < 0 || d3.event.subject.fy > height) {
-                            onDragOut(d3.event.subject.name);
+                        if (e.subject.fx < 0 || e.subject.fx > width || e.subject.fy < 0 || e.subject.fy > height) {
+                            onDragOut(e.subject.name);
                             return;
                         }
 
-                    let dragCoord = this.selectedPebble === d3.event.subject
-                        ? [d3.event.subject.fx, d3.event.subject.fy]
-                        : [d3.event.subject.x, d3.event.subject.y];
+                    let dragCoord = this.selectedPebble === e.subject
+                        ? [e.subject.fx, e.subject.fy]
+                        : [e.subject.x, e.subject.y];
 
                     // prevent drag actions if the drag distance is too small
                     if (Math.abs(mag(sub(dragCoord, this.startDragLocation))) < 50) return;
@@ -358,7 +358,7 @@ export default class ForceDiagram {
 
                     if (onDragAway) {
                         groups
-                            .filter(group => group.nodes.has(d3.event.subject.name))
+                            .filter(group => group.nodes.has(e.subject.name))
                             .filter(group => {
                                 if (group.nodes.size === 2)
                                     return mag(sub(...hullCoords[group.name])) > 1000;
@@ -371,19 +371,19 @@ export default class ForceDiagram {
                                 return !reducedHull
                                     .some(coord => mag(sub(coord, centroidReduced)) * 5 > distanceDragged);
                             })
-                            .forEach(group => onDragAway(d3.event.subject, group.name))
+                            .forEach(group => onDragAway(e.subject, group.name))
                     }
 
                     if (onDragOver) {
                         Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
-                            .forEach(groupId => onDragOver(d3.event.subject, groupId))
+                            .forEach(groupId => onDragOver(e.subject, groupId))
                     }
 
-                    if (this.isPinned || d3.event.subject.name === this.hoverPebble || d3.event.subject.name === this.selectedPebble) return;
-                    d3.event.subject.x = dragCoord[0];
-                    d3.event.subject.y = dragCoord[1];
-                    delete d3.event.subject.fx;
-                    delete d3.event.subject.fy;
+                    if (this.isPinned || e.subject.name === this.hoverPebble || e.subject.name === this.selectedPebble) return;
+                    e.subject.x = dragCoord[0];
+                    e.subject.y = dragCoord[1];
+                    delete e.subject.fx;
+                    delete e.subject.fy;
                     m.redraw();
                 }));
     }
@@ -611,7 +611,7 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
         .on('start', function () {
             d3.select(this).style('display', 'block')
         }) // prevent mouseovers/clicks from opacity:0 elements
-        .on('end', function (d) {
+        .on('end', function (_, d) {
             if (d === state.hoverPebble || d === state.selectedPebble) return;
             d3.select(this).style('display', 'none');
         });
@@ -673,9 +673,9 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
         d3.select(this).selectAll('path')
             .data(partition(root).descendants(), label => label.data.id)
             .on("click", label => label.data.onclick(pebble))
-            .on('mouseover', () => state.pebbleEvents.mouseover(pebble))
-            .on('mouseout', () => state.pebbleEvents.mouseout(pebble))
-            .on('contextmenu', () => state.pebbleEvents.contextmenu(pebble))
+            .on('mouseover', e => state.pebbleEvents.mouseover(e, pebble))
+            .on('mouseout', e => state.pebbleEvents.mouseout(e, pebble))
+            .on('contextmenu', e => state.pebbleEvents.contextmenu(e, pebble))
             .transition()  // Animate transitions between styles
             .duration(state.selectTransitionDuration)
             .attr("d", arc);
@@ -749,7 +749,7 @@ let pebbleBuilderLabels = (attrs, context, newPebbles) => {
         .style('font-size', pebble => context.nodes[pebble].radius * .175 + 7 + 'px');
 };
 
-let colors = d3.scaleOrdinal(d3.schemeCategory20);
+let colors = d3.scaleOrdinal(d3.schemeCategory10);
 let speckCoords = Array.from({length: 100})
     .map((_, i) => ({id: i, x: jStat.normal.sample(0, 1), y: jStat.normal.sample(0, 1)}));
 
@@ -792,7 +792,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         // bind all events to the plot
         Object.keys(attrs.pebbleEvents)
             .forEach(event => circleSelection
-                .on(event, () => attrs.pebbleEvents[event](pebble)));
+                .on(event, e => attrs.pebbleEvents[event](e, pebble)));
 
         d3.select(this).selectAll("circle.embedded-plot").data(groupSpeckCoords)
             .transition()
@@ -840,7 +840,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
         // bind all events to the plot
         Object.keys(attrs.pebbleEvents)
             .forEach(event => plotSelection
-                .on(event, () => attrs.pebbleEvents[event](pebble)));
+                .on(event, e => attrs.pebbleEvents[event](e, pebble)));
 
         // rebind the path datum regardless of if path existed
         d3.select(this).selectAll('path')
@@ -891,7 +891,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
 
         // bind all events to the plot
         Object.keys(attrs.pebbleEvents)
-            .forEach(event => rectSelection.on(event, () => attrs.pebbleEvents[event](pebble)));
+            .forEach(event => rectSelection.on(event, e => attrs.pebbleEvents[event](e, pebble)));
 
         d3.select(this).selectAll("rect").data(data)
             .transition()

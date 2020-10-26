@@ -3,6 +3,8 @@
  *  reference: https://hackernoon.com/copying-text-to-clipboard-with-javascript-df4d4988697f
  */
 
+import m from "mithril";
+
 export const copyToClipboard = str => {
   const el = document.createElement('textarea');  // Create a <textarea> element
   el.value = str;                                 // Set its value to the string that you want copied
@@ -31,22 +33,12 @@ export const numberWithCommas = some_number => {
     return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-export const getClearWorkspacesLink = _ => {
-  return window.location.origin + clear_user_workspaces_url;
-  // '/user-workspaces/clear-user-workspaces';
-}
-
-
-/*
- * Clear workspace and return to the pebbles page
- */
-export const clearWorkpacesAndReloadPage = _ => {
-    document.location = getClearWorkspacesLink();
-    // return some_number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
 // for debugging - if not in PRODUCTION, prints args
 export let cdb = _ => PRODUCTION || console.log(_);
+
 export let byId = id => document.getElementById(id);
+// export let byId = id => {console.log(id); return document.getElementById(id);}
+
 /**
  deletes the first instance of obj from arr
  @param {Object[]} arr - array
@@ -142,13 +134,46 @@ export let sample = (arr, n = 1, replacement = false, ordered = false) => {
 // n linearly spaced points between min and max
 export let linspace = (min, max, n) => Array.from({length: n})
     .map((_, i) => min + (max - min) / (n - 1) * i);
-export let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
-export let setDefaultRecursive = (obj, map) => map
-    .reduce((obj, pair) => setDefault(obj, pair[0], pair[1]), obj);
-export let setRecursive = (obj, map) => {
-    let [attr, value] = map[map.length - 1];
-    setDefaultRecursive(obj, map.slice(0, -1))[attr] = value;
-}
+
+/**
+ * Set obj[id] to value if id is not in object, and return obj[id]
+ * @param obj - object to assign into
+ * @param key - key of object to assign to
+ * @param value - used if id does not exist in object
+ * @returns {*} - obj[id]
+ */
+export let setDefault = (obj, key, value) =>
+    obj[key] = key in obj ? obj[key] : value;
+
+/**
+ * Create a nested structure of objects along path within obj. Does not overwrite any value.
+ * Creates arrays for integer path segments
+ * @param obj - object to assign into
+ * @param path - array of segments
+ * @returns {*} - deepest object in the structure
+ */
+export let setStructure = (obj, path) =>
+    path.reduce((obj, segment) => setDefault(obj, segment, {}), obj);
+
+/**
+ * Create a nested structure of objects along path within obj. Does not overwrite any value.
+ * @param obj - object to assign into
+ * @param path - array of string keys
+ * @param value - used if path does not existent in object
+ * @returns {*} - either default value or prior value
+ */
+export let setDefaultDeep = (obj, path, value) =>
+    setDefault(setStructure(obj, path.slice(0, -1)), path[path.length - 1], value)
+
+/**
+ * Create a nested structure of objects along path within obj. Only overwrites the final value.
+ * @param {object} obj - assign into
+ * @param {string[]} path
+ * @param {*} value - value to assign at the end of the structure
+ * @returns {*} - value
+ */
+export let setDeep = (obj, path, value) =>
+    setStructure(obj, path.slice(0, -1))[path[path.length - 1]] = value
 
 export function minutesToString(minutes) {
     let seconds = minutes * 60;
@@ -166,3 +191,13 @@ export function minutesToString(minutes) {
 }
 
 export let parseNumeric = value => isNaN(parseFloat(value)) ? value : parseFloat(value);
+export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
+export let boldPlain = value => m('b', value);
+export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
+export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
+export let linkURL = url => m('a', {href: url, style: {color: 'blue'},}, url);
+export let linkURLwithText = (url, text) => m('a', {href: url, style: {color: 'blue'}, target: '_blank'}, text);
+export let preformatted = text => m('pre', text);
+export let abbreviate = (text, length) => text.length > length
+    ? m('div', {'data-toggle': 'tooltip', title: text}, text.substring(0, length - 3).trim() + '...')
+    : text;

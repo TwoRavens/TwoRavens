@@ -941,17 +941,16 @@ export function buildMenu(step) {
 
     if (metadata.type === 'summary') return {pipeline: [
         {
-            $group: metadata.variables.reduce((out, variable) => {
-                out[variable + '-mean'] = {$avg: '$' + variable};
-                out[variable + '-max'] = {$max: '$' + variable};
-                out[variable + '-min'] = {$min: '$' + variable};
-                out[variable + '-stdDev'] = {$stdDevPop: '$' + variable};
-                out[variable + '-validCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
-                out[variable + '-invalidCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
-                out[variable + '-types'] = {$addToSet: {$type: '$' + variable}};
-                out[variable + '-uniques'] = {$addToSet: '$' + variable};
-                return out;
-            }, {_id: 0})
+            $group: metadata.variables.reduce((out, variable) => Object.assign(out, {
+                [variable + '-mean']: {$avg: '$' + variable},
+                [variable + '-max']: {$max: '$' + variable},
+                [variable + '-min']: {$min: '$' + variable},
+                [variable + '-stdDev']: {$stdDevPop: '$' + variable},
+                [variable + '-validCount']: {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}},
+                [variable + '-invalidCount']: {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}},
+                [variable + '-types']: {$addToSet: {$type: '$' + variable}},
+                [variable + '-uniques']: {$addToSet: '$' + variable},
+            }), {_id: 0})
         },
         {
             $project: metadata.variables.reduce((out, variable) => {

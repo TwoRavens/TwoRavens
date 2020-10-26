@@ -14,9 +14,8 @@ import PlotContinuous from './views/PlotContinuous';
 
 import {getData} from "../app";
 import Paginated from "../../common/views/Paginated";
-import {omniSort} from "../utils";
+import {setDefault, omniSort} from "../utils";
 
-let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
 let usedTermDefaults = () => ({

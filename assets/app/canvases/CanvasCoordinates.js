@@ -63,39 +63,39 @@ export default class CanvasCoordinates {
 
         let drag = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.dragmove(vnode, d));
+            .on("drag", (e, d) => this.dragmove(vnode, e, d));
 
         let dragright = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.rdragresize(vnode, d));
+            .on("drag", (e, d) => this.rdragresize(vnode, e, d));
 
         let dragleft = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.ldragresize(vnode, d));
+            .on("drag", (e, d) => this.ldragresize(vnode, e, d));
 
         let dragtop = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.tdragresize(vnode, d));
+            .on("drag", (e, d) => this.tdragresize(vnode, e, d));
 
         let dragbottom = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.bdragresize(vnode, d));
+            .on("drag", (e, d) => this.bdragresize(vnode, e, d));
 
         let dragbottomright = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.brdragresize(vnode, d));
+            .on("drag", (e, d) => this.brdragresize(vnode, e, d));
 
         let dragbottomleft = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.bldragresize(vnode, d));
+            .on("drag", (e, d) => this.bldragresize(vnode, e, d));
 
         let dragtopright = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.trdragresize(vnode, d));
+            .on("drag", (e, d) => this.trdragresize(vnode, e, d));
 
         let dragtopleft = d3.drag()
             .subject(Object)
-            .on("drag", (d) => this.tldragresize(vnode, d));
+            .on("drag", (e, d) => this.tldragresize(vnode, e, d));
 
         this.svgMap = d3.select('#worldMap');
         this.imgs = this.svgMap.selectAll("image").data([0]);
@@ -254,9 +254,9 @@ export default class CanvasCoordinates {
     }
 
 
-    dragmove(vnode, d) {
+    dragmove(vnode, e, d) {
         this.dragrect
-            .attr("x", d.x = Math.max(0, Math.min(2 - widthCoord, d3.event.x)));
+            .attr("x", d.x = Math.max(0, Math.min(2 - widthCoord, e.x)));
         this.dragbarleft
             .attr("x", function (d) {
                 return d.x - (dragbarw / 2);
@@ -275,7 +275,7 @@ export default class CanvasCoordinates {
             });
 
         this.dragrect
-            .attr("y", d.y = Math.max(0, Math.min(1 - heightCoord, d3.event.y)));
+            .attr("y", d.y = Math.max(0, Math.min(1 - heightCoord, e.y)));
         this.dragbarleft
             .attr("y", function (d) {
                 return d.y + (dragbarw / 2);
@@ -330,11 +330,11 @@ export default class CanvasCoordinates {
         setInputBounds(vnode, d)
     };
 
-    ldragresize(vnode, d) {
+    ldragresize(vnode, e, d) {
         let oldx = d.x;
         //Max x on the right is x + width - dragbarw
         //Max x on the left is 0 - (dragbarw/2)
-        d.x = Math.max(0, Math.min(d.x + widthCoord - (dragbarw / 2), d3.event.x));
+        d.x = Math.max(0, Math.min(d.x + widthCoord - (dragbarw / 2), e.x));
         widthCoord = widthCoord + (oldx - d.x);
         this.dragbarleft
             .attr("x", function (d) {
@@ -370,10 +370,10 @@ export default class CanvasCoordinates {
         setInputBounds(vnode, d)
     };
 
-    rdragresize(vnode, d) {
+    rdragresize(vnode, e, d) {
         //Max x on the left is x - width
         //Max x on the right is width of screen + (dragbarw/2)
-        let dragx = Math.max(d.x + (dragbarw / 2), Math.min(2, d.x + widthCoord + d3.event.dx));
+        let dragx = Math.max(d.x + (dragbarw / 2), Math.min(2, d.x + widthCoord + e.dx));
         //recalculate width
         widthCoord = dragx - d.x;
 
@@ -405,12 +405,12 @@ export default class CanvasCoordinates {
     };
 
 
-    tdragresize(vnode, d) {
+    tdragresize(vnode, e, d) {
 
         let oldy = d.y;
         //Max x on the right is x + width - dragbarw
         //Max x on the left is 0 - (dragbarw/2)
-        d.y = Math.max(0, Math.min(d.y + heightCoord - (dragbarw / 2), d3.event.y));
+        d.y = Math.max(0, Math.min(d.y + heightCoord - (dragbarw / 2), e.y));
 
         heightCoord = heightCoord + (oldy - d.y);
         this.dragbartop
@@ -447,10 +447,10 @@ export default class CanvasCoordinates {
         setInputBounds(vnode, d)
     };
 
-    bdragresize(vnode, d) {
+    bdragresize(vnode, e, d) {
         //Max x on the left is x - width
         //Max x on the right is width of screen + (dragbarw/2)
-        let dragy = Math.max(d.y + (dragbarw / 2), Math.min(2, d.y + heightCoord + d3.event.dy));
+        let dragy = Math.max(d.y + (dragbarw / 2), Math.min(2, d.y + heightCoord + e.dy));
 
         //recalculate width
         heightCoord = dragy - d.y;

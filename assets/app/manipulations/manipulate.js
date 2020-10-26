@@ -1,4 +1,11 @@
+import hopscotch from 'hopscotch';
 import m from 'mithril';
+
+import * as app from "../app";
+import * as queryAbstract from './queryAbstract';
+import * as queryMongo from "./queryMongo";
+import * as datamart from '../datamart/Datamart';
+
 import {TreeAggregate, TreeAugment, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
@@ -8,6 +15,7 @@ import CanvasImputation from "../canvases/CanvasImputation";
 
 import Flowchart from '../views/Flowchart';
 
+import * as common from '../../common/common';
 import Button from '../../common/views/Button';
 import TextField from "../../common/views/TextField";
 import PanelList from "../../common/views/PanelList";
@@ -15,20 +23,15 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import Panel from "../../common/views/Panel";
 import Canvas from "../../common/views/Canvas";
 import Table from "../../common/views/Table";
-
-import * as common from '../../common/common';
-
-import * as app from "../app";
-import {alertError, alertLog, setPreprocess} from "../app";
-
-import * as queryAbstract from './queryAbstract';
-import * as queryMongo from "./queryMongo";
-import hopscotch from 'hopscotch';
+import Icon from "../../common/views/Icon";
 
 import {formatVariableSummary} from '../views/VariableSummary';
-import Icon from "../../common/views/Icon";
-import * as datamart from '../datamart/Datamart';
-import {getSelectedProblem, getTransformVariables} from "../problem";
+
+import {
+    getSelectedProblem,
+    getTransformVariables,
+    loadProblemPreprocess
+} from "../problem";
 
 
 export function menu(compoundPipeline) {
@@ -590,8 +593,8 @@ export let setQueryUpdated = async state => {
 
         selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
 
-        app.loadProblemPreprocess(selectedProblem)
-            .then(setPreprocess)
+        loadProblemPreprocess(selectedProblem)
+            .then(app.setPreprocess)
             .then(m.redraw)
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
@@ -652,7 +655,7 @@ export let setConstraintMenu = async menu => {
         let candidatevariableData = await loadMenu(menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)), summaryStep, {recount: true});
         if (candidatevariableData) variableMetadata = candidatevariableData;
         else {
-            alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
+            app.alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
             constraintMenu = undefined;
             app.resetPeek();
             m.redraw();
@@ -730,12 +733,12 @@ export let setConstraintType = (type, pipeline) => {
         constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.validCount / 10)), 100);
 
         if (varMeta.types.includes('string')) {
-            alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
+            app.alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
 
         if (varMeta.max === varMeta.min) {
-            alertLog(`The max and min are the same in ${column}. Switching to discrete.`);
+            app.alertLog(`The max and min are the same in ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
     }
@@ -791,8 +794,8 @@ export let loadMenu = async (
 
     let success = true;
     let onError = err => {
-        if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
-        else alertError(err.message);
+        if (err === 'no records matched') app.alertError("No records match your subset. Plots will not be updated.");
+        else app.alertError(err.message);
         success = false;
     };
 
