@@ -3,7 +3,7 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
-import {isExploreMode, loadProblemPreprocess, setPreprocess, setVariableSummaryAttr, workspace} from "../app";
+import {hexToRgba, isExploreMode, loadProblemPreprocess, setPreprocess, setVariableSummaryAttr, workspace} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -69,7 +69,7 @@ export class CanvasModel {
                     let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
                     pebbles.forEach(pebble => setGroup(selectedProblem, 'None', pebble));
-                    selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || [])
+                    selectedProblem.predictorLinks = (selectedProblem.predictorLinks || [])
                         .filter(link => link.target !== pebble && link.source !== pebble);
                     app.resetPeek();
                     m.redraw();
@@ -96,11 +96,14 @@ export class CanvasModel {
 
                 labels: forceDiagramLabels(selectedProblem),
                 mutateNodes: mutateNodes(selectedProblem),
-                pebbleLinks: selectedProblem.pebbleLinks,
+                pebbleLinks: selectedProblem[linkMode],
                 onclickLink: d => {
-                    let originalLink = selectedProblem.pebbleLinks.find(link => d.source === link.source && d.target === link.target);
+                    let originalLink = selectedProblem[linkMode].find(link => d.source === link.source && d.target === link.target);
                     if (!originalLink) return;
-                    remove(selectedProblem.pebbleLinks, originalLink);
+                    if (linkMode === "predictorsLinks")
+                        remove(selectedProblem[linkMode], originalLink);
+                    if (linkMode === "causalLinks")
+                        originalLink.selected = !originalLink.selected
                     app.resetPeek();
                 }
             }, forceData)),
@@ -109,6 +112,15 @@ export class CanvasModel {
             app.isModelMode && !app.swandive && m("#spacetools.spaceTool", {
                     style: {right: app.panelWidth.right, 'z-index': 16}
                 },
+                m(ButtonRadio, {
+                    id: 'linkModeButtonRadio', attrsAll: {style: {margin: '0px .5em', width: '200px'}},
+                    onclick: mode => linkMode = {Causal: 'causalLinks', Predictors: 'predictorLinks'}[mode],
+                    activeSection: {causalLinks: 'Causal', predictorLinks: 'Predictors'}[linkMode],
+                    sections: [
+                        {value: 'Causal', title: 'draw the causal relationships by right clicking pebbles'},
+                        {value: 'Predictors', title: 'highlight/include additional predictors by right clicking pebbles'}
+                    ],
+                }),
                 m(Button, {
                     id: 'btnAdd', style: {margin: '0px .5em'},
                     onclick: addProblemFromForceDiagram,
@@ -132,7 +144,7 @@ export class CanvasModel {
                             alertEditCopy();
                             return;
                         }
-                        selectedProblem.pebbleLinks = []
+                        selectedProblem.predictorLinks = []
                     },
                     title: 'delete all connections between nodes'
                 }, m(Icon, {name: 'circle-slash'})),
@@ -730,7 +742,7 @@ export let leftpanel = forceData => {
             onclick: () => app.setFocusedPanel('left'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'left'),
-                background: 'rgb(249, 249, 249, .9)',
+                background: hexToRgba(common.menuColor, .9),
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
@@ -1240,6 +1252,8 @@ const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has
 export let forceDiagramMode = 'variables';
 export let setForceDiagramMode = mode => forceDiagramMode = mode;
 
+export let linkMode = 'causalLinks';
+
 export let buildForceData = problem => {
 
     if (!problem) return;
@@ -1250,19 +1264,24 @@ export let buildForceData = problem => {
 
     let supervised = !['clustering', 'communityDetection'].includes(problem.task);
 
+    let backingColor = {
+        'light': '#fff',
+        'dark': '#888'
+    }[common.theme]
+
     if (forceDiagramMode === 'variables') {
         groups = [
             {
                 name: "Predictors",
                 color: common.gr1Color,
-                colorBackground: app.swandive && 'grey',
+                colorBackground: app.swandive ? 'grey' : backingColor,
                 nodes: new Set(problem.predictors),
                 opacity: 0.3
             },
             supervised && {
                 name: "Targets",
                 color: common.gr2Color,
-                colorBackground: app.swandive && 'grey',
+                colorBackground: app.swandive ? 'grey' : backingColor,
                 nodes: new Set(problem.targets),
                 opacity: 0.3
             },
@@ -1280,7 +1299,7 @@ export let buildForceData = problem => {
                 id: "Structural",
                 name: '',
                 color: "transparent",
-                colorBackground: "transparent",
+                colorBackground: app.swandive ? 'grey' : 'transparent',
                 nodes: new Set([
                     ...problem.tags.crossSection,
                     ...problem.tags.weights,
@@ -1499,15 +1518,22 @@ let setContextPebble = pebble => {
     if (forceDiagramState.contextPebble) {
 
         if (forceDiagramState.contextPebble !== pebble) {
-            selectedProblem.pebbleLinks = selectedProblem.pebbleLinks || [];
-            selectedProblem.pebbleLinks.push({
+            selectedProblem[linkMode] = selectedProblem[linkMode] || [];
+            let link = {
                 source: forceDiagramState.contextPebble,
                 target: pebble,
                 right: true
-            });
+            };
+            selectedProblem[linkMode].push(link);
         }
         forceDiagramState.contextPebble = undefined;
-    } else forceDiagramState.contextPebble = pebble;
+    } else {
+        if (linkMode === 'predictorLinks' && selectedProblem.targets.includes(pebble)) {
+            app.alertWarn("Targets may not be predictors!")
+            return
+        }
+        forceDiagramState.contextPebble = pebble;
+    }
     app.resetPeek();
     m.redraw();
 };
@@ -2027,15 +2053,8 @@ export async function addProblemFromForceDiagram() {
 export function connectAllForceDiagram() {
     let problem = getSelectedProblem();
 
-    problem.pebbleLinks = problem.pebbleLinks || [];
-    if (app.isExploreMode) {
-        let pebbles = [...problem.predictors, ...problem.targets];
-        problem.pebbleLinks = pebbles
-            .flatMap((pebble1, i) => pebbles.slice(i + 1, pebbles.length)
-                .map(pebble2 => ({
-                    source: pebble1, target: pebble2
-                })))
-    } else problem.pebbleLinks = problem.predictors
+    problem.predictorLinks = problem.predictorLinks || [];
+    problem.predictorLinks = problem.predictors
         .flatMap(source => problem.targets
             .map(target => ({
                 source, target, right: true

@@ -90,7 +90,8 @@ export function menu(compoundPipeline) {
             attrsAll: {
                 style: {
                     height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
-                    'z-index': 99
+                    'z-index': 99,
+                    background: common.baseColor
                 }
             }
         }, canvas(compoundPipeline))

@@ -112,7 +112,6 @@ export default class VariableSummary {
             plot && m('div', {style: {'max-height': '300px', 'text-align': 'center', margin: '1em'}}, plot),
             m(Table, {
                 id: 'varSummaryTable',
-                style: {background: 'white'},
                 data: formatVariableSummary(variable)
             })
         ]
