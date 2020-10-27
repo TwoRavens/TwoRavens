@@ -214,7 +214,7 @@ export class CanvasExplore {
                                 margin: '.5em',
                                 width: '250px',
                                 'align-items': 'center',
-                                'background-color': selected ? app.hexToRgba(common.selVarColor) : common.menuColor
+                                'background-color': selected ? app.hexToRgba(common.selVarColor) : common.baseColor
                             }
                         },
                         m('#exploreNodePlot', {

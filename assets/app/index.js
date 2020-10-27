@@ -19,6 +19,7 @@ import * as explore from './modes/explore';
 import * as results from './modes/results';
 
 import * as manipulate from './manipulations/manipulate';
+
 import * as solverD3M from "./solvers/d3m";
 
 import * as common from '../common/common';
@@ -43,7 +44,6 @@ import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 import Body_Deploy from "./views/Body_Deploy";
 import {getSelectedProblem} from "./problem";
-import {constraintMenu} from "./manipulations/manipulate";
 
 export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
 export let boldPlain = value => m('b', value);
@@ -91,6 +91,10 @@ class Body {
         let drawForceDiagram = (app.isModelMode || app.isExploreMode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
         let forceData = drawForceDiagram && model.buildForceData(selectedProblem);
 
+        let backgroundColor = app.swandive ? 'grey'
+            : app.isExploreMode ? {"light": '#ffffff', "dark": "#474747"}[common.theme]
+                : common.baseColor;
+
         return m('main',
 
             this.constructModals(),
@@ -101,6 +105,7 @@ class Body {
             app.workspace && manipulate.constraintMenu && Body.manipulations(),
             app.peekInlineShown && this.peekTable(),
 
+
             m(`#main`, {
                     style: {
                         overflow,
@@ -108,7 +113,8 @@ class Body {
                         height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
                         bottom: common.heightFooter,
                         display: (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
-                        'background-color': app.swandive ? 'grey' : 'transparent'
+                        'background-color': backgroundColor,
+                        color: common.textColor
                     }
                 },
 
@@ -187,7 +193,7 @@ class Body {
                     'In the Norse, their names were "Thought" and "Memory". ' +
                     'In our coming release, our thought-raven automatically advises on statistical model selection, ' +
                     'while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.',
-                attrsInterface: {style: app.isExploreMode ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
+                attrsInterface: {style: app.isExploreMode && common.theme === "light" ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
             },
             m('div', {style: {'flex-grow': 1}}),
 
@@ -252,7 +258,7 @@ class Body {
                     "overflow-y": "scroll",
                     "overflow-x": "auto",
                     'z-index': 100,
-                    'background': 'rgba(255,255,255,.8)'
+                    'background': {'light': 'rgba(255,255,255,.8)', 'dark': 'rgba(115,115,115,0.8)'}[common.theme]
                 },
                 onscroll: () => {
                     // don't apply infinite scrolling when list is empty

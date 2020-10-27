@@ -442,7 +442,7 @@ export class CanvasDataset {
                     data: Object.entries(app.variableSummaries)
                         .filter(variable => !datasetPreferences.reportSearch
                             || variable[0].toLowerCase().includes(datasetPreferences.reportSearch ?? "")),
-                    makePage: entries => entries.map(([variable, vals]) => m('div.border', {style: 'margin-bottom: 1em; padding: 1em'},
+                    makePage: entries => entries.map(([variable, vals]) => m('div', {style: `margin-bottom: 1em; padding: 1em; border: ${common.borderColor}`},
                         m('h4', variable),
                         m('.row',
                             m('.col[style=min-width:auto !important]',

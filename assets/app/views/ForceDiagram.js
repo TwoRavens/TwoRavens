@@ -982,12 +982,15 @@ export let groupBuilder = (attrs, context) => {
     context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.enter()
         .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
         .attr("id", group => group.name + 'HullBackground')
-        .style("fill", group => group.colorBackground || '#ffffff')
-        .style("stroke", group => group.colorBackground || '#ffffff')
         .style("stroke-width", 2.5 * attrs.hullRadius)
         .style('stroke-linejoin', 'round')
         .style("opacity", 1)
         .merge(context.selectors.hullBackgrounds);
+
+    // allow fading between background colors
+    context.selectors.hullBackgrounds
+        .style("fill", group => group.colorBackground || '#ffffff')
+        .style("stroke", group => group.colorBackground || '#ffffff')
 };
 
 export let linkBuilder = (attrs, context) => {
@@ -1002,17 +1005,15 @@ export let linkBuilder = (attrs, context) => {
     context.selectors.links = context.selectors.links.enter()
         .append('svg:path')
         .attr('class', 'link')
-        .classed('selected', () => null)
         .style('marker-start', marker('left'))
         .style('marker-end', marker('right'))
         .on('mousedown', attrs.onclickLink || Function)
         .merge(context.selectors.links);
 
-    // update existing links
-    // VJD: dashed links between pebbles are "selected". this is disabled for now
-    // selectors.links.classed('selected', x => null)
-    //     .style('marker-start', marker('left'))
-    //     .style('marker-end', marker('right'));
+    // update these attrs every time
+    context.selectors.links
+        .classed('selected', link => link.selected)
+        .styles(link => link.styles || {})
 };
 
 

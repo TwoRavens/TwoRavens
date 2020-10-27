@@ -70,6 +70,7 @@ export default class PlotVegaLite {
                 [axis, {}],
                 ['labelLimit', 100]
             ]));
+            // setDefaultRecursive(specification, [['config', {}], ['background', 'transparent']]);
 
             vegaEmbed(vnode.dom, specification, options).then(result => {
                 let addThemeSetter = theme => {
