@@ -482,24 +482,24 @@ export default class CanvasCoordinates {
         setInputBounds(vnode, d)
     };
 
-    trdragresize(vnode, d) {
-        this.tdragresize(vnode, d);
-        this.rdragresize(vnode, d);
+    trdragresize(vnode, e, d) {
+        this.tdragresize(vnode, e, d);
+        this.rdragresize(vnode, e, d);
     };
 
-    tldragresize(vnode, d) {
-        this.tdragresize(vnode, d);
-        this.ldragresize(vnode, d);
+    tldragresize(vnode, e, d) {
+        this.tdragresize(vnode, e, d);
+        this.ldragresize(vnode, e, d);
     };
 
-    bldragresize(vnode, d) {
-        this.bdragresize(vnode, d);
-        this.ldragresize(vnode, d);
+    bldragresize(vnode, e, d) {
+        this.bdragresize(vnode, e, d);
+        this.ldragresize(vnode, e, d);
     };
 
-    brdragresize(vnode, d) {
-        this.bdragresize(vnode, d);
-        this.rdragresize(vnode, d);
+    brdragresize(vnode, e, d) {
+        this.bdragresize(vnode, e, d);
+        this.rdragresize(vnode, e, d);
     };
 
     updateLatitude(preferences) {

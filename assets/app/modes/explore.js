@@ -168,7 +168,7 @@ export class CanvasExplore {
                         'margin-left': 'calc(460px + 1.5em)',
                         'margin-top': '0.5em',
                         position: 'fixed',
-                        background: '#fff',
+                        background: common.lightGrayColor,
                         'border-radius': '3px',
                         'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)'
                     }
@@ -717,7 +717,8 @@ let customConfiguration = {};
 let mappingConfiguration = {
     mark: 'point',
     latitude: "pgd_xcoord",
-    longitude: "pgd_ycoord"
+    longitude: "pgd_ycoord",
+    color: 'pgd_pasture_ih'
 };
 window.customConfiguration = customConfiguration;
 export let explorePreferences = {

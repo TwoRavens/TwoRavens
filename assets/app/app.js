@@ -1780,7 +1780,10 @@ export let setVariableSummaries = state => {
     // delete state.d3mIndex;
 
     // I'm treating existence of a time format as indication that the data is temporal
-    Object.values(state).forEach(summary => delete summary.temporal)
+    Object.values(state).forEach(summary => {
+        delete summary.temporal
+        delete summary.geographic
+    })
     variableSummaries = state;
 
     // TODO: replace usages of .name with already existing .variableName

@@ -28,7 +28,7 @@ export default class PlotMapboxEditor {
             // "area",
             "point",
             // 'boxplot',
-            // 'rect',
+            'rect',
             // 'rule'
         ];
 
@@ -40,7 +40,7 @@ export default class PlotMapboxEditor {
                         activeItem: configuration.mark,
                         onclickChild: value => configuration.mark = value
                     })],
-                    ...configuration.mark === "point" ? [
+                    ...['point', 'rect'].includes(configuration.mark) ? [
                         [
                             "latitude", m(TextFieldSuggestion, {
                                 id: `channelLatitudeTextField`,
@@ -59,6 +59,16 @@ export default class PlotMapboxEditor {
                                 enforce: true,
                                 oninput: value => configuration.longitude = value,
                                 onblur: value => configuration.longitude = value
+                            })
+                        ],
+                        [
+                            "color", m(TextFieldSuggestion, {
+                                id: `channelColorTextField`,
+                                value: configuration.color,
+                                suggestions: variables,
+                                enforce: true,
+                                oninput: value => configuration.color = value,
+                                onblur: value => configuration.color = value
                             })
                         ]
                     ] : []

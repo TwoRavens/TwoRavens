@@ -43,10 +43,12 @@ import {TreeAggregate, TreeSubset, TreeVariables} from "../views/QueryTrees";
 import Icon from "../../common/views/Icon";
 import CanvasContinuous from "../canvases/CanvasContinuous";
 import {italicize} from "../utils";
+import {setLightTheme} from "../../common/common";
 
 export default class Body_EventData {
 
     oninit(vnode) {
+        setLightTheme()
         if (vnode.attrs.mode !== 'home') {
             m.route.set('/home');
             vnode.attrs.mode = 'home';

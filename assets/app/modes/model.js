@@ -1503,6 +1503,7 @@ export let forceDiagramState = {
     arcHeight: 16,
     arcGap: 1
 };
+window.forceDiagramState = forceDiagramState;
 
 let setContextPebble = (e, pebble) => {
     let selectedProblem = getSelectedProblem();
@@ -1556,12 +1557,12 @@ Object.assign(forceDiagramState, {
             else setSelectedPebble(pebble)
         },
         mouseover: (e, pebble) => {
-            console.log(e);
             if (firstSummaryMouseover && app.tutorial_mode && !hopscotch.getCurrTour())
                 hopscotch.startTour(summaryTour());
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = pebble;
+                console.log("setting mouseover", pebble)
                 if (app.leftTab !== 'Summary') app.setLeftTabHidden(app.leftTab);
                 app.setLeftTab('Summary');
                 m.redraw()
@@ -1571,6 +1572,7 @@ Object.assign(forceDiagramState, {
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
                 forceDiagramState.hoverPebble = undefined;
+                console.log("setting mouseout")
                 if (!forceDiagramState.selectedPebble)
                     app.setLeftTab(app.leftTabHidden)
 

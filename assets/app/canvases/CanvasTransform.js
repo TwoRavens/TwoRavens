@@ -347,7 +347,7 @@ class MenuBinning {
                     min: metadata.variables[variable].min,
                     columns: [variable]
                 }
-            })]);
+            })['pipeline']]);
 
             preferences.buckets = await getData({method: 'aggregate', query});
             preferences.variableIndicator = variable;
@@ -412,7 +412,7 @@ class MenuBinning {
             }
         }
 
-        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor, height: 'calc(100% - 62px)'}},
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor, height: '100%'}},
             m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
             m(TextField, {
                 id: 'textFieldVariableName',
@@ -486,7 +486,7 @@ class MenuBinning {
                     value: preferences.custom
                 })
             ],
-            preferences.buckets && m('[style=height:calc(100% - 165px)]', m(PlotContinuous, {
+            preferences.buckets && m('[style=height:calc(100% - 265px)]', m(PlotContinuous, {
                 id: 'plotOriginal',
                 data: {[common.d3Color]: preferences.buckets},
                 disableBrushes: true,

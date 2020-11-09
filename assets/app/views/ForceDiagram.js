@@ -1,6 +1,5 @@
 import * as d3 from "d3";
 // import 'd3-selection-multi';
-
 import * as jStat from 'jstat';
 
 import * as common from "../../common/common";
@@ -611,7 +610,7 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
         .on('start', function () {
             d3.select(this).style('display', 'block')
         }) // prevent mouseovers/clicks from opacity:0 elements
-        .on('end', function (_, d) {
+        .on('end', function (d) {
             if (d === state.hoverPebble || d === state.selectedPebble) return;
             d3.select(this).style('display', 'none');
         });
@@ -621,16 +620,17 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
         .selectAll('g.arc').filter(d => d === state.hoverPebble || d === state.selectedPebble).each(function (pebble) {
         let data = {name: '', children: state.labels(pebble)};
         let setWidths = node => {
-            if ('children' in node) node.value = node.children.reduce((sum, child) => sum + setWidths(child), 0);
+            if ('children' in node) {
+                node.children.forEach(setWidths);
+                node.value = 0;
+            }
             else node.value = node.name.length + 5;
-            return node.value;
         };
         setWidths(data);
 
         let root = d3.hierarchy(data);
 
-        let x = d3.scaleLinear()
-            .range([0, 2 * Math.PI]);
+        let x = d3.scaleLinear().range([0, 2 * Math.PI]);
         let partition = d3.partition();
 
         let arc = d3.arc()
@@ -651,7 +651,7 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
 
         // add paths for new nodes
         d3.select(this).selectAll('path')
-            .data(partition(root).descendants(), label => label.data.id)
+            .data(partition(root.sum(d => d.value)).descendants(), label => label.data.id)
             .attr("d", arc)
             .enter()
             .append("path")
@@ -673,8 +673,13 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
         d3.select(this).selectAll('path')
             .data(partition(root).descendants(), label => label.data.id)
             .on("click", label => label.data.onclick(pebble))
-            .on('mouseover', e => state.pebbleEvents.mouseover(e, pebble))
-            .on('mouseout', e => state.pebbleEvents.mouseout(e, pebble))
+            .on('mouseover', e => {
+
+                state.pebbleEvents.mouseover(e, pebble)
+            })
+            .on('mouseout', e => {
+                state.pebbleEvents.mouseout(e, pebble)
+            })
             .on('contextmenu', e => state.pebbleEvents.contextmenu(e, pebble))
             .transition()  // Animate transitions between styles
             .duration(state.selectTransitionDuration)
@@ -1013,7 +1018,7 @@ export let linkBuilder = (attrs, context) => {
     // update these attrs every time
     context.selectors.links
         .classed('selected', link => link.selected)
-        .styles(link => link.styles || {})
+        // .styles(link => link.styles || {})
 };
 
 

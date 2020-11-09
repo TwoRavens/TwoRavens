@@ -139,7 +139,7 @@ export default class PlotContinuous {
         }
 
         function zoomed(e) {
-            if (disableBrushes || e.sourceEvent && e.sourceEvent.type === "brush") return; // ignore zoom-by-brush
+            if (disableBrushes || e?.sourceEvent?.type === "brush") return; // ignore zoom-by-brush
             let t = e.transform;
             x.domain(t.rescaleX(x2).domain());
             focus.select(".area").attr("d", area);
@@ -147,7 +147,7 @@ export default class PlotContinuous {
                 .selectAll("text")
                 .attr("transform", "rotate(45)")
                 .style("text-anchor", "start");
-            !disableBrushes && context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
+            // !disableBrushes && context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
         }
 
         // Draw data on focus portion of svg (focus) with the area variable attribute

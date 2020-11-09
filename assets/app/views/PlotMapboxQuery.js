@@ -17,7 +17,7 @@ export default class PlotMapboxQuery {
                 type: 'menu',
                 metadata: {
                     type: 'data',
-                    variables: [configuration.latitude, configuration.longitude].filter(_ => _),
+                    variables: [configuration.latitude, configuration.longitude, configuration.color].filter(_ => _),
                     limit: sampleSize
                 }
             }
@@ -25,12 +25,26 @@ export default class PlotMapboxQuery {
 
         let baseQuery = JSON.stringify([
             ...queryMongo.buildPipeline([...abstractQuery || [], ...mappingQuery], variablesInitial)['pipeline'],
+            // {
+            //     $project: {
+            //         lat: `$${configuration.latitude}`,
+            //         lon: `$${configuration.longitude}`,
+            //         color: `$${configuration.color}`
+            //     }
+            // },
+            {
+                $group: {
+                    _id: {lat: `$${configuration.latitude}`, lon: `$${configuration.longitude}`},
+                    color: {$avg: `$${configuration.color}`}
+                }
+            },
             {
                 $project: {
-                    lat: `$${configuration.latitude}`,
-                    lon: `$${configuration.longitude}`
+                    lat: `$_id\\.lat`,
+                    lon: `$_id\\.lon`,
+                    color: `$color`
                 }
-            }
+            },
         ])
 
         // unload all if base query changed
@@ -44,18 +58,21 @@ export default class PlotMapboxQuery {
 
             getData({method: 'aggregate', query: baseQuery}).then(data => {
                 this.dataset = data.map(point => ({
-                    type: 'feature', geometry: {
-                        type: 'point',
-                        coordinates: [point.lon, point.lat]
-                    }
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [point.lat, point.lon]
+                    },
+                    color: point.color
                 }));
                 this.isLoading = false;
                 m.redraw()
+                setTimeout(m.redraw, 200);
             });
         }
 
         console.log("this.dataset", this.dataset);
 
-        return this.dataset && m(PlotMapbox, {points: this.dataset})
+        return m(PlotMapbox, {points: this.dataset})
     }
 }
