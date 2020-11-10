@@ -3,11 +3,13 @@ import m from 'mithril';
 import TwoPanel from "../../common/views/TwoPanel";
 import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
 import PlotVegaLiteEditor from "./PlotVegaLiteEditor";
+import PlotMapbox from "./PlotMapbox";
+import PlotVegaLite from "./PlotVegaLite";
 
 export default class PlotVegaLiteWrapper {
 
     view(vnode) {
-        let {configuration, getData, abstractQuery, summaries, nominals, sampleSize, variablesInitial} = vnode.attrs;
+        let {mapping, configuration, getData, abstractQuery, summaries, nominals, sampleSize, variablesInitial} = vnode.attrs;
         let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
             [variable]: nominals.has(variable)
                 ? 'nominal' : summaries[variable].nature === 'ordinal'
@@ -34,19 +36,26 @@ export default class PlotVegaLiteWrapper {
                 ...(specification.hconcat || [])
             ].map(countEncodings).reduce((sum, count) => sum + count, 0);
 
+            // both need to be set for mapping
+            if (mapping && (!specification?.encoding?.latitude?.field || !specification?.encoding?.longitude?.field))
+                encodingsCount = 0
+
             // 5px margin keeps the drag bar visible
             plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
+                component: mapping ? PlotMapbox : PlotVegaLite,
                 getData,
                 specification,
                 abstractQuery,
                 summaries,
                 sampleSize,
-                variablesInitial
+                variablesInitial,
+                mapping
             }))
         }
 
         return m(TwoPanel, {
             left: m(PlotVegaLiteEditor, {
+                mapping,
                 configuration,
                 variables: Object.keys(summaries)
             }),
@@ -93,7 +102,7 @@ let makeLayer = (layer, varTypes) => {
     let channels = (layer.channels || [])
         .filter(channel => !channel.delete && (channel.variable || (channel.variables || []).length));
     if (channels.length === 0) return;
-    let orientation = channels.find(channel => channel.name === 'primary axis').orientation || 'x';
+    let orientation = channels.find(channel => channel.name === 'primary axis')?.orientation || 'x';
     let spec = {};
 
     if ('mark' in layer) spec.mark = {type: layer.mark};

@@ -14,14 +14,14 @@ export default class PlotVegaLiteEditor {
         this.pendingSecondaryVariable = '';
     }
     view(vnode) {
-        let {configuration, variables} = vnode.attrs;
+        let {configuration, variables, mapping} = vnode.attrs;
 
-        let multi = 'layers' in configuration
-            ? 'layers'
-            : ('vconcat' in configuration)
-                ? 'vconcat'
-                : ('hconcat' in configuration)
-                    ? 'hconcat' : undefined;
+        // let multi = 'layers' in configuration
+        //     ? 'layers'
+        //     : ('vconcat' in configuration)
+        //         ? 'vconcat'
+        //         : ('hconcat' in configuration)
+        //             ? 'hconcat' : undefined;
 
         return [
             m('div', {
@@ -30,60 +30,63 @@ export default class PlotVegaLiteEditor {
                     padding: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                 }
-            }, this.layerEditor(configuration, variables)),
+            }, this.layerEditor(configuration, variables, mapping)),
 
-            ([
-                // {
-                //     key: 'layers',
-                //     button: 'Add layer',
-                //     name: 'Layers'
-                // },
-                // {
-                //     key: 'vconcat',
-                //     button: 'Add plot below',
-                //     name: 'Vertical Concatenate'
-                // },
-                // {
-                //     key: 'hconcat',
-                //     button: 'Add plot beside',
-                //     name: 'Horizontal Stack'
-                // }
-            ]).map(multiType => [
-                (multi === multiType.key || !multi) && [
-                    (configuration[multiType.key] || [])
-                        .map(layer => m('div', {
-                                style: {
-                                    margin: '1em',
-                                    padding: '1em',
-                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                                }
-                            },
-                            m(Button, {
-                                onclick: () => {
-                                    remove(configuration[multiType.key], layer);
-                                    if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
-                                }
-                            }, m(Icon, {name: 'x'})),
-                            this.layerEditor(layer, variables)
-                        )),
-
-                    m('div[style=margin:1em]',
-                        m('h4', multiType.name),
-                        m(Button, {
-                            onclick: () => {
-                                configuration[multiType.key] = configuration[multiType.key] || [];
-                                configuration[multiType.key].push({
-                                    mark: 'point'
-                                })
-                            }
-                        }, multiType.button))
-                ],
-            ])
+            // !mapping && ([
+            //     {
+            //         key: 'layers',
+            //         button: 'Add layer',
+            //         name: 'Layers'
+            //     },
+            //     {
+            //         key: 'vconcat',
+            //         button: 'Add plot below',
+            //         name: 'Vertical Concatenate'
+            //     },
+            //     {
+            //         key: 'hconcat',
+            //         button: 'Add plot beside',
+            //         name: 'Horizontal Stack'
+            //     }
+            // ]).map(multiType => [
+            //     (multi === multiType.key || !multi) && [
+            //         (configuration[multiType.key] || [])
+            //             .map(layer => m('div', {
+            //                     style: {
+            //                         margin: '1em',
+            //                         padding: '1em',
+            //                         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+            //                     }
+            //                 },
+            //                 m(Button, {
+            //                     onclick: () => {
+            //                         remove(configuration[multiType.key], layer);
+            //                         if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
+            //                     }
+            //                 }, m(Icon, {name: 'x'})),
+            //                 this.layerEditor(layer, variables)
+            //             )),
+            //
+            //         m('div[style=margin:1em]',
+            //             m('h4', multiType.name),
+            //             m(Button, {
+            //                 onclick: () => {
+            //                     configuration[multiType.key] = configuration[multiType.key] || [];
+            //                     configuration[multiType.key].push({
+            //                         mark: 'point'
+            //                     })
+            //                 }
+            //             }, multiType.button))
+            //     ],
+            // ])
 
         ];
     }
 
-    layerEditor(configuration, variables) {
+    layerEditor(configuration, variables, mapping) {
+
+        // maps should be interactive by default
+        if (mapping && !('interactive' in configuration)) configuration.interactive = true;
 
         configuration.channels = configuration.channels || [];
 
@@ -95,47 +98,58 @@ export default class PlotVegaLiteEditor {
         }
 
         let allChannels = [
-            'primary axis',
-            'secondary axis',
-            'size',
+            !mapping && 'primary axis',
+            !mapping && 'secondary axis',
+            mapping && 'longitude',
+            mapping && 'latitude',
+            !mapping && 'size',
             'color',
-            'order',
-            'shape',
+            !mapping && 'order',
+            !mapping && 'shape',
             'opacity',
-            'row',
-            'column',
+            !mapping && 'row',
+            !mapping && 'column',
             configuration.mark === "line" && 'detail',
             // 'fillOpacity',
             // 'strokeWidth',
-            configuration.mark === "text" && 'text',
+            !mapping && configuration.mark === "text" && 'text',
             'tooltip',
         ].filter(_=>_);
 
         let allMarks = [
-            "bar",
-            "text",
+            !mapping && "bar",
+            !mapping && "text",
             // "circle",
             // "square",
-            "tick",
-            "line",
-            "area",
+            !mapping && "tick",
+            !mapping && "line",
+            !mapping && "area",
             "point",
-            'boxplot',
+            !mapping && 'boxplot',
             // 'rect',
             // 'rule'
-        ];
+        ].filter(_=>_);
 
         let unusedChannels = allChannels
             .filter(channelName => !configuration.channels
                 .find(channel => channel.name === channelName && !channel.delete));
 
-        if (unusedChannels.includes('primary axis')) {
+        if (!mapping && unusedChannels.includes('primary axis')) {
             configuration.channels.push({name: 'primary axis'});
             remove(unusedChannels, 'primary axis')
         }
-        if (unusedChannels.includes('secondary axis')) {
+        if (!mapping && unusedChannels.includes('secondary axis')) {
             configuration.channels.push({name: 'secondary axis'});
             remove(unusedChannels, 'secondary axis')
+        }
+
+        if (mapping && unusedChannels.includes('longitude')) {
+            configuration.channels.push({name: 'longitude'});
+            remove(unusedChannels, 'longitude')
+        }
+        if (mapping && unusedChannels.includes('latitude')) {
+            configuration.channels.push({name: 'latitude'});
+            remove(unusedChannels, 'latitude')
         }
 
         if (!('mark' in configuration))
@@ -164,7 +178,7 @@ export default class PlotVegaLiteEditor {
                     //         {value: 'False'},
                     //     ]
                     // }))],
-                    ["zero", m(Popper, {
+                    !mapping && ["zero", m(Popper, {
                         content: () => configuration.zero
                             ? "Zero is enabled, so axes are extended to include zero. "
                             : "Zero is disabled, so axes are not extended to include zero. "

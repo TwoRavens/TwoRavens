@@ -65,7 +65,6 @@ import {
     getSelectedProblem,
     setSelectedProblem
 } from "../problem";
-import PlotMapboxWrapper from "../views/PlotMapboxWrapper";
 
 window.timeParse = d3.timeParse;
 
@@ -266,7 +265,8 @@ export class CanvasExplore {
                         position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
                     }
                 },
-                m(PlotMapboxWrapper, {
+                m(PlotVegaLiteWrapper, {
+                    mapping: true,
                     getData: app.getData,
                     variables: Object.keys(app.variableSummaries),
                     nominals: new Set(getNominalVariables(selectedProblem)),

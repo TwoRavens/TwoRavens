@@ -10,7 +10,7 @@ export default class PlotVegaLiteQuery {
     }
 
     view(vnode) {
-        let {getData, specification} = vnode.attrs;
+        let {mapping, component, getData, specification} = vnode.attrs;
 
         let {abstractQuery, summaries, sampleSize, variablesInitial} = vnode.attrs;
         if (isNaN(sampleSize)) sampleSize = 5000;
@@ -41,8 +41,14 @@ export default class PlotVegaLiteQuery {
                     this.isLoading[compiled] = true;
 
                     getData({method: 'aggregate', query: compiled}).then(data => {
+                        // translate mapping data to geojson
+                        if (mapping) data.forEach(point => Object.assign(point, {type: 'Feature', geometry: {
+                            type: 'Point',
+                            coordinates: [point[layer.encoding.longitude.field], point[layer.encoding.latitude.field]]
+                        }}))
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
+                        m.redraw();
                     });
                 }
             });
@@ -76,7 +82,7 @@ export default class PlotVegaLiteQuery {
         pruneSpec('vconcat');
 
         // draw plot
-        return m(PlotVegaLite, {specification: specificationStripped})
+        return m(component, {specification: specificationStripped})
     }
 }
 
@@ -302,6 +308,7 @@ let getQuery = (abstractQuery, layer, summaries, sampleSize, variablesInitial) =
     if (layer.transform)
         dataQuery.push(...translateVegaLite(layer.transform, summaries));
     dataQuery.push({$project: {_id: 0}});
+    // projecting down to columns in fields is not necessarily faster, because it can cause cache misses
     dataQuery.push({$sample: {size: sampleSize}});
 
     return dataQuery;

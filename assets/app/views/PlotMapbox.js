@@ -25,8 +25,15 @@ export default class PlotMapbox {
     }
 
     onupdate({attrs, dom}) {
-        let {data, specification} = attrs;
+        let {specification} = attrs;
+        let data = specification.data.values;
         if (!data) return
+
+        delete specification.encoding.latitude;
+        delete specification.encoding.longitude;
+        specification.mark = {"type": "geoshape"};
+
+        delete specification.selection;
 
         if (this.map === undefined) {
             let map = this.map = new mapboxgl.Map({
@@ -84,10 +91,13 @@ export default class PlotMapbox {
         this.map.on("moveend", updateOnce);
     }
 
-    view() {
+    view({attrs}) {
+        let vegaStyle = {position: 'absolute', top: 0, left: 0};
+        if (!!attrs.specification?.selection) vegaStyle['pointer-events'] = 'none';
+
         return m(`div`, {style: {width: '100%', height: '100%', position: 'relative'}},
             m('div#mapboxContainer', {style: {width: '100%', height: '100%'}}),
-            m('div#vegaContainer', {style: {position: 'absolute', top: 0, left: 0, 'pointer-events': 'none'}}))
+            m('div#vegaContainer', {style: vegaStyle}))
     }
 }
 
