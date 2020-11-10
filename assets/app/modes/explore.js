@@ -716,8 +716,8 @@ let defaultRecordLimit = 5000;
 let customConfiguration = {};
 let mappingConfiguration = {
     mark: 'point',
-    latitude: "pgd_xcoord",
-    longitude: "pgd_ycoord",
+    latitude: "pgd_ycoord",
+    longitude: "pgd_xcoord",
     color: 'pgd_pasture_ih'
 };
 window.customConfiguration = customConfiguration;

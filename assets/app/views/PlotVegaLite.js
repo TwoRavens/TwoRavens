@@ -1,8 +1,8 @@
 import m from 'mithril';
-import vegaEmbed from "vega-embed";
+import vegaEmbed, {vega} from "vega-embed";
 
-import * as vega from 'vega';
 import {setDefaultDeep} from "../utils";
+import {mergeAttributes} from "../../common/common";
 
 // m(PlotVegaLite, {
 //     specification: {...}, // an instance of this spec: https://vega.github.io/vega-lite/docs/spec.html,
@@ -18,22 +18,24 @@ import {setDefaultDeep} from "../utils";
 //     the diff is applied to the existing plot as a vegalite changeset, instead of rebuilding the entire plot
 
 export default class PlotVegaLite {
-    view() {
-        return m('div', {style: {width: '100%', height: '100%'}})
+    view({attrs}) {
+        return m('div', mergeAttributes({style: {width: '100%', height: '100%'}}, attrs.attrsAll))
     }
 
     plot(vnode) {
-        let {data, specification, listeners} = vnode.attrs;
+        let {force, data, specification, options, listeners, projections} = vnode.attrs;
 
-        // change-sets are not currently supported. Data is manually inserted here.
-        // long term, if change-sets are not returned, it would be better to remove the data argument from this component
+        // register projections in vega
+        Object.entries(projections || {}).forEach(([k, v]) => vega.projection(k, v));
+
+        // Data is manually inserted here.
         if (data) specification.data = {values: data};
 
         let newSpecification = JSON.stringify(specification);
         let {width, height} = vnode.dom.getBoundingClientRect();
 
         if (this.isPlotting) return;
-        if (this.specification !== newSpecification
+        if (force || this.specification !== newSpecification
             || this.width !== width
             || this.height !== height
             || this.theme !== localStorage.getItem('plotTheme')) {
@@ -51,10 +53,9 @@ export default class PlotVegaLite {
                 "contains": "padding"
             };
             // if ('vconcat' in specification) specification.vconcat.forEach(spec => spec.width = this.width);
-            // change-sets are not currently supported
-            // if (data) specification.data = {name: 'embedded'};
+            if (data) specification.data = {name: 'embedded'};
 
-            let options = {actions: true, theme: this.theme || 'default'};
+            options = Object.assign({actions: true, theme: this.theme || 'default'}, options || {});
             if ('vconcat' in specification)
                 width && specification.vconcat.forEach(spec => spec.width = 'width' in spec ? spec.width : width);
             else if ('hconcat' in specification)
@@ -68,6 +69,7 @@ export default class PlotVegaLite {
             ['axisX', 'axisY'].forEach(axis => setDefaultDeep(specification, ['config', axis, 'labelLimit'], 100));
             // setDefaultRecursive(specification, [['config', {}], ['background', 'transparent']]);
 
+            console.log(options);
             vegaEmbed(vnode.dom, specification, options).then(result => {
                 let addThemeSetter = theme => {
                     const themeAction = document.createElement('a');
@@ -77,7 +79,8 @@ export default class PlotVegaLite {
                         vnode.dom.querySelector('details').removeAttribute('open');
                         m.redraw();
                     }
-                    vnode.dom.querySelector('.vega-actions').appendChild(themeAction);
+                    let actionsMenu = vnode.dom.querySelector('.vega-actions')
+                    if (actionsMenu) actionsMenu.appendChild(themeAction);
                 }
                 ['default', 'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'latimes', 'dark'].map(addThemeSetter)
 
@@ -90,12 +93,11 @@ export default class PlotVegaLite {
                 this.width = width;
                 this.height = height;
 
-                // change-sets are not currently supported
-                // this.instance = result.view;
-                // if (data) {
-                //     this.dataKeys = new Set();
-                //     this.diff(vnode);
-                // }
+                this.instance = result.view;
+                if (data) {
+                    this.dataKeys = new Set();
+                    this.diff(vnode);
+                }
                 this.isPlotting = false;
                 m.redraw()
             })
@@ -103,7 +105,7 @@ export default class PlotVegaLite {
 
         // this is the optimized path for the optional data attr
         // check for existence of dataKeys because the initial plotting is asynchronous
-        // else if (data && this.dataKeys) this.diff(vnode);
+        else if (data && this.dataKeys) this.diff(vnode);
     }
 
     diff(vnode) {

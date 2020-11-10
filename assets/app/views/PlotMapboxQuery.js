@@ -61,7 +61,7 @@ export default class PlotMapboxQuery {
                     type: 'Feature',
                     geometry: {
                         type: 'Point',
-                        coordinates: [point.lat, point.lon]
+                        coordinates: [point.lon, point.lat]
                     },
                     color: point.color
                 }));
@@ -71,8 +71,15 @@ export default class PlotMapboxQuery {
             });
         }
 
-        console.log("this.dataset", this.dataset);
 
-        return m(PlotMapbox, {points: this.dataset})
+        return m(PlotMapbox, {
+            data: this.dataset,
+            specification: {
+                mark: {"type": "geoshape"},
+                encoding: {
+                    color: {field: 'color', 'type': 'quantitative'}
+                }
+            }
+        })
     }
 }
