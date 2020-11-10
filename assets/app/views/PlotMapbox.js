@@ -6,7 +6,8 @@ import * as vega from 'vega';
 import * as d3 from "d3";
 import vegaEmbed from "vega-embed";
 
-mapboxgl.accessToken = 'pk.eyJ1Ijoic2hvZWJveGFtIiwiYSI6ImNrZzhlZGEyeDAydnUydXF4NXltMmpwcWIifQ.R1HkwcfcG0dbQOsSxwBunA'
+mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+
 
 // Specification
 

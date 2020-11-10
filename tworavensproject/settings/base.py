@@ -419,3 +419,5 @@ TEST_PASSWORD = os.environ.get('TEST_PASSWORD', 'test_user')
 #  - set in the Dockerfile
 #
 DOCKER_BUILD_TIMESTAMP = os.environ.get('DOCKER_BUILD_TIMESTAMP', '(Not available)')
+
+MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', 'token-not-set')
