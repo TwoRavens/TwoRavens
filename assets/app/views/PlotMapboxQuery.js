@@ -76,6 +76,7 @@ export default class PlotMapboxQuery {
             data: this.dataset,
             specification: {
                 mark: {"type": "geoshape"},
+                data: {values: this.dataset},
                 encoding: {
                     color: {field: 'color', 'type': 'quantitative'}
                 }
