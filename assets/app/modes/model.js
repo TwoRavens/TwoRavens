@@ -998,7 +998,7 @@ export let rightpanel = () => {
                         defaultShown: false,
                         style: {margin: '1em'}
                     },
-                    m('label', 'Approximate time bound for overall pipeline search, in minutes. Leave empty for unlimited time.'),
+                    m('label', 'Approximate time bound for overall pipeline search, in minutes.'), //  Leave empty for unlimited time.
                     m(TextField, {
                         id: 'timeBoundOption',
                         value: selectedProblem.searchOptions.timeBoundSearch || '',
