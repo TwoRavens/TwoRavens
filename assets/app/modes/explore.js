@@ -714,13 +714,18 @@ let fillVegaSchema = (schema, data, flip) => {
 
 let defaultRecordLimit = 5000;
 let customConfiguration = {};
+window.customConfiguration = customConfiguration;
 let mappingConfiguration = {
     mark: 'point',
-    latitude: "pgd_ycoord",
-    longitude: "pgd_xcoord",
-    color: 'pgd_pasture_ih'
+    channels: [
+        {name: 'longitude'},
+        {name: 'latitude'},
+        {name: 'color'},
+        {name: 'opacity'},
+        {name: 'tooltip'}
+    ]
 };
-window.customConfiguration = customConfiguration;
+window.mappingConfiguration = mappingConfiguration;
 export let explorePreferences = {
     go: false,
     mode: 'variables',

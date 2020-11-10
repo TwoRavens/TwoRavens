@@ -75,15 +75,22 @@ export default class PlotMapbox {
             this.updateTimer = setTimeout(update, this.defaultElapsedTime)
         }
 
-        let update = () => vegaEmbed(
-            this.vegaContainer,
-            Object.assign(
-                {
-                    projection: {type: 'mapbox'},
-                    background: "transparent", width, height,
-                },
-                specification),
-            {actions: false, config: {"style": {"cell": {"stroke": "transparent"}}}});
+        let update = () => {
+            let {_sw: {lat: lat_s, lng: lon_w}, _ne: {lat: lat_n, lng: lon_e}} = this.map.getBounds();
+            specification.data.values = data.filter(point => {
+                let [lon_c, lat_c] = point.geometry.coordinates;
+                return lat_s < lat_c && lat_c < lat_n && lon_w < lon_c && lon_c < lon_e
+            })
+            vegaEmbed(
+                this.vegaContainer,
+                Object.assign(
+                    {
+                        projection: {type: 'mapbox'},
+                        background: "transparent", width, height,
+                    },
+                    specification),
+                {actions: false, config: {"style": {"cell": {"stroke": "transparent"}}}});
+        }
 
         // // Every time the map changes, update the dots
         this.map.on("viewreset", updateOnce);
