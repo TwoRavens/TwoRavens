@@ -29,6 +29,11 @@ export default class PlotMapbox {
         let data = specification.data.values;
         if (!data) return
 
+        data.forEach(point => Object.assign(point, {type: 'Feature', geometry: {
+            type: 'Point',
+            coordinates: [point[specification.encoding.longitude.field], point[specification.encoding.latitude.field]]
+        }}));
+
         delete specification.encoding.latitude;
         delete specification.encoding.longitude;
         specification.mark = {"type": "geoshape"};

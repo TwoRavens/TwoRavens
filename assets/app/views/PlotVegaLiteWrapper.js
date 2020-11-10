@@ -2,7 +2,7 @@ import m from 'mithril';
 
 import TwoPanel from "../../common/views/TwoPanel";
 import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
-import PlotVegaLiteEditor from "./PlotVegaLiteEditor";
+import PlotVegaLiteEditor, {schemes} from "./PlotVegaLiteEditor";
 import PlotMapbox from "./PlotMapbox";
 import PlotVegaLite from "./PlotVegaLite";
 
@@ -181,6 +181,18 @@ let makeLayer = (layer, varTypes) => {
                     field: channel.value,
                     type: varTypes[channel.variables[0]],
                     scale: {zero: layer.zero ?? false, nice: layer.nice ?? false}
+                }
+            })
+        }
+
+        if (channel.name === "color") {
+            let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
+            if (schemes.includes(channel.scheme)) scale.scheme = channel.scheme;
+            return Object.assign(encodings, {
+                [channel.name]: {
+                    field: channel.variable,
+                    type: varTypes[channel.variable] || 'nominal',
+                    scale
                 }
             })
         }

@@ -41,14 +41,9 @@ export default class PlotVegaLiteQuery {
                     this.isLoading[compiled] = true;
 
                     getData({method: 'aggregate', query: compiled}).then(data => {
-                        // translate mapping data to geojson
-                        if (mapping) data.forEach(point => Object.assign(point, {type: 'Feature', geometry: {
-                            type: 'Point',
-                            coordinates: [point[layer.encoding.longitude.field], point[layer.encoding.latitude.field]]
-                        }}))
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
-                        m.redraw();
+                        setTimeout(m.redraw, 1)
                     });
                 }
             });

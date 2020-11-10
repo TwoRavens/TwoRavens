@@ -237,6 +237,7 @@ export default class PlotVegaLiteEditor {
             }),
             configuration.mark === "text" && "Use the text channel to map text from your dataset to plot points. You may want to use manipulations to create a shortened text column. ",
             ['bar', 'area'].includes(configuration.mark) && "If no aggregation is chosen, the maximum of each category is shown. ",
+            mapping && configuration.interactive && "Set interactivity to false to see tooltips.",
             m('h4[style=margin-top:1em]', 'Channels'),
             m(Table, {
                 headers: ['channel', 'variables', '', ''],
@@ -294,6 +295,31 @@ export default class PlotVegaLiteEditor {
                     items: ['x', 'y'],
                     activeItem: channel.orientation || 'x',
                     onclickChild: value => channel.orientation = value,
+                    style: {'margin-left': '1em'}
+                }),
+                // m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
+                undefined
+            ]
+        }
+
+        if (channel.name === "color") {
+            return [
+                channel.name,
+                m(TextFieldSuggestion, {
+                    id: `channel${channel.name}TextField`,
+                    value: channel.variable,
+                    suggestions: variables,
+                    enforce: true,
+                    oninput: value => channel.variable = value,
+                    onblur: value => channel.variable = value
+                }),
+                m(TextFieldSuggestion, {
+                    id: 'schemeDropdown',
+                    value: channel.scheme || 'default',
+                    suggestions: schemes,
+                    enforce: true,
+                    oninput: value => channel.scheme = value,
+                    onblur: value => channel.scheme = value,
                     style: {'margin-left': '1em'}
                 }),
                 // m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
@@ -413,3 +439,74 @@ export let remove = (arr, obj) => {
     let idx = arr.indexOf(obj);
     idx !== -1 && arr.splice(idx, 1);
 };
+
+export let schemes = [
+    'none',
+    'accent',
+    'category10',
+    'category20',
+    'category20b',
+    'category20c',
+    'dark2',
+    'paired',
+    'pastel1',
+    'pastel2',
+    'set1',
+    'set2',
+    'set3',
+    'tableau10',
+    'tableau20',
+    'blues',
+    'tealblues',
+    'teals',
+    'greens',
+    'browns',
+    'oranges',
+    'reds',
+    'purples',
+    'warmgreys',
+    'greys',
+    'viridis',
+    'magma',
+    'inferno',
+    'plasma',
+    'cividis',
+    'turbo',
+    'bluegreen',
+    'bluepurple',
+    'goldgreen',
+    'goldorange',
+    'goldred',
+    'greenblue',
+    'orangered',
+    'purplebluegreen',
+    'purpleblue',
+    'purplered',
+    'redpurple',
+    'yellowgreenblue',
+    'yellowgreen',
+    'yelloworangebrown',
+    'yelloworangered',
+    'darkblue',
+    'darkgold',
+    'darkgreen',
+    'darkmulti',
+    'darkred',
+    'lightgreyred',
+    'lightgreyteal',
+    'lightmulti',
+    'lightorange',
+    'lighttealblue',
+    'blueorange',
+    'brownbluegreen',
+    'purplegreen',
+    'pinkyellowgreen',
+    'purpleorange',
+    'redblue',
+    'redgrey',
+    'redyellowblue',
+    'redyellowgreen',
+    'spectral',
+    'rainbow',
+    'sinebow'
+]
