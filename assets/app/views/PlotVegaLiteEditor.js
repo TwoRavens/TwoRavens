@@ -5,7 +5,6 @@ import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import Dropdown from "../../common/views/Dropdown";
 import Icon from "../../common/views/Icon";
 import TextField from "../../common/views/TextField";
-import Button from "../../common/views/Button";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from '../../common/views/Popper';
 
@@ -135,7 +134,7 @@ export default class PlotVegaLiteEditor {
                 .find(channel => channel.name === channelName && !channel.delete));
 
         if (!mapping && unusedChannels.includes('primary axis')) {
-            configuration.channels.push({name: 'primary axis'});
+            configuration.channels.unshift({name: 'primary axis'});
             remove(unusedChannels, 'primary axis')
         }
         if (!mapping && unusedChannels.includes('secondary axis')) {
@@ -322,8 +321,8 @@ export default class PlotVegaLiteEditor {
                     onblur: value => channel.scheme = value,
                     style: {'margin-left': '1em'}
                 }),
-                // m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
-                undefined
+                m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
+                // undefined
             ]
         }
 

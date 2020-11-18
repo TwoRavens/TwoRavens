@@ -10,7 +10,7 @@ export default class PlotVegaLiteQuery {
     }
 
     view(vnode) {
-        let {mapping, component, getData, specification} = vnode.attrs;
+        let {component, getData, specification} = vnode.attrs;
 
         let {abstractQuery, summaries, sampleSize, variablesInitial} = vnode.attrs;
         if (isNaN(sampleSize)) sampleSize = 5000;
@@ -35,12 +35,13 @@ export default class PlotVegaLiteQuery {
             ...(specification.hconcat || [])
         ])
             .forEach(layer => {
-                let compiled = JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial));
+                let {query, datasets} = getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial);
+                let compiled = JSON.stringify(query);
                 if (!(compiled in this.datasets) && !(compiled in this.isLoading)) {
                     this.datasets[compiled] = undefined;
                     this.isLoading[compiled] = true;
 
-                    getData({method: 'aggregate', query: compiled}).then(data => {
+                    getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
                         setTimeout(m.redraw, 1)
@@ -54,7 +55,7 @@ export default class PlotVegaLiteQuery {
         delete specificationStripped.vconcat;
         delete specificationStripped.hconcat;
 
-        let baseQueryCompiled = JSON.stringify(getQuery(abstractQuery, specification, summaries, sampleSize, variablesInitial));
+        let baseQueryCompiled = JSON.stringify(getQuery(abstractQuery, specification, summaries, sampleSize, variablesInitial).query);
         if (baseQueryCompiled in this.datasets) {
             if (!this.datasets[baseQueryCompiled]) return;
             specificationStripped.data = {values: this.datasets[baseQueryCompiled]};
@@ -63,9 +64,9 @@ export default class PlotVegaLiteQuery {
 
         let pruneSpec = label => {
             let subSpec = (specification[label] || [])
-                .filter(layer => JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial)) in this.datasets)
+                .filter(layer => JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial).query) in this.datasets)
                 .map(layer => Object.assign({data: {
-                        values: this.datasets[JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial))]
+                        values: this.datasets[JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial).query)]
                     }}, layer));
             if (subSpec.length > 0) {
                 specificationStripped[label] = subSpec;
@@ -297,14 +298,18 @@ let translateVegaLite = (transforms, summaries) => transforms.flatMap(transform 
 
 let getQuery = (abstractQuery, layer, summaries, sampleSize, variablesInitial) => {
 
+    let datasets;
     let dataQuery = [];
-    if (abstractQuery)
-        dataQuery.push(...queryMongo.buildPipeline(abstractQuery, variablesInitial)['pipeline']);
+    if (abstractQuery) {
+        let result = queryMongo.buildPipeline(abstractQuery, variablesInitial);
+        dataQuery.push(...result['pipeline']);
+        datasets = result['datasets'];
+    }
     if (layer.transform)
         dataQuery.push(...translateVegaLite(layer.transform, summaries));
     dataQuery.push({$project: {_id: 0}});
     // projecting down to columns in fields is not necessarily faster, because it can cause cache misses
     dataQuery.push({$sample: {size: sampleSize}});
 
-    return dataQuery;
+    return {'query': dataQuery, datasets};
 };

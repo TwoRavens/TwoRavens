@@ -43,6 +43,9 @@ import {
     getSubtask,
     setSelectedProblem
 } from "../problem";
+import PlotVegaLiteWrapper, {preparePanels} from "../views/PlotVegaLiteWrapper";
+import {explorePreferences} from "./explore";
+import {workspace} from "../app";
 
 
 /**
@@ -1217,6 +1220,65 @@ export class CanvasSolutions {
         ]
     }
 
+    variableExplore(problem, adapters) {
+
+    }
+
+    customExplore(problem, adapters, mapping) {
+
+        // wait until all produces have materialized to disk to prevent an empty join entering the cache
+        if (adapters.some(adapter => !adapter.getProduceDataPath(resultsPreferences.dataSplit)))
+            return common.loader("CustomExplore");
+
+        // names of estimated target variables
+        let foldedVariables = adapters.map(adapter => `${resultsPreferences.target}-${adapter.getSolutionId()}`);
+        // we're not recomputing preprocess summaries for joined results data.
+        //   this constructs the minimal necessary portion of what that would look like
+        let resultsSummaries = [...problem.results.variablesInitial, ...foldedVariables]
+            .reduce((out, variable) => Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {});
+
+        // lock secondary axis to estimated target variables
+        customConfiguration.channels = customConfiguration.channels || [];
+        let secondaryChannel = customConfiguration.channels.find(channel => channel.name === "secondary axis");
+        if (!secondaryChannel) {
+            secondaryChannel = {name: 'secondary axis'}
+            customConfiguration.channels.push(secondaryChannel);
+        }
+        secondaryChannel.variables = [...foldedVariables];
+        // add a color channel
+        let colorChannel = customConfiguration.channels.find(channel => channel.name === 'color');
+        if (!colorChannel && secondaryChannel.variables.length > 1) customConfiguration.channels.push({name: 'color', variable: secondaryChannel.key || 'field'})
+
+        let nominals = new Set(getNominalVariables(selectedProblem));
+        if (problem.task.toLowerCase().includes("classification")) foldedVariables.map(nominals.add);
+
+        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+        console.log(`${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`);
+        console.log(queryMongo.buildPipeline(getResultsAbstractPipeline(problem, adapters), problem.results.variablesInitial));
+
+        let {editor, plot} = preparePanels({
+            mapping,
+            getData: body => app.getData(Object.assign({
+                datafile: splitPath, // location of the dataset csv
+                collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
+            }, body)),
+            nominals,
+            configuration: customConfiguration,
+            abstractQuery: [
+                ...getResultsAbstractPipeline(problem, adapters),
+                ...resultsQuery
+            ],
+            summaries: resultsSummaries,
+            sampleSize: parseInt(explorePreferences.recordLimit),
+            variablesInitial: problem.results.variablesInitial
+        });
+
+        return [
+            editor,
+            m('', {style: {height: '800px'}}, plot)
+        ]
+    }
+
     view(vnode) {
         let {problem} = vnode.attrs;
         if (!problem) return;
@@ -1442,6 +1504,41 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Upload Dataset'] && this.uploadDataset(problem, selectedAdapters));
 
+        let customExplore = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Data Exploration',
+            shown: resultsSubpanels['Data Exploration'],
+            setShown: state => {
+                resultsSubpanels['Data Exploration'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_CUSTOM_PRODUCE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Data Exploration'] && this.customExplore(problem, selectedAdapters));
+
+        let customExploreMapping = problem.tags.geographic.length > 0 && m(Subpanel, {
+            style: {margin: '0px 1em', position: 'relative'},
+            header: 'Mapping Exploration',
+            shown: resultsSubpanels['Mapping Exploration'],
+            setShown: state => {
+                resultsSubpanels['Mapping Exploration'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_CUSTOM_PRODUCE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Mapping Exploration'] && this.customExplore(problem, selectedAdapters, true));
 
         let performanceStatsContents = firstSolution.systemId === 'caret' && Object.keys(firstSolution.models)
             .filter(target => firstSolution.models[target].statistics)
@@ -1536,7 +1633,9 @@ export class CanvasSolutions {
             coefficientMatrix,
             anovaTables,
             VIF,
-            uploadDataset
+            uploadDataset,
+            customExplore,
+            customExploreMapping
         );
     }
 }
@@ -1598,8 +1697,11 @@ export let getSolutionAdapter = (problem, solution) => ({
             || Object.values(cache?.fittedLoading?.[solution.solutionId] ?? {}).some(_=>_)
             || Object.values(cache?.producePathsLoading?.[solution.solutionId] ?? {}).some(_=>_)
     },
-    getProduceDataPath: name =>
-        resultsCache?.[problem.problemId]?.producePaths?.[solution.solutionId]?.[name],
+    getProduceDataPath: name => {
+        let adapter = getSolutionAdapter(problem, solution);
+        loadProducePath(adapter, name, problem.results.datasetPaths[name], problem.results.datasetSchemaPaths[name]);
+        return resultsCache?.[problem.problemId]?.producePaths?.[solution.solutionId]?.[name]
+    },
     getFittedVsActuals: target => {
         let adapter = getSolutionAdapter(problem, solution);
         loadFittedVsActuals(problem, adapter);
@@ -1840,7 +1942,9 @@ let resultsSubpanels = {
     'Problem Description': false,
     'Variable Importance': false,
     'Model Interpretation': false,
-    'Upload Dataset': false
+    'Upload Dataset': false,
+    'Data Exploration': false,
+    'Mapping Exploration': false,
 };
 
 /**
@@ -1964,7 +2068,7 @@ export let getSelectedAdapters = problems =>
  * @param {string} systemId
  * @returns {Solution[]}
  */
-export let getSelectedSolutions = (problem, systemId) => {
+export let getSelectedSolutions = (problem, systemId=undefined) => {
     if (!problem?.results?.selectedSolutions) return [];
 
     if (!systemId) return Object.keys(problem.results.selectedSolutions)
@@ -2083,7 +2187,25 @@ let customDatasetCount = 0;
 let getCustomDatasetId = () => 'dataset ' + customDatasetCount++;
 export let customDatasets = {};
 
-// TODO: just need to add menu element, some debug probably needed
+/**
+ * Materialize a dataset with additional columns for solutions
+ * @param problem
+ * @param adapters
+ * @returns abstract pipeline that joins predictions from adapters into original data
+ */
+let getResultsAbstractPipeline = (problem, adapters) => adapters
+    .map(adapter => [adapter, adapter.getProduceDataPath(resultsPreferences.dataSplit)])
+    .filter(([_, producePath]) => producePath)
+    .map(([adapter, producePath]) => ({
+        type: 'join',
+        from: `${app.workspace.d3m_config.name}_split_${utils.generateID(problem.results.datasetPaths[resultsPreferences.dataSplit])}_produce_${utils.generateID(producePath)}`,
+        fromPath: producePath,
+        index: problem.tags.indexes[0],
+        variables: {
+            [`${resultsPreferences.target}-${adapter.getSolutionId()}`]: resultsPreferences.target
+        }
+    }));
+
 // manipulations to apply to data after joining predictions
 export let resultsQuery = [
     {

@@ -36,7 +36,7 @@ import {
 } from "./problem";
 
 /**
- * @typedef {object} Workspace
+ * @typedef {Object} Workspace
  * @member {string} name
  * @member {RavenConfig} raven_config
  * @member {object} d3m_config
@@ -44,11 +44,11 @@ import {
  * @member {string} datasetPath - path to the un-manipulated dataset
  */
 
-/** @type {?Workspace} */
+/** @type {Workspace} */
 export let workspace;
 
 /**
- * @typedef {object} RavenConfig
+ * @typedef {Object} RavenConfig
  * @member {object.<string, Problem>} problems
  * @member {string} selectedProblem - problemId of selected problem
  * @member {number} problemCount - monotonically increasing count of number of problems, used to assign problem ids to new problems
@@ -1300,6 +1300,12 @@ export let loadPreprocess = async query => {
     return samplingCache.preprocessPromise
 }
 
+/**
+ *
+ * @param {Workspace} newWorkspace
+ * @param awaitPreprocess
+ * @returns {Promise<boolean>}
+ */
 export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
     workspace = newWorkspace;

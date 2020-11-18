@@ -7,60 +7,75 @@ import PlotMapbox from "./PlotMapbox";
 import PlotVegaLite from "./PlotVegaLite";
 
 export default class PlotVegaLiteWrapper {
+    oninit() {
+        this.rightPanelSize = 70;
+    }
 
     view(vnode) {
-        let {mapping, configuration, getData, abstractQuery, summaries, nominals, sampleSize, variablesInitial} = vnode.attrs;
-        let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
-            [variable]: nominals.has(variable)
-                ? 'nominal' : summaries[variable].nature === 'ordinal'
-                    ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
-                    : 'quantitative'
-        }), {});
 
-        window.configuration = configuration;
-
-        let specification;
-        try {
-            specification = makeSpecification(configuration, varTypes);
-        } catch (err) {
-            console.warn(err);
-        }
-
-        let plot;
-        if (specification) {
-            let countEncodings = spec => [spec, spec.layers || []]
-                .reduce((sum, layer) => sum + Object.keys(layer.encoding || {}).length, 0);
-            let encodingsCount = [
-                specification,
-                ...(specification.vconcat || []),
-                ...(specification.hconcat || [])
-            ].map(countEncodings).reduce((sum, count) => sum + count, 0);
-
-            // both need to be set for mapping
-            if (mapping && (!specification?.encoding?.latitude?.field || !specification?.encoding?.longitude?.field))
-                encodingsCount = 0
-
-            // 5px margin keeps the drag bar visible
-            plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
-                component: mapping ? PlotMapbox : PlotVegaLite,
-                getData,
-                specification,
-                abstractQuery,
-                summaries,
-                sampleSize,
-                variablesInitial,
-                mapping
-            }))
-        }
+        let {editor, plot} = preparePanels(vnode.attrs);
 
         return m(TwoPanel, {
-            left: m(PlotVegaLiteEditor, {
-                mapping,
-                configuration,
-                variables: Object.keys(summaries)
-            }),
+            rightPanelSize: this.rightPanelSize,
+            setRightPanelSize: value => this.rightPanelSize = value,
+            left: editor,
             right: plot
         })
+    }
+}
+
+export let preparePanels = state => {
+    let {mapping, configuration, getData, abstractQuery, summaries, nominals, sampleSize, variablesInitial} = state;
+    let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
+        [variable]: nominals.has(variable)
+            ? 'nominal' : summaries[variable].nature === 'ordinal'
+                ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
+                : 'quantitative'
+    }), {});
+
+    window.configuration = configuration;
+
+    let specification;
+    try {
+        specification = makeSpecification(configuration, varTypes);
+    } catch (err) {
+        console.warn(err);
+    }
+
+    let plot;
+    if (specification) {
+        let countEncodings = spec => [spec, spec.layers || []]
+            .reduce((sum, layer) => sum + Object.keys(layer.encoding || {}).length, 0);
+        let encodingsCount = [
+            specification,
+            ...(specification.vconcat || []),
+            ...(specification.hconcat || [])
+        ].map(countEncodings).reduce((sum, count) => sum + count, 0);
+
+        // both need to be set for mapping
+        if (mapping && (!specification?.encoding?.latitude?.field || !specification?.encoding?.longitude?.field))
+            encodingsCount = 0
+
+        // 5px margin keeps the drag bar visible
+        plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
+            component: mapping ? PlotMapbox : PlotVegaLite,
+            getData,
+            specification,
+            abstractQuery,
+            summaries,
+            sampleSize,
+            variablesInitial,
+            mapping
+        }))
+    }
+
+    return {
+        editor: m(PlotVegaLiteEditor, {
+            mapping,
+            configuration,
+            variables: Object.keys(summaries)
+        }),
+        plot
     }
 }
 
@@ -117,7 +132,7 @@ let makeLayer = (layer, varTypes) => {
         if (channel.name === 'primary axis') {
             return Object.assign(encodings, {
                 [orientation]: {
-                    bin: configuration.bin,
+                    // bin: configuration.bin,
                     field: channel.variable,
                     type: varTypes[channel.variable],
                     scale: {zero: layer.zero ?? false, nice: layer.nice ?? false}

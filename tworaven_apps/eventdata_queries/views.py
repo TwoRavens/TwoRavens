@@ -627,6 +627,20 @@ def api_get_data(request):
         data_path=json_req_obj.get('datafile', None),
         reload=json_req_obj.get('reload', None))
 
+    # ensure auxiliary datasets are present
+    #
+    LOGGER.info('--- api_get_data: ensure auxiliary datasets are present ---')
+    #
+    if json_req_obj.get('datasets'):
+        print('datasets passed!')
+        for collection_name, meta in json_req_obj['datasets'].items():
+            EventJobUtil.import_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                collection_name,
+                data_path=meta['path'],
+                indexes=meta.get('indexes'),
+                reload=json_req_obj.get('reload', None))
+
     # apply the manipulations
     #
     LOGGER.info('--- api_get_data: apply any manipulations ---')

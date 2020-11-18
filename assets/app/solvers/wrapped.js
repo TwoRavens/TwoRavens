@@ -247,6 +247,9 @@ export let getSystemAdapterWrapped = (systemId, problem) => ({
                 app.alertWarn(response.message);
                 return;
             }
+            problem.results.solutions = problem.results.solutions || {};
+            problem.results.solverState = problem.results.solverState || {};
+
             problem.results.solutions[systemId] = problem.results.solutions[systemId] || {};
             problem.results.solverState[systemId].message = 'searching for solutions';
             problem.results.solverState[systemId].searchId = response.data.search_id;

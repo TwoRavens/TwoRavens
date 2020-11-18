@@ -29,12 +29,17 @@ import {getGeographicVariables, getNominalVariables, getOrderingVariable, getPre
 window.buildPipeline = buildPipeline;
 
 export function buildPipeline(pipeline, variables = new Set()) {
+    // mongodb query
     let compiled = [];
-    variables = new Set(variables);
+
+    // datasets used in the pipeline {[collection name]: {path: "", indexes: []}}
+    let datasets = {};
 
     // need to know which variables are unit measures and which are accumulators. Also describe the unit variables with labels
     // only returned if the last step in the pipeline is an aggregation
     let units, accumulators, labels;
+
+    variables = new Set(variables);
 
     pipeline.forEach(step => {
 
@@ -80,6 +85,16 @@ export function buildPipeline(pipeline, variables = new Set()) {
             labels = aggPrepped['labels'];
         } else [units, accumulators, labels] = [undefined, undefined, undefined];
 
+        if (step.type === 'join') {
+            let joinPrepped = buildJoin(step)
+            compiled.push(...joinPrepped['pipeline'])
+            variables = new Set([...joinPrepped['variables'], ...variables]);
+            datasets[step.from] = {
+                path: step.fromPath,
+                indexes: [step.index]
+            }
+        }
+
         if (step.type === 'menu') {
             let menuPrepped = buildMenu(step);
             compiled.push(...menuPrepped['pipeline'])
@@ -88,7 +103,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
     });
 
-    return {pipeline: compiled, variables, units, accumulators, labels};
+    return {pipeline: compiled, variables, datasets, units, accumulators, labels};
 }
 
 
@@ -764,6 +779,33 @@ export function buildAggregation(unitMeasures, accumulations) {
         accumulators: columnsAccum,
         labels
     };
+}
+
+// ~~~~ JOIN ~~~~
+export function buildJoin(step) {
+    return {
+        'pipeline': [
+            {
+                $lookup: {
+                    from: "tr_" + step.from,
+                    localField: step.index,
+                    foreignField: step.index,
+                    as: `__temp`
+                }
+            },
+            {$unwind: "$__temp"},
+            {
+                $addFields: Object.entries(step.variables)
+                    .reduce((out, [outName, inName]) => Object.assign(out, {
+                        [outName]: `$__temp\\.${inName}`
+                    }), {})
+            },
+            {
+                $project: {__temp: 0}
+            }
+        ],
+        'variables': Object.keys(step.variables)
+    }
 }
 
 // ~~~~ MENUS ~~~~

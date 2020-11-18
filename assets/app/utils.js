@@ -80,8 +80,8 @@ export function formatPrecision(value, precision = 4) {
 }
 
 // generate a number from text (cheap hash)
-export let generateID = text => Array.from({length: text.length})
-    .reduce((hash, _, i) => ((hash << 5) - hash + text.charCodeAt(i)) | 0, 0);
+export let generateID = text => Math.abs(Array.from({length: text.length})
+    .reduce((hash, _, i) => ((hash << 5) - hash + text.charCodeAt(i)) | 0, 0));
 export let omniSort = (a, b) => {
     if (a === undefined && b !== undefined) return -1;
     if (b === undefined && a !== undefined) return 1;
