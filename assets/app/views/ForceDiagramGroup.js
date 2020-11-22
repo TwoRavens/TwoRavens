@@ -12,7 +12,7 @@ import {forceDiagramMode, prepareGroupData, toggleTag} from "../modes/model";
 
 export default class ForceDiagramGroup {
     view(vnode) {
-        let {group, i, variables} = vnode.attrs;
+        let {group, i, problem, variables} = vnode.attrs;
 
         let meta = prepareGroupData(group, i);
         return m('div.card', {
@@ -31,7 +31,7 @@ export default class ForceDiagramGroup {
                     ondelete: {
                         predictorLinks: value => {
                             console.log(group.name, value);
-                            toggleTag(selectedProblem, group.name, value)
+                            toggleTag(problem, group.name, value)
                         },
                         causalLinks: value => remove(group.nodes, value)
                     }[forceDiagramMode]
@@ -49,7 +49,7 @@ export default class ForceDiagramGroup {
                 oninput: value => this.pending = value,
                 onblur: value => {
                     ({
-                        predictorLinks: value => toggleTag(selectedProblem, group.name, value),
+                        predictorLinks: value => toggleTag(problem, group.name, value),
                         causalLinks: value => add(group.nodes, value)
                     })[forceDiagramMode](value);
 

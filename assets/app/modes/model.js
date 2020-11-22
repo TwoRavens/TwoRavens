@@ -490,7 +490,7 @@ export let leftpanel = forceData => {
             value: 'Groups',
             contents: [
                 groups.map((group, i) => m(ForceDiagramGroup, {
-                    group, i, variables: leftpanelVariables
+                    group, i, variables: leftpanelVariables, problem: selectedProblem
                 })),
                 m(Button, {
                     style: {margin: '.5em', width: 'calc(100% - 1em)'},
@@ -1313,7 +1313,6 @@ let buildGroupingState = problem => {
                     name: "Predictors",
                     color: app.colors.predictor,
                     // colorBackground: app.swandive ? 'grey' : backingColor,
-                    colorBackground: "transparent",
                     nodes: [
                         ...problem.predictors,
                         ...problem.tags.location,
@@ -1326,14 +1325,12 @@ let buildGroupingState = problem => {
                     name: "Targets",
                     color: app.colors.target,
                     // colorBackground: app.swandive ? 'grey' : backingColor,
-                    colorBackground: "transparent",
                     nodes: problem.targets,
                     opacity: 0.3
                 },
                 {
                     name: "Loose",
-                    color: common.selVarColor,
-                    colorBackground: "transparent",
+                    color: common.menuColor,
                     nodes: [
                         ...problem.tags.loose,
                         ...supervised ? [] : problem.targets
@@ -1357,31 +1354,24 @@ let buildGroupingState = problem => {
                     id: "Cross-Sectional",
                     name: 'Cross-Sectional',
                     color: app.colors.crossSection,
-                    // colorBackground: app.swandive ? 'grey' : backingColor,
-                    colorBackground: "transparent",
                     nodes: problem.tags.crossSection,
                     opacity: 0.3
                 },
                 {
                     name: "Ordering",
                     color: app.colors.order,
-                    // colorBackground: app.swandive && 'grey',
-                    colorBackground: "transparent",
                     nodes: problem.tags.ordering,
                     opacity: 0.3
                 },
                 {
                     name: "Location",
                     color: app.colors.location,
-                    // colorBackground: app.swandive && 'grey',
-                    colorBackground: "transparent",
                     nodes: problem.tags.location,
                     opacity: 0.3
                 }
                 // {
                 //     name: "Priors",
                 //     color: common.warnColor,
-                //     colorBackground: "transparent",
                 //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
                 //     opacity: 0.4
                 // }
@@ -1998,7 +1988,7 @@ export let toggleTag = (problem, tag, name) => {
         }
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_LOCATION';
     } else if (tag === 'Predictors') {
-        if (!(problem.tags.location).includes(name)) {
+        if (!(problem.predictors).includes(name)) {
             add(problem.predictors, name);
             remove(problem.targets, name);
             remove(problem.tags.loose, name);
@@ -2009,7 +1999,7 @@ export let toggleTag = (problem, tag, name) => {
         }
         logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_PREDICTOR';
     } else if (tag === 'Targets') {
-        if (!(problem.tags.location).includes(name)) {
+        if (!(problem.targets).includes(name)) {
             add(problem.targets, name)
             remove(problem.predictors, name);
             remove(problem.tags.loose, name);

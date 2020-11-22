@@ -149,10 +149,12 @@ export default class ForceDiagram {
                     [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
                 }), {});
 
-            this.selectors.hulls.selectAll('path')
+            this.selectors.hulls.selectAll('path.hull')
                 .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
-            this.selectors.hullBackgrounds
-                .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
+            this.selectors.hulls.selectAll('path.hullLabelPath')
+                .attr('d', d => `M${makeHullLabelSegment(hullCoords[d.name]).join('L')}Z`);
+            // this.selectors.hullBackgrounds
+            //     .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
 
             // update positions of groupLines
             let centroids = Object.keys(hullCoords)
@@ -163,7 +165,6 @@ export default class ForceDiagram {
                 let source = intersectLineHull(centroids[line.target], centroids[line.source], hullCoords[line.source], attrs.hullRadius * 1.25);
                 let target = intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius * 1.5);
 
-                console.log(source, target);
                 if (source?.every?.(_ => _) && target?.every?.(_ => _)) {
                     // flip arrow direction when regions are overlapping
                     if (mag(sub(centroids[line.target], target)) > mag(sub(centroids[line.target], source)))
@@ -368,6 +369,8 @@ export default class ForceDiagram {
                         groups
                             .filter(group => group.nodes.has(e.subject.name))
                             .filter(group => {
+                                if (group.nodes.size === 1)
+                                    return false;
                                 if (group.nodes.size === 2)
                                     return mag(sub(...hullCoords[group.name])) > 1000;
 
@@ -436,10 +439,10 @@ export default class ForceDiagram {
             .attr('id', 'groupLinks')
             .selectAll('line');
 
-        this.selectors.hullBackgrounds = svg // group hulls handle
-            .append('svg:g')
-            .attr('id', 'hullBackings')
-            .selectAll('g');
+        // this.selectors.hullBackgrounds = svg // group hulls handle
+        //     .append('svg:g')
+        //     .attr('id', 'hullBackings')
+        //     .selectAll('g');
         this.selectors.hulls = svg // group hulls handle
             .append('svg:g')
             .attr('id', 'hulls')
@@ -494,6 +497,7 @@ function jamescentroid(coord) {
 }
 
 let sub = (a, b) => a.reduce((out, _, i) => [...out, a[i] - b[i]], []);
+let add = (a, b) => a.reduce((out, _, i) => [...out, a[i] + b[i]], []);
 let mul = (a, b) => a.map(e => e * b);
 let dot = (a, b) => a.reduce((out, _, i) => out + a[i] * b[i], 0);
 let mag = a => a.reduce((out, e) => out + e * e, 0);
@@ -576,6 +580,37 @@ function isInside(point, vs) {
     return inside;
 }
 
+let makeHullLabelSegment = coords => {
+
+    let getMean = points => points.reduce((center, point) =>
+        [center[0] + point[0] / points.length, center[1] + point[1] / points.length], [0, 0])
+
+    let center = getMean(coords);
+
+    let segments = coords
+        .map((p0, i) => [p0, coords[(i + 1) % coords.length]])
+        .filter(([p0, p1]) => p0[0] <= p1[0]);
+    let idealTheta = Math.PI * 1.5;
+    let worstTheta = (idealTheta + Math.PI) % (Math.PI * 2);
+    let segment = segments[segments
+        .map(segment => {
+            let [dx, dy] = sub(getMean(segment), center);
+            return Math.atan2(dy, dx)
+        })
+        .reduce(([bestTheta, j], theta, i) =>
+            Math.abs((idealTheta - theta) % (Math.PI * 2)) > Math.abs((idealTheta - bestTheta) % (Math.PI * 2))
+                ? [bestTheta, j]
+                : [theta, i],
+            [worstTheta, 0])[1]];
+
+    if (segment[0][0] < segment[1][0])
+        segment = [segment[1], segment[0]]
+
+    // adjust the right point to ensure segment length is 200 px
+    let v = sub(segment[1], segment[0]);
+    return [sub(segment[1], mul(v, 200 / Math.sqrt(mag(v)))), segment[1]]
+}
+
 
 function lengthen(coords, radius, isDragging) {
     // d3.geom.hull returns null for two points, and fails if three points are in a line,
@@ -603,18 +638,16 @@ function lengthen(coords, radius, isDragging) {
     }
     // extend the vertices of the region to be similar to rounded parts
     if (coords.length === 1) {
-        let delta = 12;
+        let delta = 10;
         coords.push([coords[0][0] + delta, coords[0][1] + delta]);
         coords.push([coords[0][0] - delta, coords[0][1] + delta]);
         coords.push([coords[0][0] + delta, coords[0][1] - delta]);
         coords.push([coords[0][0] - delta, coords[0][1] - delta]);
 
-        if (isDragging) {
-            coords.push([coords[0][0] + Math.sqrt(2) * delta, coords[0][1]]);
-            coords.push([coords[0][0] - Math.sqrt(2) * delta, coords[0][1]]);
-            coords.push([coords[0][0], coords[0][1] + Math.sqrt(2) * delta]);
-            coords.push([coords[0][0], coords[0][1] - Math.sqrt(2) * delta]);
-        }
+        coords.push([coords[0][0] + Math.sqrt(2) * delta, coords[0][1]]);
+        coords.push([coords[0][0] - Math.sqrt(2) * delta, coords[0][1]]);
+        coords.push([coords[0][0], coords[0][1] + Math.sqrt(2) * delta]);
+        coords.push([coords[0][0], coords[0][1] - Math.sqrt(2) * delta]);
     }
     if (isDragging) {
         let centroid = coords.reduce((out, point) => [out[0] + point[0] / coords.length, out[1] + point[1] / coords.length], [0, 0])
@@ -981,8 +1014,10 @@ export let pebbleBuilderLabeled = (attrs, context) => {
 
 
 export let groupBuilder = (attrs, context) => {
+    // rebind data
     context.selectors.hulls = context.selectors.hulls
         .data(context.filtered.groups, group => JSON.stringify(group));
+    // remove hulls that no longer exist
     context.selectors.hulls.exit().remove();
     let newHulls = context.selectors.hulls.enter()
         .append('svg:g')
@@ -992,11 +1027,15 @@ export let groupBuilder = (attrs, context) => {
 
     // add new paths
     newHulls.append("path")
+        .attr('class', 'hull')
         .attr("id", group => group.name + 'Hull')
         .style('stroke-linejoin', 'round');
+    newHulls.append("path")
+        .attr('class', 'hullLabelPath')
+        .attr("id", group => group.name + 'HullLabelPath')
 
     // update all paths
-    context.selectors.hulls.selectAll('path')
+    context.selectors.hulls.selectAll('path.hull')
         .style("fill", group => group.color)
         .style("stroke", group => group.color)
         .style("stroke-width", 2.5 * attrs.hullRadius)
@@ -1011,8 +1050,9 @@ export let groupBuilder = (attrs, context) => {
         .attr('alignment-baseline', 'middle')
 
     context.selectors.hulls.selectAll('textPath')
-        .attr("xlink:href", group => `#${group.name}Hull`)
-        .text(group => group.nodes.size > 1 ? group.name : '');
+        .attr("xlink:href", group => `#${group.name}HullLabelPath`)
+        .style("opacity", group => group.opacity)
+        .text(group => group.name);
     // TODO: flip if on top
     // .style('transform', 'scale(+1,-1)')
 
@@ -1023,18 +1063,18 @@ export let groupBuilder = (attrs, context) => {
     //     // .attr('xlink:href', group => '#' + group.name + 'Hull')
     //     .text(group => group.name);
 
-    context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.data(context.filtered.groups, group => group.name);
-    context.selectors.hullBackgrounds.exit().remove();
-    context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.enter()
-        .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-        .attr("id", group => group.name + 'HullBackground')
-        .style('stroke-linejoin', 'round')
-        .merge(context.selectors.hullBackgrounds);
-
-    // allow fading between background colors
-    context.selectors.hullBackgrounds
-        .style("fill", group => group.colorBackground || '#ffffff')
-        .style("stroke", group => group.colorBackground || '#ffffff')
+    // context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.data(context.filtered.groups, group => group.name);
+    // context.selectors.hullBackgrounds.exit().remove();
+    // context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.enter()
+    //     .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
+    //     .attr("id", group => group.name + 'HullBackground')
+    //     .style('stroke-linejoin', 'round')
+    //     .merge(context.selectors.hullBackgrounds);
+    //
+    // // allow fading between background colors
+    // context.selectors.hullBackgrounds
+    //     .style("fill", group => group.colorBackground || '#ffffff')
+    //     .style("stroke", group => group.colorBackground || '#ffffff')
     // .style("stroke-width", (context.isDragging ? 0.1 : 2.5) * attrs.hullRadius)
     // .style("opacity", 1)
 };
