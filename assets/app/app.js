@@ -34,6 +34,7 @@ import {
     setSelectedProblem,
     standardizeDiscovery
 } from "./problem";
+import {lightGrayColor} from "../common/common";
 
 /**
  * @typedef {Object} Workspace
@@ -73,6 +74,30 @@ export let defaultMaxRecordCount = 10000;
 export let preprocessSampleSize = 5000;
 
 window.addEventListener('resize', m.redraw);
+
+export let colors = {
+    // groups
+    predictor: '#14bdcc',
+    target: '#79af4f',
+    crossSection: '#fda760', // should be similar to nominal
+    order: '#2d6ca2',
+    location: '#419641',
+
+    // labels
+    time: '#2d6ca2', // should be similar/same to orderColor
+    nominal: '#ff6600',
+    ordinal: '#ffb700', // should be similar to nominal
+    weight: '#cb5a94',
+    boundary: '#d23e3e', // similar to bounding box color?
+    privileged: '#996bcc', // royalty?
+    exogenous: '#4fc48c',
+
+    index: '#797478',
+    matched: '#330b0b',
+}
+// set the css variables to match
+Object.entries(colors).forEach(([name, color]) =>
+    document.documentElement.style.setProperty(`--tag-${name}`, color))
 
 // ~~~~~ PEEK ~~~~~
 // for the second-window data preview
@@ -999,6 +1024,13 @@ export let applicableMetrics = {
         subTypeNone: ['objectDetectionAveragePrecision']
     }
 };
+
+export let locationUnits = {
+    'latitude': ['decimal'], // ['sexagesimal', 'minutes']
+    'longitude': ['decimal'],
+    'country': ["ISO-3", "ICEWS", "UN M.49", "cowcode", "gwcode", "gtdcode", "ISO-2"],
+    'US state': ['US_state_name', 'USPS']
+}
 
 let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'
 

@@ -99,8 +99,8 @@ export default class ForceDiagram {
 
         if (this.hoverPebble !== attrs.hoverPebble) {
             if (!this.isPinned && this.hoverPebble && this.hoverPebble !== this.selectedPebble) {
-                delete (this.nodes[this.hoverPebble] || {}).fx;
-                delete (this.nodes[this.hoverPebble] || {}).fy;
+                delete this.nodes[this.hoverPebble]?.fx;
+                delete this.nodes[this.hoverPebble]?.fy;
             }
             this.hoverPebble = attrs.hoverPebble;
 
@@ -112,8 +112,8 @@ export default class ForceDiagram {
 
         if (this.selectedPebble !== attrs.selectedPebble) {
             if (!this.isPinned && this.selectedPebble) {
-                delete (this.nodes[this.selectedPebble] || {}).fx;
-                delete (this.nodes[this.selectedPebble] || {}).fy;
+                delete this.nodes[this.selectedPebble]?.fx;
+                delete this.nodes[this.selectedPebble]?.fy;
             }
             this.selectedPebble = attrs.selectedPebble;
 
@@ -158,17 +158,29 @@ export default class ForceDiagram {
             let centroids = Object.keys(hullCoords)
                 .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(groupCoords[group])}), {});
 
-            let intersections = groupLinks.reduce((out, line) => Object.assign(out, {
-                [`${line.source}-${line.target}`]: {
-                    source: centroids[line.source],
-                    target: intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius * 1.5)
-                }}), {});
+            let intersections = groupLinks.reduce((out, line) => {
+                // source: centroids[line.source],
+                let source = intersectLineHull(centroids[line.target], centroids[line.source], hullCoords[line.source], attrs.hullRadius * 1.25);
+                let target = intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius * 1.5);
 
-            this.selectors.groupLinks
+                console.log(source, target);
+                if (source?.every?.(_ => _) && target?.every?.(_ => _)) {
+                    // flip arrow direction when regions are overlapping
+                    if (mag(sub(centroids[line.target], target)) > mag(sub(centroids[line.target], source)))
+                        [source, target] = [target, source];
+
+                    out[`${line.source}-${line.target}`] = {source, target};
+                }
+                return out;
+            }, {});
+
+            this.selectors.groupLinks.filter(line => `${line.source}-${line.target}` in intersections)
                 .attr('x1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[0] || 0)
                 .attr('y1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[1] || 0)
                 .attr('x2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[0] || 0)
                 .attr('y2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[1] || 0);
+            this.selectors.groupLinks.style("opacity", line => `${line.source}-${line.target}` in intersections ? 1 : 0);
+            // .style('opacity', line => Object.values(intersections[`${line.source}-${line.target}`]).flatMap(_ => _).some(v => v === undefined) ? 0 : 1)
 
             // NOTE: update positions of nodes BEFORE adjusting positions for group forces
             // This keeps the nodes centered in the group when resizing,
@@ -225,17 +237,18 @@ export default class ForceDiagram {
                 this.position = {};
             }
 
-            this.selectors.hulls.selectAll('text')
-                .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
-                // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
+            // this.selectors.hulls.selectAll('text')
+            //     .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
+            // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
         };
         this.force.on('tick', () => {
             // somehow tick is keeping a reference to an older 'this' after being rebound
             // this aggressively rebinds until something catches, which surprisingly works
             // TODO: RCA, TEMP FIX 7/19
-            try{tick()} catch(_) {
-                m.redraw();
-            }
+            // try{tick()} catch(_) {
+            //     m.redraw();
+            // }
+            tick()
         });
         this.force.alphaTarget( 1).restart();
         setTimeout(() => {
@@ -274,12 +287,12 @@ export default class ForceDiagram {
                     e.subject.fx = e.x;
                     e.subject.fy = e.y;
 
+                    // manually update location of the dragged pebble
+                    this.selectors.pebbles
+                        .filter(d => d === e.subject.name)
+                        .attr('transform', d => `translate(${this.nodes[d].fx},${this.nodes[d].fy})`);
+
                     if (onDragOver) {
-
-                        let dragCoord = this.selectedPebble === e.subject
-                            ? [e.subject.fx, e.subject.fy]
-                            : [e.subject.x, e.subject.y];
-
                         let groupCoords = groups
                             .reduce((out, group) => Object.assign(out, {
                                 [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
@@ -287,7 +300,7 @@ export default class ForceDiagram {
 
                         let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
                             : Object.assign(out, {
-                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
+                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius, this.isDragging))
                             }), {});
 
                         // don't freeze own group
@@ -295,24 +308,22 @@ export default class ForceDiagram {
                             .filter(group => group.nodes.has(e.subject.name))
                             .forEach(group => delete hullCoords[group.name]);
 
-                        Object.keys(hullCoords)
-                            .forEach(groupId => {
-                                let nodeNames = [...groups.find(group => group.name === groupId).nodes];
-                                if (isInside(dragCoord, hullCoords[groupId])) {
-                                    this.frozenGroups[groupId] = true;
-                                    !this.isPinned && nodeNames.forEach(node => {
-                                        this.nodes[node].fx = this.nodes[node].x;
-                                        this.nodes[node].fy = this.nodes[node].y;
-                                    })
-                                }
-                                else if (this.frozenGroups[groupId]) {
-                                    !this.isPinned && nodeNames.forEach(node => {
-                                        if (node === (this.selectedPebble || {}).name) return;
-                                        delete this.nodes[node].fx;
-                                        delete this.nodes[node].fy;
-                                    })
-                                }
-                            });
+                        Object.keys(hullCoords).forEach(groupId => {
+                            if (isInside([e.subject.fx, e.subject.fy], hullCoords[groupId])) {
+                                this.frozenGroups[groupId] = true;
+                                !this.isPinned && groups.find(group => group.name === groupId).nodes.forEach(node => {
+                                    node = this.nodes[node];
+                                    if (!node.fx) node.fx = node.x;
+                                    if (!node.fy) node.fy = node.y;
+                                })
+                            } else if (this.frozenGroups[groupId]) {
+                                !this.isPinned && groups.find(group => group.name === groupId).nodes.forEach(node => {
+                                    if (node === this.selectedPebble?.name) return;
+                                    delete this.nodes[node].fx;
+                                    delete this.nodes[node].fy;
+                                })
+                            }
+                        });
                     }
                 })
                 .on("end", e => {
@@ -323,7 +334,7 @@ export default class ForceDiagram {
                     !this.isPinned && Object.keys(this.frozenGroups).forEach(groupId => {
                         let nodeNames = [...groups.find(group => group.name === groupId).nodes];
                         nodeNames.forEach(node => {
-                            if (node === (this.selectedPebble || {}).name) return;
+                            if (node === this.selectedPebble?.name) return;
                             delete this.nodes[node].fx;
                             delete this.nodes[node].fy;
                         })
@@ -335,9 +346,7 @@ export default class ForceDiagram {
                             return;
                         }
 
-                    let dragCoord = this.selectedPebble === e.subject
-                        ? [e.subject.fx, e.subject.fy]
-                        : [e.subject.x, e.subject.y];
+                    let dragCoord = [e.x, e.y];
 
                     // prevent drag actions if the drag distance is too small
                     if (Math.abs(mag(sub(dragCoord, this.startDragLocation))) < 50) return;
@@ -351,7 +360,7 @@ export default class ForceDiagram {
 
                         hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
                             : Object.assign(out, {
-                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
+                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius, true))
                             }), {});
                     }
 
@@ -374,6 +383,9 @@ export default class ForceDiagram {
                     }
 
                     if (onDragOver) {
+                        groups
+                            .filter(group => group.nodes.has(e.subject.name))
+                            .forEach(group => delete hullCoords[group.name]);
                         Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
                             .forEach(groupId => onDragOver(e.subject, groupId))
                     }
@@ -486,6 +498,14 @@ let mul = (a, b) => a.map(e => e * b);
 let dot = (a, b) => a.reduce((out, _, i) => out + a[i] * b[i], 0);
 let mag = a => a.reduce((out, e) => out + e * e, 0);
 
+/**
+ *
+ * @param a1 source coordinates
+ * @param a2 target coordinates
+ * @param points list of coordinates of points on hull
+ * @param radius
+ * @returns {*}
+ */
 let intersectLineHull = (a1, a2, points, radius) => {
     // endpoints of the line segment on the convex hull that intercepts a1, a2 centroids
     let b1, b2;
@@ -497,7 +517,10 @@ let intersectLineHull = (a1, a2, points, radius) => {
         return int !== undefined;
     });
 
-    if (!int) return;
+    if (!int) return; // no lines along the hull intercept a1, a2
+
+    Object.assign(window, {a1, a2, b1, b2, int});
+
     let dir1 = sub(b2, int);
     let dir2 = sub(b2, int);
 
@@ -516,50 +539,49 @@ let intersectLineHull = (a1, a2, points, radius) => {
     return sub(int, mul(dirSource, -hypotenuse / Math.sqrt(mag(dirSource))));
 };
 
+// compute the intersection between the line from p1 to p2 against the line from p3 to p4
 let intersectLineLine = (p1, p2, p3, p4) => {
-    // ua_t is the reparameterization for the segment p1 - p2
-    let ua_t = (p3[1] - p4[1]) * (p1[0] - p3[0]) + (p4[0] - p3[0]) * (p1[1] - p3[1]);
-    let ub_t = (p1[1] - p2[1]) * (p1[0] - p3[0]) + (p2[0] - p1[0]) * (p1[1] - p3[1]);
-    let u_b = (p4[0] - p3[0]) * (p1[1] - p2[1]) - (p1[0] - p2[0]) * (p4[1] - p3[1]);
+    let det = (p4[0] - p3[0]) * (p1[1] - p2[1]) - (p1[0] - p2[0]) * (p4[1] - p3[1]);
+    if (det === 0) return;
 
-    if (u_b !== 0) {
-        let ua = ua_t / u_b;
-        let ub = ub_t / u_b;
+    // ua is the reparameterization for the segment p1 - p2 along x
+    let ua = ((p3[1] - p4[1]) * (p1[0] - p3[0]) + (p4[0] - p3[0]) * (p1[1] - p3[1])) / det;
+    // ub is the reparameterization for the segment p1 - p2 along y
+    let ub = ((p1[1] - p2[1]) * (p1[0] - p3[0]) + (p2[0] - p1[0]) * (p1[1] - p3[1])) / det;
 
-        if ( 0 <= ua && ua <= 1 && 0 <= ub && ub <= 1 ) {
-            return [
-                p1[0] + ua * (p2[0] - p1[0]),
-                p1[1] + ua * (p2[1] - p1[1])
-            ]
-        }
+    let eps = 1e-5;
+    if (-eps <= ua && ua <= 1 + eps && -eps <= ub && ub <= 1 + eps) {
+        return [
+            p1[0] + ua * (p2[0] - p1[0]),
+            p1[1] + ua * (p2[1] - p1[1])
+        ]
     }
 };
 
 function isInside(point, vs) {
     // ray-casting algorithm based on
-    // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+    // https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
 
-    var x = point[0], y = point[1];
+    let x = point[0], y = point[1];
 
-    var inside = false;
-    for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-        var xi = vs[i][0], yi = vs[i][1];
-        var xj = vs[j][0], yj = vs[j][1];
+    let inside = false;
+    for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        let xi = vs[i][0], yi = vs[i][1];
+        let xj = vs[j][0], yj = vs[j][1];
 
-        var intersect = ((yi > y) != (yj > y))
-            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi))
+            inside = !inside;
     }
 
     return inside;
 }
 
 
-function lengthen(coords, radius) {
+function lengthen(coords, radius, isDragging) {
     // d3.geom.hull returns null for two points, and fails if three points are in a line,
     // so this puts a couple points slightly off the line for two points, or around a singleton.
-    let magnitude = 1 / 8;
     if (coords.length === 2) {
+        let magnitude = 1 / 16;
         let deltax = coords[0][0] - coords[1][0];
         let deltay = coords[0][1] - coords[1][1];
         coords.push([
@@ -579,12 +601,27 @@ function lengthen(coords, radius) {
             (coords[0][1] + coords[1][1]) / 2 - deltay * magnitude
         ]);
     }
+    // extend the vertices of the region to be similar to rounded parts
     if (coords.length === 1) {
-        let delta = radius * .3;
+        let delta = 12;
         coords.push([coords[0][0] + delta, coords[0][1] + delta]);
         coords.push([coords[0][0] - delta, coords[0][1] + delta]);
         coords.push([coords[0][0] + delta, coords[0][1] - delta]);
         coords.push([coords[0][0] - delta, coords[0][1] - delta]);
+
+        if (isDragging) {
+            coords.push([coords[0][0] + Math.sqrt(2) * delta, coords[0][1]]);
+            coords.push([coords[0][0] - Math.sqrt(2) * delta, coords[0][1]]);
+            coords.push([coords[0][0], coords[0][1] + Math.sqrt(2) * delta]);
+            coords.push([coords[0][0], coords[0][1] - Math.sqrt(2) * delta]);
+        }
+    }
+    if (isDragging) {
+        let centroid = coords.reduce((out, point) => [out[0] + point[0] / coords.length, out[1] + point[1] / coords.length], [0, 0])
+        coords = coords.map(coord => {
+            let angle = Math.atan2(coord[1] - centroid[1], coord[0] - centroid[0])
+            return [coord[0] + Math.cos(angle) * radius, coord[1] + Math.sin(angle) * radius]
+        })
     }
     return coords;
 }
@@ -672,14 +709,9 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
         // update paths for existing nodes
         d3.select(this).selectAll('path')
             .data(partition(root).descendants(), label => label.data.id)
-            .on("click", label => label.data.onclick(pebble))
-            .on('mouseover', e => {
-
-                state.pebbleEvents.mouseover(e, pebble)
-            })
-            .on('mouseout', e => {
-                state.pebbleEvents.mouseout(e, pebble)
-            })
+            .on("click", (e, label) => label.data.onclick(e, pebble))
+            .on('mouseover', e => state.pebbleEvents.mouseover(e, pebble))
+            .on('mouseout', e => state.pebbleEvents.mouseout(e, pebble))
             .on('contextmenu', e => state.pebbleEvents.contextmenu(e, pebble))
             .transition()  // Animate transitions between styles
             .duration(state.selectTransitionDuration)
@@ -770,7 +802,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
                 'continuous': 'density-plot',
                 'bar': 'bar-plot',
                 'collapsed': 'speck-plot'
-            }[(attrs.summaries[pebble] || {}).pdfPlotType] || 'bar-plot';
+            }[attrs.summaries[pebble]?.pdfPlotType] || 'bar-plot';
 
             // delete old plot if plot type changed
             if (!this.classList.contains(className))
@@ -949,7 +981,8 @@ export let pebbleBuilderLabeled = (attrs, context) => {
 
 
 export let groupBuilder = (attrs, context) => {
-    context.selectors.hulls = context.selectors.hulls.data(context.filtered.groups, group => group.name);
+    context.selectors.hulls = context.selectors.hulls
+        .data(context.filtered.groups, group => JSON.stringify(group));
     context.selectors.hulls.exit().remove();
     let newHulls = context.selectors.hulls.enter()
         .append('svg:g')
@@ -971,31 +1004,39 @@ export let groupBuilder = (attrs, context) => {
 
     // add new texts
     newHulls.append('text')
-        .style('font-weight', 'bold');
-        // .append('textPath')
-        // .attr('alignment-baseline', 'top')
-        // .attr('startOffset', '50%');
+        .attr("dy", 60)
+        .attr("dx", 0)
+        .append('textPath')
+        .attr('startOffset', '50%')
+        .attr('alignment-baseline', 'middle')
+
+    context.selectors.hulls.selectAll('textPath')
+        .attr("xlink:href", group => `#${group.name}Hull`)
+        .text(group => group.nodes.size > 1 ? group.name : '');
+    // TODO: flip if on top
+    // .style('transform', 'scale(+1,-1)')
+
 
     // update all texts
-    context.selectors.hulls.selectAll('text')
-        .style('display', () => context.isDragging ? 'block' : 'none')
-        .attr('xlink:href', group => '#' + group.name + 'Hull')
-        .text(group => group.name);
+    // context.selectors.hulls.selectAll('text')
+    //     // .style('display', () => context.isDragging ? 'block' : 'none')
+    //     // .attr('xlink:href', group => '#' + group.name + 'Hull')
+    //     .text(group => group.name);
 
     context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.data(context.filtered.groups, group => group.name);
     context.selectors.hullBackgrounds.exit().remove();
     context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.enter()
         .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
         .attr("id", group => group.name + 'HullBackground')
-        .style("stroke-width", 2.5 * attrs.hullRadius)
         .style('stroke-linejoin', 'round')
-        .style("opacity", 1)
         .merge(context.selectors.hullBackgrounds);
 
     // allow fading between background colors
     context.selectors.hullBackgrounds
         .style("fill", group => group.colorBackground || '#ffffff')
         .style("stroke", group => group.colorBackground || '#ffffff')
+    // .style("stroke-width", (context.isDragging ? 0.1 : 2.5) * attrs.hullRadius)
+    // .style("opacity", 1)
 };
 
 export let linkBuilder = (attrs, context) => {
@@ -1016,9 +1057,12 @@ export let linkBuilder = (attrs, context) => {
         .merge(context.selectors.links);
 
     // update these attrs every time
-    context.selectors.links
-        .classed('selected', link => link.selected)
-        // .styles(link => link.styles || {})
+    // context.selectors.links
+    //     .classed('selected', link => link.selected)
+    //     .style("link => link.styles || {})
+    context.selectors.links.classed('selected', link => link.selected)
+        .style('border-style', 'dotted');
+
 };
 
 

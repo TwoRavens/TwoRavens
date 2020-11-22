@@ -5,7 +5,7 @@ import * as app from '../app';
 import * as results from "../modes/results";
 import * as utils from '../utils';
 import {
-    getGeographicVariables,
+    getGeographicVariables, getLocationVariables,
     getNominalVariables,
     getOrderingVariable,
     getPredictorVariables,
@@ -81,11 +81,17 @@ export let SPEC_problem = problem => {
         'time_format': Object.values(app.variableSummaries)
             .filter(summary => summary.timeUnit)
             .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.timeUnit}), {}),
+        'location_unit': Object.values(app.variableSummaries)
+            .filter(summary => summary.locationUnit)
+            .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.locationUnit}), {}),
+        'location_format': Object.values(app.variableSummaries)
+            .filter(summary => summary.locationUnit)
+            .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.locationFormat}), {}),
 
         // structural variables
         "indexes": problem.tags.indexes,
         "crossSection": problem.tags.crossSection.filter(variable => predictors.includes(variable)),
-        "location": getGeographicVariables(problem).filter(variable => predictors.includes(variable)),
+        "location": getLocationVariables(problem),
         "boundary": problem.tags.boundary.filter(variable => predictors.includes(variable)),
         "weights": problem.tags.weights.filter(variable => predictors.includes(variable)), // singleton list
         "privileged": problem.tags.privileged.filter(variable => predictors.includes(variable)),

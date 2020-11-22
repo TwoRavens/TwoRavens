@@ -5,6 +5,7 @@ import TextField from "../../common/views/TextField";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Table from "../../common/views/Table";
 import {setDefault} from '../utils';
+import * as app from "../app";
 
 let labelOffset = '15em';
 let mongoTypes = {
@@ -231,7 +232,7 @@ export default class CanvasImputation {
 
 let replaceMissing = (data, missing, replacement) => data.map(row => Object.keys(row).filter(col => col in missing).reduce((out, col) => {
     out[col] = (missing[col] || []).includes(row[col])
-        ? m(`[style=background-color:${common.gr2Color};min-width:1em;min-height:1em]`, replacement[col])
+        ? m(`[style=background-color:${common.successColor};min-width:1em;min-height:1em]`, replacement[col])
         : row[col];
     return out;
 }, {}));
@@ -239,7 +240,7 @@ let replaceMissing = (data, missing, replacement) => data.map(row => Object.keys
 let deleteMissing = (data, missing) => data.map(row => Object.keys(row).some(variable => missing[variable].includes(row[variable]))
     ? Object.keys(row).reduce((out, col) => {
         out[col] = m(`[style=text-decoration:line-through;${row[col] === missing ? 'background-color:' +
-            common.gr2Color : ''}]`, row[col]);
+            common.errorColor : ''}]`, row[col]);
         return out;
     }, {})
     : row);

@@ -24,7 +24,6 @@ export default class PlotVegaLite {
 
     plot(vnode) {
         let {data, specification, listeners} = vnode.attrs;
-        console.log(specification);
 
         // change-sets are not currently supported. Data is manually inserted here.
         // long term, if change-sets are not returned, it would be better to remove the data argument from this component

@@ -149,7 +149,7 @@ export let buildEmptyProblem = problemId => ({
         nominal: [],
         ordinal: [],
         crossSection: [],
-        geographic: [],
+        location: [],
         boundary: [],
         ordering: [],
         weights: [], // singleton list
@@ -283,7 +283,7 @@ export let buildDefaultProblem = problemDoc => {
             crossSection: getTagsByRole('suggestedGroupingKey'),
             ordinal: [],
             boundary: getTagsByRole('boundaryIndicator'),
-            geographic: getTagsByRole('locationIndicator'),
+            location: getTagsByRole('locationIndicator'),
             ordering: [problemDoc?.inputs?.forecastingHorizon?.colName].filter(_ => _),
             weights: getTagsByRole('instanceWeight'), // singleton list
             indexes,
@@ -423,7 +423,7 @@ export function standardizeDiscovery(problems) {
                 crossSection: [],
                 ordinal: [],
                 boundary: [],
-                geographic: [],
+                location: [],
                 ordering,
                 indexes: ['d3mIndex'],
                 privileged: [],
@@ -643,18 +643,16 @@ export let getOrderingTimeUnit = problem => {
     return units.join("-")
 }
 
-/**
- * Sets the currently selected problem, and updates all relevant page state
- * @param {Problem} problem
- * @returns {string[]}
- */
-export let getGeographicVariables = problem => {
+export let getGeographicVariables = () =>
+    Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].locationUnit);
+
+export let getLocationVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
-    return [...new Set([
-        ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].geographic),
-        ...selectedProblem.tags.geographic
-    ])];
+    return selectedProblem.tags.location;
 }
+
+export let getLocationUnit = variable => app.variableSummaries[variable].locationUnit;
+export let getLocationFormat = variable => app.variableSummaries[variable].locationFormat;
 export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
 

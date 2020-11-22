@@ -920,7 +920,7 @@ function getThumbnailStyle(nodeSummaries, schemaName) {
     };
 
     styling.border = isRecommended
-        ? "2px solid " + common.csColor
+        ? "2px solid " + common.successColor
         : "2px solid " + common.errorColor;
 
     return styling;

@@ -7,7 +7,7 @@ import m from 'mithril';
 import * as app from "../app";
 import * as explore from "./explore";
 import * as manipulate from "../manipulations/manipulate";
-import * as schema from '../../preprocess-schemas/1-2-0';
+import * as preprocessSchema from '../../preprocess-schemas/1-2-0';
 import * as utils from "../utils";
 
 import * as common from "../../common/common";
@@ -387,7 +387,7 @@ export class CanvasDataset {
 
         let reportContent;
         if (datasetPreferences.reportShown) {
-            let props = schema.properties.variables.patternProperties['.'];
+            let props = preprocessSchema.properties.variables.patternProperties['.'];
             let editables = props.editable;
             let widget = (set, variable, k, v) => {
                 let prop = props.properties[k];
@@ -419,7 +419,7 @@ export class CanvasDataset {
                 m(Table, {
                     data: Object.keys(app.datasetSummary).map(key => [
                         key,
-                        datasetPreferences.reportEdit && schema.properties.dataset.editable.includes(key)
+                        datasetPreferences.reportEdit && preprocessSchema.properties.dataset.editable.includes(key)
                             ? widget(setDatasetSum, null, key, app.datasetSummary[key])
                             : app.datasetSummary[key]
                     ])

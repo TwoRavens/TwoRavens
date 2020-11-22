@@ -1105,9 +1105,9 @@ export class CanvasSolutions {
             });
 
             return [
-                {color: common.csColor, key: 'Inputs', summary: inputs, content: inputs},
+                {color: common.successColor, key: 'Inputs', summary: inputs, content: inputs},
                 ...steps,
-                {color: common.csColor, key: 'Outputs', summary: outputs, content: outputs}
+                {color: common.successColor, key: 'Outputs', summary: outputs, content: outputs}
             ];
         };
 
@@ -1522,7 +1522,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Data Exploration'] && this.customExplore(problem, selectedAdapters));
 
-        let customExploreMapping = problem.tags.geographic.length > 0 && m(Subpanel, {
+        let customExploreMapping = problem.tags.location.length > 0 && m(Subpanel, {
             style: {margin: '0px 1em', position: 'relative'},
             header: 'Mapping Exploration',
             shown: resultsSubpanels['Mapping Exploration'],

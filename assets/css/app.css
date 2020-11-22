@@ -1,3 +1,20 @@
+:root {
+    --tag-predictor: #fff;
+    --tag-target: #fff;
+    --tag-crossSection: #fff;
+    --tag-order: #fff;
+    --tag-location: #fff;
+    --tag-time: #fff;
+    --tag-nominal: #fff;
+    --tag-ordinal: #fff;
+    --tag-weight: #fff;
+    --tag-boundary: #fff;
+    --tag-privileged: #fff;
+    --tag-exogenous: #fff;
+    --tag-index: #fff;
+    --tag-matched: #fff;
+}
+
 /* BEGIN BOOTSWATCH MATERIA OVERRIDES */
 .btn.active {
     background-color: #e8e8e8;
@@ -423,37 +440,48 @@ tr.item-lineout{
 }
 
 .item-nominal {
-    border: solid #ff6600B0;
+    border-style: solid;
+    border-color: var(--tag-nominal);
 }
 .item-cross-section {
-    border: solid #419641;
+    border-style: solid;
+    border-color: var(--tag-crossSection);
 }
 .item-ordinal {
-    border: solid #ffb700;
+    border-style: solid;
+    border-color: var(--tag-ordinal);
 }
 .item-boundary {
-    border: solid #3cc394;
+    border-style: solid;
+    border-color: var(--tag-boundary);
 }
-.item-geographic {
-    border: solid #d23e3e;
+.item-location {
+    border-style: solid;
+    border-color: var(--tag-location);
 }
 .item-time {
-    border: solid #2d6ca2;
+    border-style: solid;
+    border-color: var(--tag-time);
 }
 .item-weight {
-    border: solid #bf4d66;
+    border-style: solid;
+    border-color: var(--tag-weight);
 }
 .item-privileged {
-    border: solid #6F29A7;
+    border-style: solid;
+    border-color: var(--tag-privileged);
 }
 .item-exogenous {
-    border: solid #C03D3E;
+    border-style: solid;
+    border-color: var(--tag-exogenous);
 }
 .item-index {
-    border: solid #797478;
+    border-style: solid;
+    border-color: var(--tag-index);
 }
 .item-matched {
-    border: solid #330b0b;
+    border-style: solid;
+    border-color: var(--tag-matched);
     font-weight: bolder;
 }
 .item-hovered {
@@ -550,11 +578,4 @@ div#scatterplot .axis path {fill: none; stroke: #BDBDBD; shape-rendering: crispE
     font-size: .875rem;
     line-height: .5;
     border-radius: .2rem;
-}
-
-.geo-point {
-    height: 10px;
-    width: 10px;
-    background-color: #4da5de;
-    border-radius: 50%;
 }
