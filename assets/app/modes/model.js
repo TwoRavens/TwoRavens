@@ -1402,8 +1402,8 @@ let buildGroupingState = problem => {
     }
     else if (forceDiagramMode === "causalLinks") {
         return {
-            groups: (problem.causalGroups || []),
-            groupLinks: []
+            groups: problem.causalGroups || [],
+            groupLinks: problem.causalGroupLinks || []
         };
     }
 };
@@ -1515,7 +1515,7 @@ export let forceDiagramState = {
     selectedPebble: undefined,
     hoverTimeout: undefined,
     isPinned: false,
-    hullRadius: 40,
+    hullRadius: 50,
     defaultPebbleRadius: 40,
     hoverTimeoutDuration: 150, // milliseconds to wait before showing/hiding the pebble handles
     selectTransitionDuration: 300, // milliseconds of pebble resizing animations
@@ -1570,6 +1570,38 @@ let setSelectedPebble = pebble => {
 
 Object.assign(forceDiagramState, {
     setSelectedPebble,
+    groupEvents: {
+        click: (e, group) => {
+            if (forceDiagramMode !== "causalLinks") return;
+
+            let selectedProblem = getSelectedProblem();
+            if (selectedProblem.system === 'solved') {
+                alertEditCopy();
+                return;
+            }
+
+            delete selectedProblem.unedited;
+            if (e) e.preventDefault(); // block browser context menu
+            if (forceDiagramState.contextGroup) {
+
+                if (forceDiagramState.contextGroup !== group) {
+                    selectedProblem.causalGroupLinks = selectedProblem.causalGroupLinks || [];
+                    let link = {
+                        source: forceDiagramState.contextGroup.name,
+                        target: group.name,
+                        color: forceDiagramState.contextGroup.color
+                    };
+                    selectedProblem.causalGroupLinks.push(link);
+                }
+                forceDiagramState.contextGroup = undefined;
+            }
+            m.redraw();
+        },
+        contextmenu: (e, group) => {
+            if (e) e.preventDefault(); // block browser context menu
+            forceDiagramState.contextGroup = group;
+        }
+    },
     pebbleEvents: {
         click: (e, pebble) => {
             if (forceDiagramState.contextPebble) setContextPebble(e, pebble);

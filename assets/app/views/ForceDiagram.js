@@ -162,8 +162,8 @@ export default class ForceDiagram {
 
             let intersections = groupLinks.reduce((out, line) => {
                 // source: centroids[line.source],
-                let source = intersectLineHull(centroids[line.target], centroids[line.source], hullCoords[line.source], attrs.hullRadius * 1.25);
-                let target = intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius * 1.5);
+                let source = intersectLineHull(centroids[line.target], centroids[line.source], hullCoords[line.source], attrs.hullRadius);
+                let target = intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius);
 
                 if (source?.every?.(_ => _) && target?.every?.(_ => _)) {
                     // flip arrow direction when regions are overlapping
@@ -232,7 +232,19 @@ export default class ForceDiagram {
 
             if (attrs.contextPebble && this.position.x && this.position.y) this.selectors.nodeDragLine
                 .attr('display', 'block')
-                .attr('d', `M${this.nodes[attrs.contextPebble].x},${this.nodes[attrs.contextPebble].y}L${this.position.x},${this.position.y}`);
+                .attr('d', `M${this.nodes[attrs.contextPebble].x},${this.nodes[attrs.contextPebble].y}L${this.position.x},${this.position.y}`)
+                .style('stroke', 'black')
+                .style('stroke-width', '3px');
+            else if (attrs.contextGroup && this.position.x && this.position.y) {
+                let sourceCenter = getMean(groupCoords[attrs.contextGroup.name]);
+                let sourceIntersection = intersectLineHull([this.position.x, this.position.y], sourceCenter, groupCoords[attrs.contextGroup.name], attrs.hullRadius);
+                let source = sourceIntersection?.every?.(v => !isNaN(v)) ? sourceIntersection : sourceCenter;
+                this.selectors.nodeDragLine
+                    .attr('display', 'block')
+                    .attr('d', `M${source}L${this.position.x},${this.position.y}`)
+                    .style('stroke', attrs.contextGroup.color)
+                    .style('stroke-width', '5px')
+            }
             else {
                 this.selectors.nodeDragLine.attr('display', 'none');
                 this.position = {};
@@ -260,8 +272,11 @@ export default class ForceDiagram {
         let updatePosition = e => this.position = {x: e.pageX - x, y: e.pageY - y};
         // track mouse position for dragging, remove arrow on click
         d3.select(dom)
-            .on('mousemove', attrs.contextPebble && updatePosition)
-            .on('click', () => attrs.contextPebble = undefined);
+            .on('mousemove', (attrs.contextPebble || attrs.contextGroup) && updatePosition)
+            .on('click', () => {
+                attrs.contextPebble = undefined;
+                attrs.contextGroup = undefined;
+            });
 
 
         d3.select(dom)
@@ -372,7 +387,7 @@ export default class ForceDiagram {
                                 if (group.nodes.size === 1)
                                     return false;
                                 if (group.nodes.size === 2)
-                                    return mag(sub(...hullCoords[group.name])) > 1000;
+                                    return mag(sub(...hullCoords[group.name])) > 100;
 
                                 let reducedHull = hullCoords[group.name]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
@@ -500,7 +515,9 @@ let sub = (a, b) => a.reduce((out, _, i) => [...out, a[i] - b[i]], []);
 let add = (a, b) => a.reduce((out, _, i) => [...out, a[i] + b[i]], []);
 let mul = (a, b) => a.map(e => e * b);
 let dot = (a, b) => a.reduce((out, _, i) => out + a[i] * b[i], 0);
-let mag = a => a.reduce((out, e) => out + e * e, 0);
+let mag = a => Math.sqrt(a.reduce((out, e) => out + e * e, 0));
+let getMean = points => points.reduce((center, point) =>
+    [center[0] + point[0] / points.length, center[1] + point[1] / points.length], [0, 0])
 
 /**
  *
@@ -523,24 +540,17 @@ let intersectLineHull = (a1, a2, points, radius) => {
 
     if (!int) return; // no lines along the hull intercept a1, a2
 
-    Object.assign(window, {a1, a2, b1, b2, int});
-
-    let dir1 = sub(b2, int);
-    let dir2 = sub(b2, int);
-
     let dirSource = sub(a1, int);
+    let dirSegment = sub(b1, int);
 
     // definition of dot product to find angle between segment a and segment b
-    let theta1 = Math.acos(dot(dir1, dirSource) / (mag(dir1) * mag(dirSource)));
-    let theta2 = Math.acos(dot(dir2, dirSource) / (mag(dir2) * mag(dirSource)));
+    let theta = Math.acos(dot(dirSource, dirSegment) / (mag(dirSegment) * mag(dirSource)));
     // take the acute side
-    let [dirHull, theta] = Math.abs(theta1) < 90 ? [dir1, theta1] : [dir2, theta2];
+    theta = theta > 90 ? 180 - theta : theta;
+    let hypotenuse = radius / Math.sin(theta);
 
-    // compute length of triangle base
-    let width = radius / Math.tan(theta);
-    let hypotenuse = Math.sqrt(width * width + radius * radius);
     // offset intercept by the hypotenuse length in the direction of the source centroid
-    return sub(int, mul(dirSource, -hypotenuse / Math.sqrt(mag(dirSource))));
+    return add(int, mul(dirSource, hypotenuse / mag(dirSource)));
 };
 
 // compute the intersection between the line from p1 to p2 against the line from p3 to p4
@@ -548,9 +558,8 @@ let intersectLineLine = (p1, p2, p3, p4) => {
     let det = (p4[0] - p3[0]) * (p1[1] - p2[1]) - (p1[0] - p2[0]) * (p4[1] - p3[1]);
     if (det === 0) return;
 
-    // ua is the reparameterization for the segment p1 - p2 along x
+    // ua is the reparameterization for the segment p1 - p2
     let ua = ((p3[1] - p4[1]) * (p1[0] - p3[0]) + (p4[0] - p3[0]) * (p1[1] - p3[1])) / det;
-    // ub is the reparameterization for the segment p1 - p2 along y
     let ub = ((p1[1] - p2[1]) * (p1[0] - p3[0]) + (p2[0] - p1[0]) * (p1[1] - p3[1])) / det;
 
     let eps = 1e-5;
@@ -582,9 +591,6 @@ function isInside(point, vs) {
 
 let makeHullLabelSegment = coords => {
 
-    let getMean = points => points.reduce((center, point) =>
-        [center[0] + point[0] / points.length, center[1] + point[1] / points.length], [0, 0])
-
     let center = getMean(coords);
 
     let segments = coords
@@ -608,7 +614,7 @@ let makeHullLabelSegment = coords => {
 
     // adjust the right point to ensure segment length is 200 px
     let v = sub(segment[1], segment[0]);
-    return [sub(segment[1], mul(v, 200 / Math.sqrt(mag(v)))), segment[1]]
+    return [sub(segment[1], mul(v, 200 / mag(v))), segment[1]]
 }
 
 
@@ -1034,12 +1040,18 @@ export let groupBuilder = (attrs, context) => {
         .attr('class', 'hullLabelPath')
         .attr("id", group => group.name + 'HullLabelPath')
 
-    // update all paths
+    // update all hulls
     context.selectors.hulls.selectAll('path.hull')
         .style("fill", group => group.color)
         .style("stroke", group => group.color)
-        .style("stroke-width", 2.5 * attrs.hullRadius)
+        .style("stroke-width", attrs.hullRadius * 2)
         .style('opacity', group => group.opacity);
+
+    context.selectors.hulls.selectAll('path.hull').each(function(group) {
+        d3.select(this)
+            .on('click', e => attrs.groupEvents.click(e, group))
+            .on('contextmenu', e => attrs.groupEvents.contextmenu(e, group))
+    })
 
     // add new texts
     newHulls.append('text')
