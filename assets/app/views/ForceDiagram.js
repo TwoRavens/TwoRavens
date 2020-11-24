@@ -141,7 +141,7 @@ export default class ForceDiagram {
 
             let groupCoords = groups
                 .reduce((out, group) => Object.assign(out, {
-                    [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
+                    [group.name]: [...group.nodes].map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y])
                 }), {});
 
             let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
@@ -158,7 +158,7 @@ export default class ForceDiagram {
 
             // update positions of groupLines
             let centroids = Object.keys(hullCoords)
-                .reduce((out, group) => Object.assign(out, {[group]: jamescentroid(groupCoords[group])}), {});
+                .reduce((out, group) => Object.assign(out, {[group]: getMean(groupCoords[group])}), {});
 
             let intersections = groupLinks.reduce((out, line) => {
                 // source: centroids[line.source],
@@ -514,10 +514,18 @@ function jamescentroid(coord) {
 let sub = (a, b) => a.reduce((out, _, i) => [...out, a[i] - b[i]], []);
 let add = (a, b) => a.reduce((out, _, i) => [...out, a[i] + b[i]], []);
 let mul = (a, b) => a.map(e => e * b);
-let dot = (a, b) => a.reduce((out, _, i) => out + a[i] * b[i], 0);
+// let dot = (a, b) => a.reduce((out, _, i) => out + a[i] * b[i], 0);
 let mag = a => Math.sqrt(a.reduce((out, e) => out + e * e, 0));
+// let dist = (a, b) => mag(sub(b, a));
 let getMean = points => points.reduce((center, point) =>
     [center[0] + point[0] / points.length, center[1] + point[1] / points.length], [0, 0])
+
+let unitNormal = function (p0, p1) {
+    // Returns the unit normal to the line segment from p0 to p1.
+    let difference = sub(p1, p0);
+    let magnitude = mag(difference);
+    return [-difference[1] / magnitude, difference[0] / magnitude];
+};
 
 /**
  *
@@ -527,31 +535,43 @@ let getMean = points => points.reduce((center, point) =>
  * @param radius
  * @returns {*}
  */
-let intersectLineHull = (a1, a2, points, radius) => {
-    // endpoints of the line segment on the convex hull that intercepts a1, a2 centroids
-    let b1, b2;
-    let int; // intercept
-    points.some((_, i) => {
-        b1 = points[i];
-        b2 = points[(i + 1) % points.length];
-        int = intersectLineLine(a1, a2, b1, b2);
-        return int !== undefined;
-    });
+let intersectLineHull = (a0, a1, points, radius) => {
+    for (let i = 0; i < points.length; i++) {
+        let [b0, b1] = [points[i], points[(i + 1) % points.length]];
+        let offset = unitNormal(b0, b1);
+        offset = mul(offset, radius);
+        let int = intersectLineLine(add(b0, offset), add(b1, offset), a0, a1);
+        if (int !== undefined) return int;
+    }
 
-    if (!int) return; // no lines along the hull intercept a1, a2
+    let intersections = []
+    for (let point of points) {
+        let [dx, dy] = sub(a1, a0);
 
-    let dirSource = sub(a1, int);
-    let dirSegment = sub(b1, int);
+        let a0c = sub(a0, point);
+        let A = dx * dx + dy * dy;
+        let B = 2 * (dx * a0c[0] + dy * a0c[1]);
+        let C = a0c[0] * a0c[0] + a0c[1] * a0c[1] - radius * radius;
+        let determinant = B * B - 4 * A * C;
 
-    // definition of dot product to find angle between segment a and segment b
-    let theta = Math.acos(dot(dirSource, dirSegment) / (mag(dirSegment) * mag(dirSource)));
-    // take the acute side
-    theta = theta > 90 ? 180 - theta : theta;
-    let hypotenuse = radius / Math.sin(theta);
-
-    // offset intercept by the hypotenuse length in the direction of the source centroid
-    return add(int, mul(dirSource, hypotenuse / mag(dirSource)));
-};
+        if ((A <= 0.0000001) || (determinant < 0)) continue;
+        let t;
+        if (determinant === 0) {
+            t = -B / (2 * A);
+            intersections.push([a0[0] + t * dx, a0[1] + t * dy]);
+        } else {
+            t = (-B + Math.sqrt(determinant)) / (2 * A);
+            intersections.push([a0[0] + t * dx, a0[1] + t * dy]);
+            t = (-B - Math.sqrt(determinant)) / (2 * A);
+            intersections.push([a0[0] + t * dx, a0[1] + t * dy]);
+        }
+    }
+    let closestInt = intersections.reduce(([minMag, j], cand, i) => {
+        let candMag = mag(sub(a0, cand));
+        return candMag < minMag ? [candMag, i] : [minMag, j]
+    }, [Infinity, -1])[1];
+    if (closestInt > -1) return intersections[closestInt];
+}
 
 // compute the intersection between the line from p1 to p2 against the line from p3 to p4
 let intersectLineLine = (p1, p2, p3, p4) => {
