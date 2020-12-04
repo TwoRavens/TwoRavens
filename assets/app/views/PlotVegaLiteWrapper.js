@@ -35,14 +35,12 @@ export let preparePanels = state => {
 
     window.configuration = configuration;
 
-    console.log('A')
     let specification;
     try {
         specification = makeSpecification(configuration, varTypes);
     } catch (err) {
         console.warn(err);
     }
-    console.log('B', specification)
 
     let plot;
     if (specification) {

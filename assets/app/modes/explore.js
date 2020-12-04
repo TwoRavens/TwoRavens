@@ -84,7 +84,7 @@ let get_node_label = problemOrVariableName => {
     if (explorePreferences.mode === 'problems') {
         let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[problemOrVariableName];
         let predictorVariables = getPredictorVariables(exploreProblem);
-        let targetVariables = getTargetVariables(exploreProblems);
+        let targetVariables = getTargetVariables(exploreProblem);
         if (targetVariables.length === 0)
             return
 
@@ -739,10 +739,7 @@ let defaultRecordLimit = 5000;
 let customConfiguration = {};
 window.customConfiguration = customConfiguration;
 let mappingConfiguration = {
-    mark: 'point',
     channels: [
-        {name: 'longitude'},
-        {name: 'latitude'},
         {name: 'color'},
         {name: 'opacity'},
         {name: 'tooltip'}

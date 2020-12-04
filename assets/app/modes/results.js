@@ -287,7 +287,7 @@ export let leftpanel = () => {
                             ),
                         })),
                         // headers: ['solver', 'action', 'state'],
-                        tableTags: m('colgroup',
+                        tableTags: m('colgroup', {tag: 'colgrouper'},
                             m('col', {span: 1, width: '15em'}),
                             m('col', {span: 1, width: '3em'}),
                             m('col', {span: 1}))

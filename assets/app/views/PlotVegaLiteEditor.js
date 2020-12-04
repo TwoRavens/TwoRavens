@@ -8,6 +8,7 @@ import TextField from "../../common/views/TextField";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from '../../common/views/Popper';
 import * as app from "../app";
+import {getSelectedProblem, getTargetVariables} from "../problem";
 
 export default class PlotVegaLiteEditor {
     oninit(vnode) {
@@ -145,18 +146,40 @@ export default class PlotVegaLiteEditor {
             remove(unusedChannels, 'secondary axis')
         }
 
-        if (mapping && configuration.mark === 'point' && unusedChannels.includes('longitude')) {
-            configuration.channels.unshift({name: 'longitude'});
-            remove(unusedChannels, 'longitude')
+        // initial load
+        if (mapping && !configuration.mark) {
+            configuration.mark = Object.values(app.variableSummaries)
+                .some(summary => ['latitude', 'longitude'].includes(summary.locationUnit)) ? 'point' : 'region'
+            let colorVariable = getTargetVariables(getSelectedProblem())[0];
+            if (!colorVariable || app.variableSummaries[colorVariable].numchar !== 'numeric')
+                colorVariable = variables.find(variable => app.variableSummaries[variable].numchar === 'numeric');
+            let colorChannel = configuration.channels.find(channel => channel.name === 'color')
+            if (colorChannel) colorChannel.variable = colorVariable;
         }
-        if (mapping && configuration.mark === 'point' && unusedChannels.includes('latitude')) {
-            configuration.channels.unshift({name: 'latitude'});
-            remove(unusedChannels, 'latitude')
+
+        if (mapping && configuration.mark === 'point') {
+            ['longitude', 'latitude'].filter(name => unusedChannels.includes(name))
+                .forEach(name => {
+                    let channel = configuration.channels.find(channel => channel.name === name);
+                    if (channel) channel.delete = false
+                    else configuration.channels.unshift({
+                        name, variable: variables.find(variable => app.variableSummaries[variable].locationUnit === name)
+                    });
+                    remove(unusedChannels, name)
+                })
+            let regionChannel = configuration.channels.find(channel => channel.name === 'region');
+            if (regionChannel) regionChannel.delete = true;
         }
         if (mapping && configuration.mark === 'region' && unusedChannels.includes('region')) {
             let regionUnits = Object.keys(app.locationUnits).filter(unit => !['latitude', 'longitude'].includes(unit));
-            configuration.channels.unshift({name: 'region', variable: variables.find(variable => regionUnits.includes(app.variableSummaries[variable].locationUnit))});
-            remove(unusedChannels, 'region')
+            configuration.channels.unshift({
+                name: 'region',
+                variable: variables.find(variable => regionUnits.includes(app.variableSummaries[variable].locationUnit))
+            });
+            remove(unusedChannels, 'region');
+            ['longitude', 'latitude'].forEach(name => configuration.channels
+                .filter(channel => channel.name === name)
+                .forEach(channel => channel.delete = true));
         }
 
         if (!('mark' in configuration))

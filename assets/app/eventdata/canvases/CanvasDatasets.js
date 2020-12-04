@@ -29,7 +29,7 @@ export default class CanvasDatasets {
         let tempDataset = this.dataset ? eventdata.genericMetadata[this.dataset] : {};
 
         let colgroupDataset = () => {
-            return m('colgroup',
+            return m('colgroup', {tag: 'colgrouper'},
                 m('col', {span: 1}),
                 m('col', {span: 1}),
                 m('col', {span: 1}),
