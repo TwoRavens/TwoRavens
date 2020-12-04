@@ -566,7 +566,7 @@ def api_get_eventdata(request):
 
 @csrf_exempt
 def api_get_metadata(request):
-    """ get metadata (configs/formats/alignments)"""
+    """ get metadata (configs/formats/geojson/alignments)"""
 
     success, json_req_obj = get_request_body_as_json(request)
 
@@ -579,7 +579,7 @@ def api_get_metadata(request):
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
     return JsonResponse({name: EventJobUtil.get_metadata(name, json_req_obj[name])
-                         for name in ['collections', 'formats', 'alignments'] if name in json_req_obj})
+                         for name in ['collections', 'formats', 'alignments', 'geojson'] if name in json_req_obj})
 
 
 @csrf_exempt

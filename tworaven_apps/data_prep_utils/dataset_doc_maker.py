@@ -20,9 +20,6 @@ from tworaven_apps.utils.file_util import \
 from tworaven_apps.utils.random_info import \
     (get_alpha_string,)
 
-# mapping from: https://pbpython.com/pandas_dtypes.html
-#   -> https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
-
 
 
 class DatasetDocMaker(BasicErrCheck):

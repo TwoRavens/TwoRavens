@@ -29,12 +29,12 @@ import {
     getNominalVariables,
     getPredictorVariables,
     getProblemCopy,
-    getSelectedProblem,
+    getSelectedProblem, getTargetGroups, getTargetVariables,
     needsManipulationRewritePriorToSolve,
     setSelectedProblem,
     standardizeDiscovery
 } from "./problem";
-import {lightGrayColor} from "../common/common";
+import {setMetadata} from "./eventdata/eventdata";
 
 /**
  * @typedef {Object} Workspace
@@ -200,7 +200,7 @@ export async function updatePeek(pipeline) {
 
     let problem = getSelectedProblem();
     if (isModelMode || isResultsMode)
-        variables = [...getPredictorVariables(problem), ...problem.targets];
+        variables = [...getPredictorVariables(problem), ...getTargetVariables(problem)];
 
     let previewMenu = {
         type: 'menu',
@@ -1025,11 +1025,12 @@ export let applicableMetrics = {
     }
 };
 
+// first format is the one stored in the geoJSON file
 export let locationUnits = {
     'latitude': ['decimal'], // ['sexagesimal', 'minutes']
     'longitude': ['decimal'],
     'country': ["ISO-3", "ICEWS", "UN M.49", "cowcode", "gwcode", "gtdcode", "ISO-2"],
-    'US state': ['US_state_name', 'USPS']
+    'US_state': ['US_state_name', 'USPS']
 }
 
 let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'
@@ -1099,7 +1100,7 @@ export let initialTour = () => ({
                       <p>Generally, as a tip, the Green button is the next button you need to press to move the current task forward, and this button will be Green when Task 1 is completed and Task 2 started.</p>
                       <p>Click this Solve button to tell the tool to find a solution to the problem, using the variables presented in the center panel.</p>`),
         step('TargetsHull', "left", "Target Variable",
-            `We are trying to predict ${getSelectedProblem().targets.join(', ')}.
+            `We are trying to predict ${getTargetVariables(getSelectedProblem()).join(', ')}.
                       This center panel graphically represents the problem currently being attempted.`),
         step("PredictorsHull", "right", "Explanation Set", "This set of variables can potentially predict the target."),
         step("tabVariables", "right", "Variable List",
@@ -1510,16 +1511,17 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
     let selectedProblemPromise = Promise.all([promiseProblemDoc, promiseDiscovery])
         .then(() => {
             let problem = getSelectedProblem();
+            let targets = getTargetVariables(problem);
+            let predictors = getPredictorVariables(problem);
 
-            if (problem.unedited && problem.predictors.length === 0 && problem.targets.length === 0) {
+            if (problem.unedited && predictors.length === 0 && targets.length === 0) {
                 setSelectedProblem(Object.values(workspace.raven_config.problems)
-                    .find(problem => problem.predictors.length !== 0)?.problemId)
+                    .find(problem => getPredictorVariables(problem).length !== 0)?.problemId)
             }
             else if (problem.unedited) {
-                let newPredictors = workspace.raven_config.problems['problem 1']
-                    ?.predictors
-                    ?.filter?.(variable => !problem.targets.includes(variable));
-                if (newPredictors?.length > 0) problem.predictors = newPredictors;
+                let newPredictors = getPredictorVariables(workspace.raven_config.problems['problem 1'])
+                    ?.filter?.(variable => !targets.includes(variable));
+                if (newPredictors?.length > 0) problem.groups.find(group => group.name === "Predictors").nodes = newPredictors;
             }
         })
         .catch(e => console.warn(e, 'failed to adopt predictors from first discovered problem'))
@@ -1817,7 +1819,7 @@ export let setVariableSummaries = state => {
     if (!state) return;
     // delete state.d3mIndex;
 
-    // I'm treating existence of a time format as indication that the data is temporal
+    // I'm treating existence of a time format as indication that the data is temporal. same for geo
     Object.values(state).forEach(summary => {
         delete summary.temporal
         delete summary.geographic
@@ -1832,8 +1834,44 @@ export let setVariableSummaries = state => {
     Object.entries(workspace.raven_config.variableSummariesDiffs)
         .filter(([key, _]) => key in variableSummaries)
         .forEach(([key, value]) => common.deepMerge(variableSummaries[key], value));
+
+    // infer location formats when possible
+    Object.values(variableSummaries)
+        .filter(summary => summary.locationUnit && !summary.locationFormat)
+        .forEach(summary => inferLocationFormat(summary.variableName))
+
     window.variableSummaries = variableSummaries;
 };
+
+export let inferLocationFormat = variable => {
+    let unit = variableSummaries[variable].locationUnit;
+    if ([undefined, 'latitude', 'longitude'].includes(unit))
+        return;
+    if (!variableSummaries[variable].plotValues) return
+
+    if ((unit in locationUnits) && !(unit in alignmentData)) {
+        console.log('requesting metadata')
+        m.request({
+            url: mongoURL + 'get-metadata',
+            method: 'POST',
+            body: {alignments: [unit]}
+        }).then(setMetadata).then(() => {
+            let inversion = alignmentData[unit].reduce((inversion, alignment) => {
+                Object.entries(alignment).forEach(([format, value]) => {
+                    inversion[format] = inversion[format] || new Set();
+                    inversion[format].add(value)
+                })
+                return inversion;
+            }, {});
+
+            let sampleNames = Object.keys(variableSummaries[variable].plotValues);
+
+            // guess the format based on some plotValues
+            let format = Object.keys(inversion).find(format => sampleNames.every(name => inversion[format].has(name)));
+            setVariableSummaryAttr(variable, 'locationFormat', format);
+        })
+    }
+}
 
 export let setVariableSummaryAttr = (variable, attr, value) => {
     utils.setDeep(workspace, ['raven_config', 'variableSummariesDiffs', variable, attr], value);
@@ -2263,7 +2301,15 @@ export async function handleAugmentDataMessage(msg_data) {
                 // (6) add a problem with new columns added to predictors, and set it to the selected problem
                 let problemCopy = getProblemCopy(priorSelectedProblem);
 
-                problemCopy.predictors.push(...workspace.raven_config.variablesInitial
+                let joinedGroup = problemCopy.groups.find(group => group.name === 'Joined')
+                if (!joinedGroup) {
+                    joinedGroup = {name: 'Joined', color: colors.predictor, opacity: 0.3, nodes: []};
+                    problemCopy.groups.unshift(joinedGroup);
+                    let targetGroups = getTargetGroups(problemCopy)
+                    if (targetGroups.length > 0)
+                        problemCopy.groupLinks.push({source: 'Joined', target: targetGroups[0].name, color: colors.predictor})
+                }
+                joinedGroup.nodes.push(...workspace.raven_config.variablesInitial
                     .filter(newVariable => !priorVariablesInitial.includes(newVariable)));
 
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
@@ -2286,3 +2332,14 @@ export let inferIsCategorical = variableSummary => {
     if (variableSummary.nature === 'ordinal' && variableSummary.uniqueCount <= 20) return true;
     return false;
 };
+
+
+let getSolutionIds = workspace => Object.values(workspace.raven_config.problems)
+    .filter(problem => problem.results).reduce((out, problem) => {
+        problem.results.solutions
+        out.d3m.push(...Object.values(problem.results.solutions.d3m || {}).map(solution => solution.solutionId));
+        out.wrapped.push(...Object.keys(problem.results.solutions)
+            .filter(systemId => systemId !== 'd3m')
+            .flatMap(systemId => Object.keys(problem.results.solutions[systemId])))
+        return out
+    }, {d3m: [], wrapped: []})

@@ -7,6 +7,7 @@ import Icon from "../../common/views/Icon";
 import TextField from "../../common/views/TextField";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from '../../common/views/Popper';
+import * as app from "../app";
 
 export default class PlotVegaLiteEditor {
     oninit(vnode) {
@@ -101,6 +102,7 @@ export default class PlotVegaLiteEditor {
             !mapping && 'secondary axis',
             mapping && 'longitude',
             mapping && 'latitude',
+            mapping && 'region',
             !mapping && 'size',
             'color',
             !mapping && 'order',
@@ -125,6 +127,7 @@ export default class PlotVegaLiteEditor {
             !mapping && "area",
             "point",
             !mapping && 'boxplot',
+            mapping && 'region'
             // 'rect',
             // 'rule'
         ].filter(_=>_);
@@ -142,13 +145,18 @@ export default class PlotVegaLiteEditor {
             remove(unusedChannels, 'secondary axis')
         }
 
-        if (mapping && unusedChannels.includes('longitude')) {
-            configuration.channels.push({name: 'longitude'});
+        if (mapping && configuration.mark === 'point' && unusedChannels.includes('longitude')) {
+            configuration.channels.unshift({name: 'longitude'});
             remove(unusedChannels, 'longitude')
         }
-        if (mapping && unusedChannels.includes('latitude')) {
-            configuration.channels.push({name: 'latitude'});
+        if (mapping && configuration.mark === 'point' && unusedChannels.includes('latitude')) {
+            configuration.channels.unshift({name: 'latitude'});
             remove(unusedChannels, 'latitude')
+        }
+        if (mapping && configuration.mark === 'region' && unusedChannels.includes('region')) {
+            let regionUnits = Object.keys(app.locationUnits).filter(unit => !['latitude', 'longitude'].includes(unit));
+            configuration.channels.unshift({name: 'region', variable: variables.find(variable => regionUnits.includes(app.variableSummaries[variable].locationUnit))});
+            remove(unusedChannels, 'region')
         }
 
         if (!('mark' in configuration))
@@ -312,15 +320,26 @@ export default class PlotVegaLiteEditor {
                     oninput: value => channel.variable = value,
                     onblur: value => channel.variable = value
                 }),
-                m(TextFieldSuggestion, {
-                    id: 'schemeDropdown',
-                    value: channel.scheme || 'default',
-                    suggestions: schemes,
-                    enforce: true,
-                    oninput: value => channel.scheme = value,
-                    onblur: value => channel.scheme = value,
-                    style: {'margin-left': '1em'}
-                }),
+                m('',
+                    configuration.mark === "region" && m('',
+                        m('label', 'Aggregation:'),
+                        m(Dropdown, {
+                            id: `aggregate${channel.name}Dropdown`,
+                            items: aggregators,
+                            activeItem: channel.aggregation,
+                            onclickChild: child => channel.aggregation = child
+                        })),
+                    m('label', 'Scheme:'),
+                    m(TextFieldSuggestion, {
+                        id: 'schemeDropdown',
+                        value: channel.scheme || 'default',
+                        suggestions: schemes,
+                        enforce: true,
+                        oninput: value => channel.scheme = value,
+                        onblur: value => channel.scheme = value,
+                        style: {'margin-left': '1em'}
+                    })
+                    ),
                 m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
                 // undefined
             ]
@@ -418,6 +437,48 @@ export default class PlotVegaLiteEditor {
                 undefined
             ]
         }
+
+        if (configuration.mark === "region" && channel.name === 'region') return [
+            channel.name,
+            m(TextFieldSuggestion, {
+                id: `channel${channel.name}TextField`,
+                value: channel.variable,
+                suggestions: variables,
+                enforce: true,
+                oninput: value => channel.variable = value,
+                onblur: value => channel.variable = value
+            }),
+            m('',
+                m('label', 'Units:'),
+                m(Dropdown, {
+                    id: 'locationUnitsDropdown',
+                    items: Object.keys(app.locationUnits).filter(unit => !['latitude', 'longitude'].includes(unit)),
+                    activeItem: app.variableSummaries[channel.variable]?.locationUnit || 'unknown',
+                    onclickChild: value => {
+                        if (value === app.variableSummaries[channel.variable].locationUnit) return;
+                        app.setVariableSummaryAttr(channel.variable, 'locationUnit', value);
+                        app.setVariableSummaryAttr(channel.variable, 'locationFormat', undefined);
+                        app.inferLocationFormat(channel.variable)
+                    }
+                }),
+                app.variableSummaries[channel.variable]?.locationUnit && m('div',
+                    {style: 'margin-bottom: 1em'},
+                m('label', 'Format:'),
+                    m(Dropdown, {
+                        id: 'locationFormatDropdown',
+                        items: app.locationUnits[app.variableSummaries[channel.variable].locationUnit],
+                        activeItem: app.variableSummaries[channel.variable].locationFormat,
+                        onclickChild: value => app.setVariableSummaryAttr(channel.variable, 'locationFormat', value)
+                    }),
+                ),
+            ),
+            m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
+            // undefined
+        ]
+
+        if (configuration.mark === "region" && ['latitude', 'longitude'].includes(channel.name))
+            return
+
         return [
             channel.name,
             m(TextFieldSuggestion, {
@@ -428,7 +489,14 @@ export default class PlotVegaLiteEditor {
                 oninput: value => channel.variable = value,
                 onblur: value => channel.variable = value
             }),
-            undefined,
+            configuration.mark === "region" && m('',
+                m('label', 'Aggregation:'),
+                m(Dropdown, {
+                    id: `aggregate${channel.name}Dropdown`,
+                    items: aggregators,
+                    activeItem: channel.aggregation,
+                    onclickChild: child => channel.aggregation = child
+                })),
             m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
         ];
     }

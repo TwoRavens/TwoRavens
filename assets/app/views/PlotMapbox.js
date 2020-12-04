@@ -5,6 +5,8 @@ import m from 'mithril'
 import * as vega from 'vega';
 import * as d3 from "d3";
 import vegaEmbed from "vega-embed";
+import {geojsonData} from "../eventdata/eventdata";
+import {alignmentData, locationUnits, variableSummaries} from "../app";
 
 mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 
@@ -30,14 +32,50 @@ export default class PlotMapbox {
         let data = specification.data.values;
         if (!data) return
 
-        data.forEach(point => Object.assign(point, {type: 'Feature', geometry: {
-            type: 'Point',
-            coordinates: [point[specification.encoding.longitude.field], point[specification.encoding.latitude.field]]
-        }}));
+        let isRegional = specification.encoding.region;
+
+        if (isRegional) {
+
+            let unit = variableSummaries[specification.encoding.region.field].locationUnit;
+            // from the format in the geojson file
+            let fromFormat = locationUnits[unit][0];
+            // to the format currently is use
+            let toFormat = variableSummaries[specification.encoding.region.field].locationFormat;
+
+            let alignment = alignmentData[unit];
+            if (!(fromFormat in geojsonData) || !alignment) return;
+
+            // make a lookup table for the alignment
+            let alignmentLookup = alignment.reduce((out, align) => Object.assign(out, {[align[fromFormat]]: align[toFormat]}), {});
+
+            // console.log('alignmentLookup', alignmentLookup)
+            // make a lookup table for geo features- from current format value to geojson representation
+            let geoLookup = geojsonData[fromFormat].features
+                .reduce((out, feature) => Object.assign(out, {[alignmentLookup[feature.properties[fromFormat]]]: feature}), {});
+
+            // console.log('geoLookup', geoLookup)
+            data = Object.assign({}, geojsonData[fromFormat], {features: data.map(row => {
+                    let toFormatValue = row[specification.encoding.region.field];
+                    return Object.assign({}, geoLookup[toFormatValue], row)
+                })})
+            // console.log('data', data)
+
+            specification.data.format = {property: "features"}
+        } else {
+            data.forEach(point => Object.assign(point, {
+                type: 'Feature', geometry: {
+                    type: 'Point',
+                    coordinates: [point[specification.encoding.longitude.field], point[specification.encoding.latitude.field]]
+                }
+            }));
+        }
 
         delete specification.encoding.latitude;
         delete specification.encoding.longitude;
-        specification.mark = {"type": "geoshape"};
+        delete specification.encoding.region;
+        specification.mark = {"type": "geoshape", clip: true};
+        if (!specification.encoding.opacity)
+            specification.encoding.opacity = {value: 0.75}
 
         delete specification.selection;
 
@@ -45,7 +83,7 @@ export default class PlotMapbox {
             let map = this.map = new mapboxgl.Map({
                 container: dom.querySelector("#mapboxContainer"),
                 style: 'mapbox://styles/mapbox/streets-v11', // stylesheet location
-                center: [
+                center: isRegional ? [0, 0] : [
                     // longitude
                     (circular_mean(data.map(v => v.geometry.coordinates[0] / 180 + 1)) - 1) * 90,
                     // latitude
@@ -83,7 +121,8 @@ export default class PlotMapbox {
 
         let update = () => {
             let {_sw: {lat: lat_s, lng: lon_w}, _ne: {lat: lat_n, lng: lon_e}} = this.map.getBounds();
-            specification.data.values = data.filter(point => {
+
+            specification.data.values = isRegional ? data : data.filter(point => {
                 let [lon_c, lat_c] = point.geometry.coordinates;
                 return lat_s < lat_c && lat_c < lat_n && lon_w < lon_c && lon_c < lon_e
             })
@@ -105,10 +144,10 @@ export default class PlotMapbox {
     }
 
     view({attrs}) {
-        let vegaStyle = {position: 'absolute', top: 0, left: 0};
+        let vegaStyle = {position: 'absolute', top: '-5px', left: '-5px'};
         if (!!attrs.specification?.selection) vegaStyle['pointer-events'] = 'none';
 
-        return m(`div`, {style: {width: '100%', height: '100%', position: 'relative'}},
+        return m(`div`, {style: {width: 'calc(100% - 100px)', height: '100%', position: 'relative'}},
             m('div#mapboxContainer', {style: {width: '100%', height: '100%'}}),
             m('div#vegaContainer', {style: vegaStyle}))
     }

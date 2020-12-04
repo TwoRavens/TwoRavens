@@ -23,6 +23,10 @@ export let eventdataSubsetCount = 1;
 // metadata for all available eventdata datasets and type formats
 export let genericMetadata = {};
 
+// geojson region data for specific formats
+export let geojsonData = {};
+window.geojsonData = geojsonData;
+
 export let manipulations = [];
 window.manipulations = manipulations;
 
@@ -30,7 +34,8 @@ export let setMetadata = (data) => Object.keys(data).forEach(key =>
     Object.keys(data[key]).forEach(identifier => ({
         'collections': genericMetadata,
         'formats': formattingData,
-        'alignments': alignmentData
+        'alignments': alignmentData,
+        'geojson': geojsonData,
     }[key][identifier] = data[key][identifier])));
 
 // metadata computed on the dataset for each subset

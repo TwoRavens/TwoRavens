@@ -162,6 +162,9 @@ svg:not(.active):not(.ctrl) path.link {
 path.link.selected {
   stroke-dasharray: 10,3;
 }
+line.selected {
+    stroke-dasharray: 10,3;
+}
 
 path.link.dragline {
   pointer-events: none;

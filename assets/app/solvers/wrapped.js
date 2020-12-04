@@ -8,7 +8,7 @@ import {
     getGeographicVariables, getLocationVariables,
     getNominalVariables,
     getOrderingVariable,
-    getPredictorVariables,
+    getPredictorVariables, getTargetVariables,
     isProblemValid
 } from "../problem";
 
@@ -97,7 +97,7 @@ export let SPEC_problem = problem => {
         "privileged": problem.tags.privileged.filter(variable => predictors.includes(variable)),
         "exogenous": problem.tags.exogenous.filter(variable => predictors.includes(variable)),
 
-        "targets": problem.targets,
+        "targets": getTargetVariables(problem),
         "predictors": predictors,
 
         // data types

@@ -40,7 +40,7 @@ export default class ForceDiagram {
         // remove empty groups
         groups = groups
             .filter(group => [...group.nodes].some(node => pebbleSet.has(node)));
-        let groupNames = new Set(groups.map(group => group.name));
+        let groupIds = new Set(groups.map(group => group.id));
 
         // remove nodes from groups that don't exist in the pebbles list
         groups.forEach(group => {
@@ -51,7 +51,7 @@ export default class ForceDiagram {
         pebbleLinks = pebbleLinks
             .filter(link => pebbleSet.has(link.source) && pebbleSet.has(link.target));
         groupLinks = groupLinks
-            .filter(link => groupNames.has(link.source) && groupNames.has(link.target));
+            .filter(link => groupIds.has(link.source) && groupIds.has(link.target));
 
         let {width, height, x, y} = dom.getBoundingClientRect();
 
@@ -92,6 +92,7 @@ export default class ForceDiagram {
 
         this.kGroupGravity = attrs.isPinned ? 0 : 6 / (groups.length || 1); // strength parameter for group attraction/repulsion
         this.force.nodes(nodeArray)
+
             .force('link', d3.forceLink(common.deepCopy(pebbleLinks)).id(d => d.id).distance(100).strength(.01)) // beware, pebbleLinks is mutated by forceLink
             .force('charge', d3.forceManyBody().strength(getPebbleCharge)) // prevent tight clustering
             .force('x', d3.forceX(width / 2).strength(.05))
@@ -141,20 +142,18 @@ export default class ForceDiagram {
 
             let groupCoords = groups
                 .reduce((out, group) => Object.assign(out, {
-                    [group.name]: [...group.nodes].map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y])
+                    [group.id]: [...group.nodes].map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y])
                 }), {});
 
             let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
                 : Object.assign(out, {
-                    [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius))
+                    [group.id]: d3.polygonHull(lengthen(groupCoords[group.id], attrs.hullRadius))
                 }), {});
 
             this.selectors.hulls.selectAll('path.hull')
-                .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
+                .attr('d', d => `M${hullCoords[d.id].join('L')}Z`);
             this.selectors.hulls.selectAll('path.hullLabelPath')
-                .attr('d', d => `M${makeHullLabelSegment(hullCoords[d.name]).join('L')}Z`);
-            // this.selectors.hullBackgrounds
-            //     .attr('d', d => `M${hullCoords[d.name].join('L')}Z`);
+                .attr('d', d => `M${makeHullLabelSegment(hullCoords[d.id]).join('L')}Z`);
 
             // update positions of groupLines
             let centroids = Object.keys(hullCoords)
@@ -191,12 +190,12 @@ export default class ForceDiagram {
 
             // update positions of nodes (not implemented as a force because centroid computation is shared)
             // group members attract each other, repulse non-group members
-            groups.filter(group => group.name in centroids).forEach(group => {
+            groups.filter(group => group.id in centroids).forEach(group => {
                 nodeArray.forEach(node => {
                     if (node.fx || node.fy) return;
                     let sign = group.nodes.has(node.name) ? 1 : -1;
 
-                    let delta = [centroids[group.name][0] - node.x, centroids[group.name][1] - node.y];
+                    let delta = [centroids[group.id][0] - node.x, centroids[group.id][1] - node.y];
                     let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
                     let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
 
@@ -234,10 +233,10 @@ export default class ForceDiagram {
                 .attr('display', 'block')
                 .attr('d', `M${this.nodes[attrs.contextPebble].x},${this.nodes[attrs.contextPebble].y}L${this.position.x},${this.position.y}`)
                 .style('stroke', 'black')
-                .style('stroke-width', '3px');
+                .style('stroke-width', '4px');
             else if (attrs.contextGroup && this.position.x && this.position.y) {
-                let sourceCenter = getMean(groupCoords[attrs.contextGroup.name]);
-                let sourceIntersection = intersectLineHull([this.position.x, this.position.y], sourceCenter, groupCoords[attrs.contextGroup.name], attrs.hullRadius);
+                let sourceCenter = getMean(groupCoords[attrs.contextGroup.id]);
+                let sourceIntersection = intersectLineHull([this.position.x, this.position.y], sourceCenter, groupCoords[attrs.contextGroup.id], attrs.hullRadius);
                 let source = sourceIntersection?.every?.(v => !isNaN(v)) ? sourceIntersection : sourceCenter;
                 this.selectors.nodeDragLine
                     .attr('display', 'block')
@@ -251,8 +250,8 @@ export default class ForceDiagram {
             }
 
             // this.selectors.hulls.selectAll('text')
-            //     .attr("transform", d => `translate(${centroids[d.name][0] - d.name.length * 5},${centroids[d.name][1]})`)
-            // .attr('dy', d => centroids[d.name] - Math.min(...hullCoords[d.name].map(_ => _[1])))
+            //     .attr("transform", d => `translate(${centroids[d.id][0] - d.id.length * 5},${centroids[d.id][1]})`)
+            // .attr('dy', d => centroids[d.id] - Math.min(...hullCoords[d.id].map(_ => _[1])))
         };
         this.force.on('tick', () => {
             // somehow tick is keeping a reference to an older 'this' after being rebound
@@ -311,29 +310,29 @@ export default class ForceDiagram {
                     if (onDragOver) {
                         let groupCoords = groups
                             .reduce((out, group) => Object.assign(out, {
-                                [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
+                                [group.id]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
                             }), {});
 
                         let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
                             : Object.assign(out, {
-                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius, this.isDragging))
+                                [group.id]: d3.polygonHull(lengthen(groupCoords[group.id], attrs.hullRadius, this.isDragging))
                             }), {});
 
                         // don't freeze own group
                         groups
                             .filter(group => group.nodes.has(e.subject.name))
-                            .forEach(group => delete hullCoords[group.name]);
+                            .forEach(group => delete hullCoords[group.id]);
 
                         Object.keys(hullCoords).forEach(groupId => {
                             if (isInside([e.subject.fx, e.subject.fy], hullCoords[groupId])) {
                                 this.frozenGroups[groupId] = true;
-                                !this.isPinned && groups.find(group => group.name === groupId).nodes.forEach(node => {
+                                !this.isPinned && groups.find(group => String(group.id) === groupId).nodes.forEach(node => {
                                     node = this.nodes[node];
                                     if (!node.fx) node.fx = node.x;
                                     if (!node.fy) node.fy = node.y;
                                 })
                             } else if (this.frozenGroups[groupId]) {
-                                !this.isPinned && groups.find(group => group.name === groupId).nodes.forEach(node => {
+                                !this.isPinned && groups.find(group => String(group.id) === groupId).nodes.forEach(node => {
                                     if (node === this.selectedPebble?.name) return;
                                     delete this.nodes[node].fx;
                                     delete this.nodes[node].fy;
@@ -348,7 +347,7 @@ export default class ForceDiagram {
                     if (!e.active) this.force.alphaTarget(0);
 
                     !this.isPinned && Object.keys(this.frozenGroups).forEach(groupId => {
-                        let nodeNames = [...groups.find(group => group.name === groupId).nodes];
+                        let nodeNames = [...groups.find(group => String(group.id) === groupId).nodes];
                         nodeNames.forEach(node => {
                             if (node === this.selectedPebble?.name) return;
                             delete this.nodes[node].fx;
@@ -371,12 +370,12 @@ export default class ForceDiagram {
                     if (onDragOver || onDragAway) {
                         groupCoords = groups
                             .reduce((out, group) => Object.assign(out, {
-                                [group.name]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
+                                [group.id]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
                             }), {});
 
                         hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
                             : Object.assign(out, {
-                                [group.name]: d3.polygonHull(lengthen(groupCoords[group.name], attrs.hullRadius, true))
+                                [group.id]: d3.polygonHull(lengthen(groupCoords[group.id], attrs.hullRadius, true))
                             }), {});
                     }
 
@@ -387,9 +386,9 @@ export default class ForceDiagram {
                                 if (group.nodes.size === 1)
                                     return false;
                                 if (group.nodes.size === 2)
-                                    return mag(sub(...hullCoords[group.name])) > 100;
+                                    return mag(sub(...hullCoords[group.id])) > 100;
 
-                                let reducedHull = hullCoords[group.name]
+                                let reducedHull = hullCoords[group.id]
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
                                 let centroidReduced = jamescentroid(reducedHull);
                                 let distanceDragged = mag(sub(dragCoord, centroidReduced));
@@ -397,13 +396,13 @@ export default class ForceDiagram {
                                 return !reducedHull
                                     .some(coord => mag(sub(coord, centroidReduced)) * 5 > distanceDragged);
                             })
-                            .forEach(group => onDragAway(e.subject, group.name))
+                            .forEach(group => onDragAway(e.subject, group.id))
                     }
 
                     if (onDragOver) {
                         groups
                             .filter(group => group.nodes.has(e.subject.name))
-                            .forEach(group => delete hullCoords[group.name]);
+                            .forEach(group => delete hullCoords[group.id]);
                         Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
                             .forEach(groupId => onDragOver(e.subject, groupId))
                     }
@@ -435,6 +434,30 @@ export default class ForceDiagram {
             .attr('d', 'M0,-5L10,0L0,5')
             .style('fill', '#000');
         svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow-plus')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('overflow', 'visible')
+            .attr('refX', 4)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+            .append('svg:path')
+            //          arrow               top edge        right edge      bottom edge        left edge          return
+            .attr('d', 'M0,-5L10,0L0,5L0,-5 L-6,4L-4,4L-4,8 L0,8L0,10L-4,10 L-4,14L-6,14L-6,10 L-10,10L-10,8L-6,8 L-6,4')
+            .style('fill', '#000');
+        svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow-minus')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('overflow', 'visible')
+            .attr('refX', 4)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+            .append('svg:path')
+            //          arrow                top edge   bottom edge  return
+            .attr('d', 'M0,-5L10,0L0,5L0,-5 L-6,4L-4,4 L-4,14L-6,14 L-6,4')
+            .style('fill', '#000');
+        svg.append('svg:defs').append('svg:marker')
             .attr('id', 'start-arrow')
             .attr('viewBox', '0 -5 10 10')
             .attr('refX', 4)
@@ -444,10 +467,42 @@ export default class ForceDiagram {
             .append('svg:path')
             .attr('d', 'M10,-5L0,0L10,5')
             .style('fill', '#000');
+        svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'start-arrow-plus')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('overflow', 'visible')
+            .attr('refX', 4)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+            .append('svg:path')
+            //          arrow                top edge        right edge        bottom edge        left edge        return
+            .attr('d', 'M10,5L10,-5L0,0L10,5 L14,4L16,4L16,8 L20,8L20,10L16,10 L16,14L14,14L14,10 L10,10L10,8L14,8 L14,4')
+            .style('fill', '#000');
+        svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'start-arrow-minus')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('overflow', 'visible')
+            .attr('refX', 4)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+            .append('svg:path')
+            //          arrow                top edge   bottom edge  return
+            .attr('d', 'M10,5L10,-5L0,0L10,5 L14,4L16,4 L16,14L14,14 L14,4')
+            .style('fill', '#000');
 
         this.selectors.groupLinkDefs = svg // group line defs handle
             .append("svg:defs")
             .attr('id', 'groupLinkDefs')
+            .selectAll('marker');
+        this.selectors.groupLinkPositiveDefs = svg // group line defs handle
+            .append("svg:defs")
+            .attr('id', 'groupLinkPositiveDefs')
+            .selectAll('marker');
+        this.selectors.groupLinkNegativeDefs = svg // group line defs handle
+            .append("svg:defs")
+            .attr('id', 'groupLinkNegativeDefs')
             .selectAll('marker');
         this.selectors.groupLinks = svg // group lines handle
             .append('svg:g')
@@ -536,6 +591,8 @@ let unitNormal = function (p0, p1) {
  * @returns {*}
  */
 let intersectLineHull = (a0, a1, points, radius) => {
+    if (!a0 || !a1 || !points) return;
+
     for (let i = 0; i < points.length; i++) {
         let [b0, b1] = [points[i], points[(i + 1) % points.length]];
         let offset = unitNormal(b0, b1);
@@ -1047,18 +1104,18 @@ export let groupBuilder = (attrs, context) => {
     context.selectors.hulls.exit().remove();
     let newHulls = context.selectors.hulls.enter()
         .append('svg:g')
-        .attr('id', group => group.name + 'group');
+        .attr('id', group => group.id + 'group');
 
     context.selectors.hulls = context.selectors.hulls.merge(newHulls);
 
     // add new paths
     newHulls.append("path")
         .attr('class', 'hull')
-        .attr("id", group => group.name + 'Hull')
+        .attr("id", group => group.id + 'Hull')
         .style('stroke-linejoin', 'round');
     newHulls.append("path")
         .attr('class', 'hullLabelPath')
-        .attr("id", group => group.name + 'HullLabelPath')
+        .attr("id", group => group.id + 'HullLabelPath')
 
     // update all hulls
     context.selectors.hulls.selectAll('path.hull')
@@ -1082,40 +1139,20 @@ export let groupBuilder = (attrs, context) => {
         .attr('alignment-baseline', 'middle')
 
     context.selectors.hulls.selectAll('textPath')
-        .attr("xlink:href", group => `#${group.name}HullLabelPath`)
+        .attr("xlink:href", group => `#${group.id}HullLabelPath`)
         .style("opacity", group => group.opacity)
         .text(group => group.name);
-    // TODO: flip if on top
-    // .style('transform', 'scale(+1,-1)')
-
-
-    // update all texts
-    // context.selectors.hulls.selectAll('text')
-    //     // .style('display', () => context.isDragging ? 'block' : 'none')
-    //     // .attr('xlink:href', group => '#' + group.name + 'Hull')
-    //     .text(group => group.name);
-
-    // context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.data(context.filtered.groups, group => group.name);
-    // context.selectors.hullBackgrounds.exit().remove();
-    // context.selectors.hullBackgrounds = context.selectors.hullBackgrounds.enter()
-    //     .append("path") // note lines, are behind group hulls of which there is a white and colored semi transparent layer
-    //     .attr("id", group => group.name + 'HullBackground')
-    //     .style('stroke-linejoin', 'round')
-    //     .merge(context.selectors.hullBackgrounds);
-    //
-    // // allow fading between background colors
-    // context.selectors.hullBackgrounds
-    //     .style("fill", group => group.colorBackground || '#ffffff')
-    //     .style("stroke", group => group.colorBackground || '#ffffff')
-    // .style("stroke-width", (context.isDragging ? 0.1 : 2.5) * attrs.hullRadius)
-    // .style("opacity", 1)
 };
 
 export let linkBuilder = (attrs, context) => {
     let marker = side => x => {
-        let kind = side === 'left' ? 'start' : 'end';
-        return attrs.isExploreMode ? 'url(#circle)' :
-            x[side] ? `url(#${kind}-arrow)` : '';
+        let postfix = '';
+        if (x.sign === 'plus') postfix = '-plus'
+        if (x.sign === 'minus') postfix = '-minus'
+
+        if (side === 'end' && x.right || side === 'start' && x.left)
+            return `url(#${side}-arrow${postfix})`;
+        return ''
     };
 
     context.selectors.links = context.selectors.links.data(context.filtered.pebbleLinks, link => `${link.source}-${link.target}`);
@@ -1123,42 +1160,46 @@ export let linkBuilder = (attrs, context) => {
     context.selectors.links = context.selectors.links.enter()
         .append('svg:path')
         .attr('class', 'link')
-        .style('marker-start', marker('left'))
-        .style('marker-end', marker('right'))
+        .style('stroke', 'black')
+        .style('stroke-width', '4px')
         .on('mousedown', attrs.onclickLink || Function)
         .merge(context.selectors.links);
 
     // update these attrs every time
-    // context.selectors.links
-    //     .classed('selected', link => link.selected)
-    //     .style("link => link.styles || {})
-    context.selectors.links.classed('selected', link => link.selected)
-        .style('border-style', 'dotted');
-
+    context.selectors.links
+        .classed('selected', link => link.selected)
+        .style('marker-start', marker('start'))
+        .style('marker-end', marker('end'));
 };
 
 
 export let groupLinkBuilder = (attrs, context) => {
-    context.selectors.groupLinkDefs = context.selectors.groupLinkDefs.data(context.filtered.groupLinks, link => `${link.source}-${link.target}`);
-    context.selectors.groupLinkDefs.exit().remove();
+    [
+        ['-plus', 'groupLinkPositiveDefs', 'M0,-5L10,0L0,5L0,-5 L-6,4L-4,4L-4,8 L0,8L0,10L-4,10 L-4,14L-6,14L-6,10 L-10,10L-10,8L-6,8 L-6,4'],
+        ['', 'groupLinkDefs', 'M0,-5L10,0L0,5'],
+        ['-minus', 'groupLinkNegativeDefs', 'M0,-5L10,0L0,5L0,-5 L-6,4L-4,4 L-4,14L-6,14 L-6,4']
+    ].forEach(([suffix, key, path]) => {
+        context.selectors[key] = context.selectors[key].data(context.filtered.groupLinks, link => `${link.source}-${link.target}`);
+        context.selectors[key].exit().remove();
 
-    let newGroupLinkDefs = context.selectors.groupLinkDefs.enter()
-        .append("svg:marker")
-        .attr("id", groupLink => `${groupLink.source}-${groupLink.target}-arrow`)
-        .attr('viewBox', '0 -5 15 15')
-        .attr("refX", 2.5)
-        .attr("refY", 0)
-        .attr("markerWidth", 3)
-        .attr("markerHeight", 3)
-        .attr("orient", "auto");
+        let newGroupLinkDefs = context.selectors[key].enter()
+            .append("svg:marker")
+            .attr("id", groupLink => `${groupLink.source}-${groupLink.target}-arrow${suffix}`)
+            .attr('viewBox', '0 -5 15 15')
+            .attr('overflow', 'visible')
+            .attr("refX", 2.5)
+            .attr("refY", 0)
+            .attr("markerWidth", 3)
+            .attr("markerHeight", 3)
+            .attr("orient", "auto");
 
-    newGroupLinkDefs
-        .append("path")
-        .attr('d', 'M0,-5L10,0L0,5')
-        .style("fill", groupLink => groupLink.color);
+        newGroupLinkDefs
+            .append("path")
+            .attr('d', path)
+            .style("fill", groupLink => groupLink.color);
 
-    context.selectors.groupLinkDefs = newGroupLinkDefs.merge(context.selectors.groupLinkDefs);
-
+        context.selectors[key] = newGroupLinkDefs.merge(context.selectors[key]);
+    })
     context.selectors.groupLinks = context.selectors.groupLinks.data(context.filtered.groupLinks, link => `${link.source}-${link.target}`);
     context.selectors.groupLinks.exit().remove();
     context.selectors.groupLinks = context.selectors.groupLinks.enter()
@@ -1166,6 +1207,13 @@ export let groupLinkBuilder = (attrs, context) => {
         .style('fill', 'none')
         .style('stroke', groupLink => groupLink.color)
         .style('stroke-width', 5)
-        .attr("marker-end", groupLink => `url(#${groupLink.source}-${groupLink.target}-arrow)`)
+        .on('mousedown', attrs.onclickGroupLink || Function)
         .merge(context.selectors.groupLinks);
+
+    context.selectors.groupLinks
+        .classed('selected', link => link.selected)
+        .attr("marker-end", groupLink => {
+            let suffix = {plus: '-plus', minus: '-minus'}[groupLink.sign] || '';
+            return `url(#${groupLink.source}-${groupLink.target}-arrow${suffix})`
+        })
 };

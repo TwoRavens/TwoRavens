@@ -476,7 +476,7 @@ class EventJobUtil(object):
     @staticmethod
     def get_metadata(folder, names=None):
         """
-        Open one of the folders such as 'collections', 'formats',  or 'alignments'
+        Open one of the folders such as 'collections', 'formats', 'geojson' or 'alignments'
 
         Read through the files and return a dict with:
             {key: file contents}

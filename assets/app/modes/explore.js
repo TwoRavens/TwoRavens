@@ -62,7 +62,7 @@ import {
     getAbstractPipeline,
     getNominalVariables,
     getPredictorVariables,
-    getSelectedProblem,
+    getSelectedProblem, getTargetVariables,
     setSelectedProblem
 } from "../problem";
 
@@ -84,12 +84,12 @@ let get_node_label = problemOrVariableName => {
     if (explorePreferences.mode === 'problems') {
         let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[problemOrVariableName];
         let predictorVariables = getPredictorVariables(exploreProblem);
-
-        if (exploreProblem.targets.length === 0)
+        let targetVariables = getTargetVariables(exploreProblems);
+        if (targetVariables.length === 0)
             return
 
         let problemText = predictorVariables
-            && [exploreProblem.targets.join(','), m(Icon, {
+            && [targetVariables.join(','), m(Icon, {
                 style: 'margin:.5em;margin-top:.25em',
                 name: 'arrow-left'
             }), predictorVariables.join(', ')];
@@ -160,7 +160,7 @@ export class ExploreBoxes {
                     },
                     onupdate(vnode) {
                         let targetName = preferences.mode === 'problems'
-                            ? app.workspace.raven_config.problems[boxId].targets[0]
+                            ? getTargetVariables(app.workspace.raven_config.problems[boxId])[0]
                             : boxId;
                         let node = summaries[targetName];
                         if (node && node !== this.node) {
@@ -229,11 +229,12 @@ export class ExploreVariables {
 
             if (explorePreferences.mode === "problems") {
                 let predictors = getPredictorVariables(selectedProblem);
+                let targets = getTargetVariables(selectedProblem);
                 if (predictors.length === 0)
                     return "No predictors are selected. Please select some predictors."
 
-                if (!selectedProblem.targets.includes(explorePreferences.target))
-                    explorePreferences.target = selectedProblem.targets[0]
+                if (!targets.includes(explorePreferences.target))
+                    explorePreferences.target = targets[0]
                 if (!explorePreferences.target)
                     return "No targets are selected. Please select a target."
 
@@ -250,12 +251,12 @@ export class ExploreVariables {
 
                 let exploreContent = [];
 
-                if (selectedProblem.targets.length > 1) exploreContent.push(
+                if (targets.length > 1) exploreContent.push(
                     m('div', {style: {display: 'inline-block'}}, bold("Target:")),
                     m(ButtonRadio, {
                         id: 'exploreTargetButtonRadio',
                         title: 'select target variable',
-                        sections: selectedProblem.targets.map(target => ({value: target})),
+                        sections: targets.map(target => ({value: target})),
                         activeSection: explorePreferences.target,
                         onclick: target => explorePreferences.target = target,
                         attrsAll: {style: {width: 'auto', margin: '1em'}},
@@ -779,6 +780,7 @@ function getPlotSpecification() {
 export async function loadPlotSpecification() {
 
     let problem = getSelectedProblem();
+
     let pendingId = JSON.stringify(Object.assign({
         manipulations: getAbstractPipeline(problem, true)
     }, explorePreferences));
@@ -809,11 +811,12 @@ export async function loadPlotSpecification() {
     let facetSummaries;
 
     if (mode === 'problems') {
+        let targets = getTargetVariables(problem);
         if (explorePreferences.pageLength * (explorePreferences.page - 1) > getPredictorVariables(problem).length)
             explorePreferences.page = 0
 
-        if (!(explorePreferences.target in problem.targets))
-            explorePreferences.target = problem.targets[0];
+        if (!(explorePreferences.target in targets))
+            explorePreferences.target = targets[0];
 
         facetSummaries = getPredictorVariables(problem).map(predictor => [
             app.variableSummaries[predictor],

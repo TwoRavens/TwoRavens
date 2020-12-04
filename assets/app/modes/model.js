@@ -3,7 +3,6 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
-import {hexToRgba} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -32,6 +31,7 @@ import Flowchart from "../views/Flowchart";
 import {setModal} from "../../common/views/Modal";
 import {add, bold, boldPlain, generateID, italicize, linkURLwithText, omniSort, remove, toggle} from "../utils";
 import {
+    defaultGroupDescriptions,
     erase,
     getDescription,
     getGeographicVariables,
@@ -40,7 +40,7 @@ import {
     getPredictorVariables,
     getProblemCopy,
     getSelectedProblem,
-    getSubtask,
+    getSubtask, getTargetGroups, getTargetVariables,
     loadProblemPreprocess,
     setMetric,
     setSelectedProblem,
@@ -61,6 +61,19 @@ export class CanvasModel {
                 m('div[style=top:calc(50% - 60px);left:calc(50% - 60px);position:fixed]',
                     common.loader('forceDiagramLoader')))
 
+        let selectedLinks;
+        if (app.isModelMode && selectedProblem)
+            selectedLinks = [
+                ...(selectedProblem.pebbleLinks || []).filter(link => link.selected),
+                ...selectedProblem.groupLinks.filter(link => link.selected)
+            ];
+
+        let linkIcons = {
+            minus: m(Icon, {name: 'dash'}),
+            none: undefined,
+            plus: m(Icon, {name: 'plus'}),
+        }
+
         return [
             drawForceDiagram && m(ForceDiagram, Object.assign(forceDiagramState, {
                 nodes: forceDiagramNodesReadOnly,
@@ -69,8 +82,8 @@ export class CanvasModel {
                 onDragOut: pebble => {
                     let pebbles = forceData.summaries[pebble] && forceData.summaries[pebble].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble].childNodes : [pebble];
-                    pebbles.forEach(pebble => toggleTag(selectedProblem, 'None', pebble));
-                    selectedProblem.predictorLinks = (selectedProblem.predictorLinks || [])
+                    pebbles.forEach(pebble => toggleGroup(selectedProblem, 'None', pebble));
+                    selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || [])
                         .filter(link => link.target !== pebble && link.source !== pebble);
                     app.resetPeek();
                     m.redraw();
@@ -79,7 +92,7 @@ export class CanvasModel {
                     if (groupId === 'Loose') return;
                     let pebbles = forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
-                    pebbles.forEach(pebble => toggleTag(selectedProblem, groupId, pebble));
+                    pebbles.forEach(pebble => toggleGroup(selectedProblem, groupId, pebble));
                     app.resetPeek();
                     m.redraw();
                 },
@@ -89,7 +102,7 @@ export class CanvasModel {
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
                     let selectedProblem = getSelectedProblem();
                     pebbles.forEach(pebble => {
-                        if (groupId !== 'Loose') toggleTag(selectedProblem, 'Loose', pebble)
+                        if (groupId !== 'Loose') toggleGroup(selectedProblem, 'Loose', pebble)
                     });
                     app.resetPeek();
                     m.redraw();
@@ -97,14 +110,17 @@ export class CanvasModel {
 
                 labels: forceDiagramLabels(selectedProblem),
                 mutateNodes: mutateNodes(selectedProblem),
-                pebbleLinks: selectedProblem[forceDiagramMode],
-                onclickLink: d => {
-                    let originalLink = selectedProblem[forceDiagramMode].find(link => d.source === link.source && d.target === link.target);
+                pebbleLinks: selectedProblem.pebbleLinks,
+                onclickLink: (e, d) => {
+                    let originalLink = selectedProblem.pebbleLinks.find(link => d.source === link.source && d.target === link.target);
                     if (!originalLink) return;
-                    if (forceDiagramMode === "predictorLinks")
-                        remove(selectedProblem[forceDiagramMode], originalLink);
-                    if (forceDiagramMode === "causalLinks")
-                        originalLink.selected = !originalLink.selected
+                    originalLink.selected = !originalLink.selected
+                    app.resetPeek();
+                },
+                onclickGroupLink: (e, d) => {
+                    let originalLink = selectedProblem.groupLinks.find(link => d.source === link.source && d.target === link.target);
+                    if (!originalLink) return;
+                    originalLink.selected = !originalLink.selected
                     app.resetPeek();
                 }
             }, forceData)),
@@ -113,15 +129,6 @@ export class CanvasModel {
             app.isModelMode && !app.swandive && m("#spacetools.spaceTool", {
                     style: {right: app.panelWidth.right, 'z-index': 16}
                 },
-                m(ButtonRadio, {
-                    id: 'linkModeButtonRadio', attrsAll: {style: {margin: '0px .5em', width: '200px'}},
-                    onclick: mode => forceDiagramMode = {Causal: 'causalLinks', Predictors: 'predictorLinks'}[mode],
-                    activeSection: {causalLinks: 'Causal', predictorLinks: 'Predictors'}[forceDiagramMode],
-                    sections: [
-                        {value: 'Causal', title: 'draw the causal relationships by right clicking pebbles'},
-                        {value: 'Predictors', title: 'highlight/include additional predictors by right clicking pebbles'}
-                    ],
-                }),
                 m(Button, {
                     id: 'btnAdd', style: {margin: '0px .5em'},
                     onclick: addProblemFromForceDiagram,
@@ -145,7 +152,7 @@ export class CanvasModel {
                             alertEditCopy();
                             return;
                         }
-                        selectedProblem.predictorLinks = []
+                        selectedProblem.pebbleLinks = []
                     },
                     title: 'delete all connections between nodes'
                 }, m(Icon, {name: 'circle-slash'})),
@@ -167,6 +174,37 @@ export class CanvasModel {
                     title: 'wipe all variables from the modeling space'
                 }, m(Icon, {name: 'trashcan'}))),
 
+            selectedLinks.length > 0 && m(Subpanel, {
+                id: 'selectedLinksSubpanel', header: 'Selected Link' + (selectedLinks.length > 1 ? 's' : ''),
+                shown: true,
+                setShown: () => selectedLinks.forEach(link => delete link.selected),
+                style: {
+                    left: app.panelWidth['left'],
+                    bottom: `calc(2*${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
+                    position: 'absolute',
+                    width: '200px'
+                }
+            },
+                m('div', {style: {width: '110px', display: 'inline-block'}},
+                    m(ButtonRadio, {
+                        id: 'pebbleLinkButtonBar',
+                        onclick: linkIcon => {
+                            let action = Object.entries(linkIcons).find(([name, icon]) => linkIcon === icon)[0];
+                            selectedLinks.forEach(selectedLink => {
+                                if (action === "none") {delete selectedLink.sign} else selectedLink.sign = action;
+                            })
+                        },
+                        activeSection: selectedLinks.every(link => link.sign === selectedLinks[0].sign) && selectedLinks[0].sign || 'none',
+                        sections: Object.entries(linkIcons).map(([key, icon]) => ({id: key, value: icon}))
+                    })),
+                m(Button, {
+                    style: {display: 'inline-block', 'margin-left': '.8em'},
+                    onclick: () => {
+                        selectedProblem.pebbleLinks = (selectedProblem.pebbleLinks || []).filter(link => !selectedLinks.includes(link))
+                        selectedProblem.groupLinks = selectedProblem.groupLinks.filter(link => !selectedLinks.includes(link))
+                    }
+                }, m(Icon, {name: 'trashcan'}))
+            ),
 
             app.isModelMode && selectedProblem && m(Subpanel, {
                     id: 'legend', header: 'Legend', class: 'legend',
@@ -274,28 +312,19 @@ export class CanvasModel {
                         innerColor: app.colors.location,
                         width: 0
                     },
-                    {
-                        id: "predButton",
-                        vars: selectedProblem.predictors,
-                        name: 'Predictors',
-                        borderColor: app.colors.predictor,
-                        innerColor: app.colors.predictor,
+                    ...selectedProblem.groups.map(group => ({
+                        id: String(group.id).replace(/\W/g, '_'),
+                        vars: group.nodes,
+                        name: group.name,
+                        borderColor: group.color,
+                        innerColor: group.color,
                         width: 0
-                    },
-                    {
-                        id: "targetButton",
-                        vars: selectedProblem.targets,
-                        name: 'Targets',
-                        borderColor: app.colors.target,
-                        innerColor: app.colors.target,
-                        width: 0
-                    },
-                    // {id: "priorsButton", vars: selectedProblem.predictors, name: 'Priors', borderColor: common.warnColor, innerColor: common.warnColor, width: 0},
-                ].filter(group => group.vars.length > 0).map(group =>
-                    m(`#${group.id}[style=width:100% !important]`,
+                    }))
+                ].filter(row => row.vars.length > 0).map(row =>
+                    m(`#${row.id}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
-                            m(`circle[cx=10][cy=10][fill=${group.innerColor}][fill-opacity=0.6][r=9][stroke=${group.borderColor}][stroke-opacity=${group.width}][stroke-width=2]`))),
-                        m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", group.name)))
+                            m(`circle[cx=10][cy=10][fill=${row.innerColor}][fill-opacity=0.6][r=9][stroke=${row.borderColor}][stroke-opacity=${row.width}][stroke-width=2]`))),
+                        m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", row.name)))
             ),
 
             selectedProblem && selectedProblem.manipulations.filter(step => step.type === 'subset').length !== 0 && m(Subpanel, {
@@ -371,13 +400,14 @@ export let leftpanel = forceData => {
                     m(PanelList, {
                         id: 'varList',
                         items: leftpanelVariables,
-                        colors: {
-                            [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.explorePreferences.variables,
-                            [app.hexToRgba(app.colors.predictor, .25)]: selectedProblem.predictors,
-                            [app.hexToRgba(app.colors.target, .25)]: app.isExploreMode ? [] : selectedProblem.targets,
-                            [app.hexToRgba(app.colors.order, .25)]: selectedProblem.tags.ordering,
-                            [app.hexToRgba(app.colors.location, .25)]: selectedProblem.tags.location
-                        },
+                        colors: Object.assign(
+                            selectedProblem.groups.reduce((out, group) =>
+                                Object.assign(out, {[app.hexToRgba(group.color, .25)]: group.nodes}), {}),
+                            {
+                                [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.explorePreferences.variables,
+                                [app.hexToRgba(app.colors.order, .25)]: selectedProblem.tags.ordering,
+                                [app.hexToRgba(app.colors.location, .25)]: selectedProblem.tags.location
+                            }),
                         classes: {
                             // keep this order aligned with params in mutateNodes
                             'item-nominal': getNominalVariables(selectedProblem),
@@ -396,10 +426,11 @@ export let leftpanel = forceData => {
                         },
                         eventsItems: {
                             onclick: varName => {
-                                toggleTag(selectedProblem, [
-                                    ...selectedProblem.predictors,
-                                    ...selectedProblem.targets,
-                                    ...selectedProblem.tags.loose
+                                toggleGroup(selectedProblem, [
+                                    ...selectedProblem.groups.flatMap(group => group.nodes),
+                                    ...selectedProblem.tags.loose,
+                                    ...selectedProblem.tags.crossSection,
+                                    ...selectedProblem.tags.ordering
                                 ].includes(varName) ? 'None' : 'Loose', varName);
                                 app.resetPeek();
                             },
@@ -486,16 +517,25 @@ export let leftpanel = forceData => {
         selectedProblem.causalGroups = selectedProblem.causalGroups || [];
         // TODO: groupLinks
         let {groups, groupLinks} = buildGroupingState(selectedProblem);
+
         sections.push({
             value: 'Groups',
             contents: [
-                groups.map((group, i) => m(ForceDiagramGroup, {
-                    group, i, variables: leftpanelVariables, problem: selectedProblem
-                })),
                 m(Button, {
                     style: {margin: '.5em', width: 'calc(100% - 1em)'},
-                    onclick: () => selectedProblem.causalGroups.push({name: '', nodes: []})
-                }, m(Icon, {name: 'plus'}), ' Group')
+                    onclick: () => selectedProblem.groups.unshift({
+                        id: selectedProblem.groupCount++,
+                        name: '',
+                        description: '',
+                        nodes: [],
+                        color: common.colorPalette[(selectedProblem.groupCount + 1) % common.colorPalette.length],
+                        opacity: 0.3,
+                        editable: true
+                    })
+                }, m(Icon, {name: 'plus'}), ' Group'),
+                groups.map(group => m(ForceDiagramGroup, {
+                    group, variables: leftpanelVariables, problem: selectedProblem
+                }))
             ]
         })
     }
@@ -534,7 +574,7 @@ export let leftpanel = forceData => {
             onclick: state => app.setCheckedDiscoveryProblem(state, problem.problemId),
             checked: problem.meaningful
         })),
-        problem.targets.join(', '),
+        getTargetVariables(problem).join(', '),
         getPredictorVariables(problem).join(', '),
         problem.subTask === 'taskSubtypeUndefined' ? '' : getSubtask(problem),
         problem.task,
@@ -759,23 +799,34 @@ export let leftpanel = forceData => {
                     }
                 },
 
-                bold('Location Format'), m('br'),
-                'Units',
-                m(Dropdown, {
-                    id: 'locationUnitsDropdown',
-                    items: Object.keys(app.locationUnits),
-                    activeItem: app.variableSummaries[variableName].locationUnit,
-                    onclickChild: value => app.setVariableSummaryAttr(variableName, 'locationUnit', value)
-                }),
-                app.variableSummaries[variableName].locationUnit && [
-                    'Format',
+                m('', {style: 'margin: 0.5em'},
+                    bold('Location Format'), m('br'),
+                    'Units',
                     m(Dropdown, {
-                        id: 'locationFormatDropdown',
-                        items: app.locationUnits[app.variableSummaries[variableName].locationUnit],
-                        activeItem: app.variableSummaries[variableName].locationFormat,
-                        onclickChild: value => app.setVariableSummaryAttr(variableName, 'locationFormat', value)
+                        id: 'locationUnitsDropdown',
+                        items: Object.keys(app.locationUnits).concat(app.variableSummaries[variableName].locationUnit ? ['none'] : []),
+                        activeItem: app.variableSummaries[variableName].locationUnit || 'unknown',
+                        onclickChild: value => {
+                            if (value === 'none') {
+                                delete app.variableSummaries[variableName].locationUnit
+                                return
+                            }
+                            if (value === app.variableSummaries[variableName].locationUnit) return;
+                            app.setVariableSummaryAttr(variableName, 'locationUnit', value)
+                            app.setVariableSummaryAttr(variableName, 'locationFormat', undefined);
+                            app.inferLocationFormat(variableName)
+                        }
                     }),
-                ]),
+                    app.variableSummaries[variableName].locationUnit && m('div',
+                        {style: 'margin-bottom: 1em'},
+                        'Format',
+                        m(Dropdown, {
+                            id: 'locationFormatDropdown',
+                            items: app.locationUnits[app.variableSummaries[variableName].locationUnit],
+                            activeItem: app.variableSummaries[variableName].locationFormat,
+                            onclickChild: value => app.setVariableSummaryAttr(variableName, 'locationFormat', value)
+                        }),
+                    ))),
 
                 m(VariableSummary, {variable: app.variableSummaries[variableName]})));
     }
@@ -952,11 +1003,11 @@ export let rightpanel = () => {
                 }),
 
                 // app.workspace.raven_config.advancedMode &&
-                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && selectedProblem.targets.length > 0 && [
+                [selectedProblem.metric, ...selectedProblem.metrics].find(metric => ['f1', 'precision', 'recall'].includes(metric)) && getTargetVariables(selectedProblem).length > 0 && [
                     m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
                     m(Dropdown, {
                         id: 'positiveClass',
-                        items: Object.keys(app.variableSummaries[selectedProblem.targets[0]]?.plotValues || {}),
+                        items: Object.keys(app.variableSummaries[getTargetVariables(targets)[0]]?.plotValues || {}),
                         activeItem: selectedProblem.positiveLabel,
                         onclickChild: label => selectedProblem.positiveLabel = label,
                         style: {'margin': '1em', 'margin-top': '0'},
@@ -1302,124 +1353,60 @@ export let colors = d3.scaleOrdinal(d3.schemeCategory10);
 const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has(x))));
 
 
-export let forceDiagramMode = 'predictorLinks';
-
 let buildGroupingState = problem => {
-    if (forceDiagramMode === "predictorLinks") {
-        let supervised = !['clustering', 'communityDetection'].includes(problem.task);
-        return {
-            groups: [
-                {
-                    name: "Predictors",
-                    color: app.colors.predictor,
-                    // colorBackground: app.swandive ? 'grey' : backingColor,
-                    nodes: [
-                        ...problem.predictors,
-                        ...problem.tags.location,
-                        ...problem.task === "forecasting" ? [] : problem.tags.ordering,
-                        ...problem.task === "forecasting" ? [] : problem.tags.crossSection
-                    ],
-                    opacity: 0.3
-                },
-                supervised && {
-                    name: "Targets",
-                    color: app.colors.target,
-                    // colorBackground: app.swandive ? 'grey' : backingColor,
-                    nodes: problem.targets,
-                    opacity: 0.3
-                },
-                {
-                    name: "Loose",
-                    color: common.menuColor,
-                    nodes: [
-                        ...problem.tags.loose,
-                        ...supervised ? [] : problem.targets
-                    ],
-                    opacity: 0.0
-                },
-                // {
-                //     id: "Structural",
-                //     name: '',
-                //     color: "transparent",
-                //     // colorBackground: app.swandive ? 'grey' : 'transparent',
-                //     colorBackground: "transparent",
-                //     nodes: [
-                //         ...problem.tags.crossSection,
-                //         ...problem.tags.weights,
-                //         ...problem.tags.ordering
-                //     ],
-                //     opacity: 0.3
-                // },
-                {
-                    id: "Cross-Sectional",
-                    name: 'Cross-Sectional',
-                    color: app.colors.crossSection,
-                    nodes: problem.tags.crossSection,
-                    opacity: 0.3
-                },
-                {
-                    name: "Ordering",
-                    color: app.colors.order,
-                    nodes: problem.tags.ordering,
-                    opacity: 0.3
-                },
-                {
-                    name: "Location",
-                    color: app.colors.location,
-                    nodes: problem.tags.location,
-                    opacity: 0.3
-                }
-                // {
-                //     name: "Priors",
-                //     color: common.warnColor,
-                //     nodes: new Set(['INSTM', 'pctfedited^2', 'test', 'PCTFLOAN^3']),
-                //     opacity: 0.4
-                // }
-            ].filter(_ => _),
-            groupLinks: [
-                {
-                    color: app.colors.predictor,
-                    source: 'Predictors',
-                    target: 'Targets'
-                },
+    return {
+        groups: [
+            ...problem.groups.map(group => Object.assign({}, group, {nodes: new Set(group.nodes), editable: true})),
+            {
+                id: 'Loose',
+                name: "Loose",
+                description: defaultGroupDescriptions.loose,
+                color: common.menuColor,
+                nodes: new Set(problem.tags.loose),
+                opacity: 0.0
+            },
+            {
+                id: "Cross-Sectional",
+                name: 'Cross-Sectional',
+                description: defaultGroupDescriptions.crossSection,
+                color: app.colors.crossSection,
+                nodes: new Set(problem.tags.crossSection),
+                opacity: 0.3
+            },
+            {
+                id: 'Ordering',
+                name: "Ordering",
+                color: app.colors.order,
+                description: defaultGroupDescriptions.ordering,
+                nodes: new Set(problem.tags.ordering),
+                opacity: 0.3
+            },
+            {
+                id: 'Location',
+                name: "Location",
+                color: app.colors.location,
+                description: defaultGroupDescriptions.location,
+                nodes: new Set(problem.tags.location),
+                opacity: 0.3
+            }
+        ].filter(_ => _),
+        groupLinks: [
+            ...problem.groupLinks,
+            ...getTargetGroups(problem).flatMap(group => [
                 {
                     color: app.colors.order,
                     source: 'Ordering',
-                    target: 'Targets'
+                    target: group.id
                 },
                 {
                     color: app.colors.crossSection,
                     source: 'Cross-Sectional',
-                    target: 'Targets'
+                    target: group.id
                 },
-                // {
-                //     color: common.locationColor,
-                //     source: 'Location',
-                //     target: 'Targets'
-                // }
-            ]
-        }
-    }
-    else if (forceDiagramMode === "causalLinks") {
-        return {
-            groups: problem.causalGroups || [],
-            groupLinks: problem.causalGroupLinks || []
-        };
+            ])
+        ]
     }
 };
-
-export let prepareGroupData = (group, i) => ({
-        predictorLinks: group => Object.assign({}, group, {nodes: new Set(group.nodes)}),
-        causalLinks: (group, i) => ({
-            id: `groupId${i}${group.name.replace(/\\W/g, '_')}`,
-            name: group.name,
-            setName: value => group.name = value,
-            color: common.colorPalette[i % common.colorPalette.length],
-            colorBackground: "transparent",
-            nodes: new Set(group.nodes),
-            opacity: 0.3
-        })
-    })[forceDiagramMode](group, i);
 
 export let buildForceData = problem => {
 
@@ -1434,10 +1421,9 @@ export let buildForceData = problem => {
     let addedPebbles = new Set();
 
     let {groups, groupLinks} = buildGroupingState(problem);
-    groups = groups.filter(group => group.name.length).map(prepareGroupData);
 
     let combinedGroups = common.deepCopy(groups)
-        .reduce((out, group) => Object.assign(out, {[group.name]: group}), {});
+        .reduce((out, group) => Object.assign(out, {[group.id]: group}), {});
 
     // TODO: can be linearized with a hashmap
     // for any combination of groups, collapse their intersection if their intersection is large enough
@@ -1469,10 +1455,10 @@ export let buildForceData = problem => {
 
                 // app.remove pebbles that were collapsed from their parent groups
                 includedGroups
-                    .forEach(group => combinedGroups[group.name].nodes = new Set([...group.nodes].filter(node => !partition.has(node))));
+                    .forEach(group => combinedGroups[group.id].nodes = new Set([...group.nodes].filter(node => !partition.has(node))));
                 // add the pebble that represents the merge to each parent group
                 includedGroups
-                    .forEach(group => combinedGroups[group.name].nodes.add(mergedName));
+                    .forEach(group => combinedGroups[group.id].nodes.add(mergedName));
 
                 summaries[mergedName] = {
                     pdfPlotType: 'collapsed',
@@ -1524,6 +1510,31 @@ export let forceDiagramState = {
 };
 window.forceDiagramState = forceDiagramState;
 
+let setContextGroup = (e, group) => {
+
+    let selectedProblem = getSelectedProblem();
+    if (selectedProblem.system === 'solved') {
+        alertEditCopy();
+        return;
+    }
+
+    delete selectedProblem.unedited;
+    if (e) e.preventDefault(); // block browser context menu
+    if (forceDiagramState.contextGroup) {
+
+        if (forceDiagramState.contextGroup !== group) {
+            let link = {
+                source: forceDiagramState.contextGroup.id,
+                target: group.id,
+                color: forceDiagramState.contextGroup.color
+            };
+            selectedProblem.groupLinks.push(link);
+        }
+        forceDiagramState.contextGroup = undefined;
+    }
+    m.redraw();
+};
+
 let setContextPebble = (e, pebble) => {
     let selectedProblem = getSelectedProblem();
     if (selectedProblem.system === 'solved') {
@@ -1536,17 +1547,18 @@ let setContextPebble = (e, pebble) => {
     if (forceDiagramState.contextPebble) {
 
         if (forceDiagramState.contextPebble !== pebble) {
-            selectedProblem[forceDiagramMode] = selectedProblem[forceDiagramMode] || [];
+            selectedProblem.pebbleLinks = selectedProblem.pebbleLinks || [];
             let link = {
                 source: forceDiagramState.contextPebble,
                 target: pebble,
-                right: true
+                right: true,
+                selected: true
             };
-            selectedProblem[forceDiagramMode].push(link);
+            selectedProblem.pebbleLinks.push(link);
         }
         forceDiagramState.contextPebble = undefined;
     } else {
-        if (forceDiagramMode === 'predictorLinks' && selectedProblem.targets.includes(pebble)) {
+        if (getTargetVariables(selectedProblem).includes(pebble)) {
             app.alertWarn("Targets may not be predictors!")
             return
         }
@@ -1571,40 +1583,20 @@ let setSelectedPebble = pebble => {
 Object.assign(forceDiagramState, {
     setSelectedPebble,
     groupEvents: {
-        click: (e, group) => {
-            if (forceDiagramMode !== "causalLinks") return;
-
-            let selectedProblem = getSelectedProblem();
-            if (selectedProblem.system === 'solved') {
-                alertEditCopy();
-                return;
-            }
-
-            delete selectedProblem.unedited;
-            if (e) e.preventDefault(); // block browser context menu
-            if (forceDiagramState.contextGroup) {
-
-                if (forceDiagramState.contextGroup !== group) {
-                    selectedProblem.causalGroupLinks = selectedProblem.causalGroupLinks || [];
-                    let link = {
-                        source: forceDiagramState.contextGroup.name,
-                        target: group.name,
-                        color: forceDiagramState.contextGroup.color
-                    };
-                    selectedProblem.causalGroupLinks.push(link);
-                }
-                forceDiagramState.contextGroup = undefined;
-            }
-            m.redraw();
-        },
+        click: setContextGroup,
         contextmenu: (e, group) => {
             if (e) e.preventDefault(); // block browser context menu
             forceDiagramState.contextGroup = group;
+
+            m.redraw();
         }
     },
     pebbleEvents: {
         click: (e, pebble) => {
-            if (forceDiagramState.contextPebble) setContextPebble(e, pebble);
+            if (forceDiagramState.contextPebble)
+                setContextPebble(e, pebble);
+            else if (forceDiagramState.contextGroup)
+                setContextGroup(e, buildGroupingState(getSelectedProblem()).groups.find(group => group.nodes.has(pebble)))
             else setSelectedPebble(pebble)
         },
         mouseover: (e, pebble) => {
@@ -1633,70 +1625,66 @@ Object.assign(forceDiagramState, {
 });
 
 let variableTagMetadata = (selectedProblem, variableName) => [
-    {
-        name: 'Predictor', active: selectedProblem.predictors.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, selectedProblem.predictors.includes(variableName) ? 'Loose' : 'Predictors', variableName),
-        title: 'Predictor variables are used to estimate the target variables.'
-    },
-    {
-        name: 'Target', active: selectedProblem.targets.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, selectedProblem.targets.includes(variableName) ? 'Loose' : 'Targets', variableName),
-        title: 'Target variables are the variables of interest.'
-    },
+    ...selectedProblem.groups.map(group => ({
+        name: group.name,
+        active: group.nodes.includes(variableName),
+        onclick: () => toggleGroup(selectedProblem, group.nodes.includes(variableName) ? 'Loose' : group.id, variableName),
+        title: group.description
+    })),
     {
         name: 'Loose', active: selectedProblem.tags.loose.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? 'None' : 'Loose', variableName),
-        title: 'Loose variables are in the modeling space, but are not used in the model.'
+        onclick: () => toggleGroup(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? 'None' : 'Loose', variableName),
+        title: defaultGroupDescriptions.loose
     },
     {
         name: 'Ordering', active: selectedProblem.tags.ordering.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'Ordering', variableName),
-        title: 'Ordering variables indicate the order of observations.',
+        onclick: () => toggleGroup(selectedProblem, 'Ordering', variableName),
+        title: defaultGroupDescriptions.ordering
     },
     {
         name: 'Location', active: selectedProblem.tags.location.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'Location', variableName),
-        title: 'Location variables indicate a geospatial location.'
+        onclick: () => toggleGroup(selectedProblem, 'Location', variableName),
+        title: defaultGroupDescriptions.location
     },
     {
         name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'nominal', variableName),
-        title: 'Nominal variables are text-based categorical variables.'
+        title: defaultGroupDescriptions.nominal,
     },
     {
         name: 'Ordinal', active: selectedProblem.tags.ordinal.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'ordinal', variableName),
-        title: 'Ordinal variables are categorical, but the categories are ordered.'
+        onclick: () => toggleGroup(selectedProblem, 'ordinal', variableName),
+        title: defaultGroupDescriptions.ordinal
     },
     {
         name: 'Cross Section', active: selectedProblem.tags.crossSection.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'crossSection', variableName),
-        title: 'Cross sectional variables group observations into treatments.'
+        onclick: () => toggleGroup(selectedProblem, 'crossSection', variableName),
+        title: defaultGroupDescriptions.crossSection
     },
     {
         name: 'Boundary', active: selectedProblem.tags.boundary.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'boundary', variableName),
-        title: 'Boundary variables are a string vector of numeric data points.'
+        title: defaultGroupDescriptions.boundary
     },
     {
         name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'weights', variableName),
-        title: 'A weight variable indicates the importance of individual observations.'
+        title: defaultGroupDescriptions.weight
     },
     {
         name: 'Privileged', active: selectedProblem.tags.privileged.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'privileged', variableName),
-        title: 'A privileged variable may or may not exist in the test set.'
+        title: defaultGroupDescriptions.privileged
     },
     {
         name: 'Exogenous', active: selectedProblem.tags.exogenous.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'exogenous', variableName),
-        title: 'An exogenous variable is determined outside of the model.'
+        title: defaultGroupDescriptions.exogenous
     },
     {
         name: 'Index', active: selectedProblem.tags.indexes.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'indexes', variableName),
-        title: 'An index variable typically has one unique value per observation.'
+        title: defaultGroupDescriptions.index
     },
 ]
 
@@ -1734,43 +1722,44 @@ export let mutateNodes = problem => (state, context) => {
         : pebbles.filter(variable => variable.toLowerCase().includes(variableSearchText));
 
     // the order of the keys indicates precedence, lower keys are more important
-    let params = {
-        predictors: new Set(problem.predictors),
-        targets: new Set(problem.targets),
-        loose: new Set(problem.tags.loose),
-        transformed: new Set(problem.tags.transformed),
-        nominal: new Set(getNominalVariables(problem)),
-        geographic: new Set(getGeographicVariables()),
-        ordinal: new Set(problem.tags.ordinal),
-        boundary: new Set(problem.tags.boundary),
-        temporal: new Set(Object.keys(app.variableSummaries)
-            .filter(variable => app.variableSummaries[variable].timeUnit)),
-        weights: new Set(problem.tags.weights),
-        privileged: new Set(problem.tags.privileged),
-        exogenous: new Set(problem.tags.exogenous),
-        crossSection: new Set(problem.tags.crossSection),
-        indexes: new Set(problem.tags.indexes),
-        matched: new Set(matchedVariables),
-    };
+    let params = Object.assign(
+        problem.groups.reduce((out, group) =>
+            Object.assign(out, {[group.id]: new Set(group.nodes)}), {}),
+        {
+            loose: new Set(problem.tags.loose),
+            transformed: new Set(problem.tags.transformed),
+            nominal: new Set(getNominalVariables(problem)),
+            geographic: new Set(getGeographicVariables()),
+            ordinal: new Set(problem.tags.ordinal),
+            boundary: new Set(problem.tags.boundary),
+            temporal: new Set(Object.keys(app.variableSummaries)
+                .filter(variable => app.variableSummaries[variable].timeUnit)),
+            weights: new Set(problem.tags.weights),
+            privileged: new Set(problem.tags.privileged),
+            exogenous: new Set(problem.tags.exogenous),
+            crossSection: new Set(problem.tags.crossSection),
+            indexes: new Set(problem.tags.indexes),
+            matched: new Set(matchedVariables),
+        });
 
-    let strokeWidths = {
-        predictors: 4,
-        targets: 4,
-        nominal: 4,
-        ordinal: 4,
-        crossSection: 4,
-        boundary: 4,
-        geographic: 4,
-        temporal: 4,
-        weights: 4,
-        privileged: 4,
-        exogenous: 4,
-        indexes: 4,
-        matched: 4
-    };
+    let strokeWidths = Object.assign(
+        problem.groups.reduce((out, group) =>
+            Object.assign(out, {[group.id]: 4}), {}),
+        {
+            nominal: 4,
+            ordinal: 4,
+            crossSection: 4,
+            boundary: 4,
+            geographic: 4,
+            temporal: 4,
+            weights: 4,
+            privileged: 4,
+            exogenous: 4,
+            indexes: 4,
+            matched: 4
+        });
 
     let nodeColors = {
-        targets: common.taggedColor,
         nominal: common.taggedColor,
         ordinal: common.taggedColor,
         crossSection: common.taggedColor,
@@ -1823,42 +1812,32 @@ export let mutateNodes = problem => (state, context) => {
         }));
 };
 
-export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Targets'].includes(pebble) ? [] : [
+export let forceDiagramLabels = problem => pebble => [
     {
         id: 'Group',
         name: 'Group',
         attrs: {fill: app.colors.predictor},
         onclick: (e, pebble) => {
             forceDiagramState.setSelectedPebble(pebble);
-            toggleTag(problem, 'Loose', pebble);
+            toggleGroup(problem, 'Loose', pebble);
         },
         children: [
-            {
-                id: 'Predictor',
-                name: 'Predictor',
-                attrs: {fill: app.colors.predictor},
+            ...problem.groups.map(group => ({
+                id: String(group.id).replace(/\W/g, '_'),
+                name: group.name,
+                attrs: {fill: group.color},
                 onclick: (_, d) => {
-                    toggleTag(problem, problem.predictors.includes(d) ? 'Loose' : 'Predictors', d);
+                    toggleGroup(problem, group.nodes.includes(d) ? 'Loose' : group.id, d);
                     forceDiagramState.setSelectedPebble(d);
                     app.resetPeek();
                 }
-            },
-            {
-                id: 'Target',
-                name: 'Target',
-                attrs: {fill: app.colors.target},
-                onclick: (_, d) => {
-                    toggleTag(problem, problem.targets.includes(d) ? 'Loose' : 'Targets', d);
-                    forceDiagramState.setSelectedPebble(d);
-                    app.resetPeek();
-                }
-            },
+            })),
             {
                 id: 'Ordering',
                 name: 'Order',
                 attrs: {fill: app.colors.order},
                 onclick: (_, d) => {
-                    toggleTag(problem, 'Ordering', d);
+                    toggleGroup(problem, 'Ordering', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
@@ -1867,7 +1846,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Cross',
                 attrs: {fill: app.colors.crossSection},
                 onclick: (_, d) => {
-                    toggleTag(problem, 'crossSection', d);
+                    toggleGroup(problem, 'crossSection', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
@@ -1876,7 +1855,7 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
                 name: 'Loc',
                 attrs: {fill: app.colors.location},
                 onclick: (_, d) => {
-                    toggleTag(problem, 'Location', d);
+                    toggleGroup(problem, 'Location', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
@@ -1933,6 +1912,105 @@ export let forceDiagramLabels = problem => pebble => ['Predictors', 'Loose', 'Ta
     }
 ].filter(_ => _);
 
+export let toggleGroup = (problem, tag, name) => {
+    if (problem.system === 'solved') {
+        app.alertError(m('div', 'This problem already has solutions. Would you like to edit a copy of this problem instead?', m(Button, {
+            style: 'margin:1em',
+            onclick: () => {
+                let problemCopy = getProblemCopy(problem);
+                app.workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                app.setShowModalAlerts(false);
+                setSelectedProblem(problemCopy.problemId);
+                toggleGroup(problemCopy, tag, name);
+            }
+        }, 'Edit Copy')));
+        m.redraw();
+        return;
+    }
+
+    delete problem.unedited;
+
+    // behavioral logging
+    let logParams = {
+        feature_id: `TOGGLE_INCLUSION_IN_${String(tag).toUpperCase()}`,
+        activity_l1: 'PROBLEM_DEFINITION',
+        activity_l2: 'PROBLEM_SPECIFICATION',
+        other: {variable: name, problem: problem.problemId}
+    }
+
+    if (tag === 'None') {
+        // variable is completely removed from diagram
+        problem.groups.forEach(group => remove(group.nodes, name))
+        remove(problem.tags.loose, name);
+        remove(problem.tags.ordering, name);
+        remove(problem.tags.crossSection, name);
+        logParams.feature_id = 'MODEL_REMOVE_VARIABLE';
+    } else if (tag === "Ordering") {
+        // if we are going to include in the ordering group
+        if (!(problem.tags.ordering).includes(name)) {
+            problem.groups.forEach(group => remove(group.nodes, name))
+            remove(problem.tags.location, name);
+            remove(problem.tags.boundary, name);
+            remove(problem.tags.loose, name);
+            remove(problem.tags.crossSection, name);
+            add(problem.tags.ordering, name);
+            if (problem.task !== 'forecasting')
+                setTask('forecasting', problem)
+        } else {
+            remove(problem.tags.ordering, name);
+            add(problem.tags.loose, name);
+        }
+        loadProblemPreprocess(problem)
+            .then(app.setPreprocess)
+            .then(m.redraw)
+    } else if (tag === "Loose") {
+        // if we are going to include in the loose group
+        if (!problem.tags.loose.includes(name)) {
+            remove(problem.tags.ordering, name);
+            remove(problem.tags.crossSection, name);
+            problem.groups.forEach(group => remove(group.nodes, name))
+        }
+        toggle(problem.tags.loose, name);
+    } else if (tag === "Location") {
+        // if we are going to include in the location group
+        if (!(problem.tags.location).includes(name)) {
+            remove(problem.tags.ordering, name);
+            remove(problem.tags.boundary, name);
+            add(problem.tags.location, name);
+        } else {
+            remove(problem.tags.location, name);
+        }
+    } else if (tag === "Cross-Sectional" || tag === 'crossSection') {
+        // if we are going to add to the cross sectional group
+        if (!problem.tags.crossSection.includes(name)) {
+            remove(problem.tags.weights, name);
+            problem.groups.forEach(group => remove(group.nodes, name))
+            remove(problem.tags.ordering, name);
+            if (problem.task !== 'forecasting')
+                setTask('forecasting', problem)
+        }
+        toggle(problem.tags.crossSection, name);
+    } else {
+        logParams.feature_id = `TOGGLE_INCLUSION_IN_${problem.groups.find(group => group.id === tag).name.toUpperCase()}`;
+        // toggle inclusion in user-defined group, remove from all other groups
+        problem.groups.forEach(group => (group.id === tag ? toggle : remove)(group.nodes, name))
+
+        if (problem.groups.some(group => group.nodes.includes(name))) {
+            // if in a user-defined group, remove from the special groups
+            remove(problem.tags.loose, name);
+            remove(problem.tags.ordering, name);
+            remove(problem.tags.crossSection, name);
+        } else {
+            // if no longer in a user-defined group, add to loose
+            add(problem.tags.loose, name)
+        }
+    }
+    if ((problem.tags.ordering.length + problem.tags.crossSection.length === 0) && problem.task === 'forecasting')
+        setTask('regression', problem)
+
+    app.saveSystemLogEntry(logParams);
+}
+
 /**
  * Toggle if a pebble name is present in a problem's tag set
  * @param problem
@@ -1965,99 +2043,9 @@ export let toggleTag = (problem, tag, name) => {
         other: {variable: name, problem: problem.problemId}
     }
 
-    if (tag === 'Loose') {
-        // variable is not in any group, but still in diagram
-        remove(problem.targets, name);
-        remove(problem.tags.ordering, name);
-        remove(problem.predictors, name);
-        remove(problem.tags.crossSection, name);
-        add(problem.tags.loose, name);
-        if ((problem.tags.ordering.length + problem.tags.crossSection.length === 0) && problem.task === 'forecasting')
-            setTask('regression', problem)
-        logParams.feature_id = 'MODEL_ADD_VARIABLE';
-    } else if (tag === 'None') {
-        // variable is completely removed from diagram
-        remove(problem.predictors, name);
-        remove(problem.tags.loose, name);
-        remove(problem.targets, name);
-        remove(problem.tags.ordering, name);
-        remove(problem.tags.crossSection, name);
-        if ((problem.tags.ordering.length + problem.tags.crossSection.length === 0) && problem.task === 'forecasting')
-            setTask('regression', problem)
-        logParams.feature_id = 'MODEL_REMOVE_VARIABLE';
-    } else if (tag === "Ordering") {
-        // if we are going to include in the ordering group
-        if (!(problem.tags.ordering).includes(name)) {
-            remove(problem.tags.location, name);
-            remove(problem.tags.boundary, name);
-            remove(problem.predictors, name);
-            remove(problem.targets, name);
-            remove(problem.tags.loose, name);
-            remove(problem.tags.crossSection, name);
-            add(problem.tags.ordering, name);
-            if (problem.task !== 'forecasting')
-                setTask('forecasting', problem)
-        } else {
-            remove(problem.tags.ordering, name);
-            add(problem.tags.loose, name);
-        }
-        loadProblemPreprocess(problem)
-            .then(app.setPreprocess)
-            .then(m.redraw)
-        if ((problem.tags.ordering.length + problem.tags.crossSection.length === 0) && problem.task === 'forecasting')
-            setTask('regression', problem)
-
-        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_ORDERING';
-    } else if (tag === "Location") {
-        // if we are going to include in the location group
-        if (!(problem.tags.location).includes(name)) {
-            remove(problem.tags.ordering, name);
-            remove(problem.targets, name);
-            remove(problem.tags.boundary, name);
-            add(problem.tags.location, name);
-        } else {
-            remove(problem.tags.location, name);
-        }
-        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_LOCATION';
-    } else if (tag === 'Predictors') {
-        if (!(problem.predictors).includes(name)) {
-            add(problem.predictors, name);
-            remove(problem.targets, name);
-            remove(problem.tags.loose, name);
-            remove(problem.tags.ordering, name);
-            remove(problem.tags.crossSection, name);
-        } else {
-            remove(problem.predictors, name);
-        }
-        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_PREDICTOR';
-    } else if (tag === 'Targets') {
-        if (!(problem.targets).includes(name)) {
-            add(problem.targets, name)
-            remove(problem.predictors, name);
-            remove(problem.tags.loose, name);
-            remove(problem.tags.ordering, name);
-            remove(problem.tags.crossSection, name);
-        } else {
-            remove(problem.targets, name);
-        }
-        logParams.feature_id = 'MODEL_ADD_VARIABLE_AS_TARGET';
-    } else if (tag === "Cross-Sectional" || tag === 'crossSection') {
-        // if we are going to add to the cross sectional group
-        if (!problem.tags.crossSection.includes(name)) {
-            remove(problem.tags.weights, name);
-            remove(problem.predictors, name);
-            remove(problem.targets, name);
-            remove(problem.tags.ordering, name);
-            if (problem.task !== 'forecasting')
-                setTask('forecasting', problem)
-        }
-        toggle(problem.tags.crossSection, name);
-        if ((problem.tags.ordering.length + problem.tags.crossSection.length) === 0 && problem.task === 'forecasting')
-            setTask('regression', problem)
-    }
 
     // LABELS
-    else if (tag === 'nominal') {
+    if (tag === 'nominal') {
         // if we are going to add the tag
         if (!getNominalVariables(problem).includes(name)) {
             if (app.variableSummaries[name].numchar === 'character') {
@@ -2152,7 +2140,6 @@ export let toggleTag = (problem, tag, name) => {
         }
         if (!problem.tags.weights.includes(name)) {
             if (getNominalVariables(problem).includes(name)) toggleTag(problem, 'nominal', name);
-            if (problem.tags.ordering.includes(name)) toggleTag(problem, 'Predictors', name);
             remove(problem.tags.crossSection, name);
             remove(problem.tags.boundary, name);
             remove(problem.tags.indexes, name);
@@ -2189,6 +2176,7 @@ export let toggleTag = (problem, tag, name) => {
             problem.tags.indexes = [name];
     }
     app.resetPeek()
+    app.saveSystemLogEntry(logParams);
 };
 
 // Used for left panel variable search
@@ -2209,12 +2197,9 @@ export async function addProblemFromForceDiagram() {
 export function connectAllForceDiagram() {
     let problem = getSelectedProblem();
 
-    problem.predictorLinks = problem.predictorLinks || [];
-    problem.predictorLinks = problem.predictors
-        .flatMap(source => problem.targets
-            .map(target => ({
-                source, target, right: true
-            })));
+    let targets = getTargetVariables(problem);
+    problem.pebbleLinks = getPredictorVariables(problem)
+        .flatMap(source => targets.map(target => ({source, target, right: true})))
     m.redraw();
 }
 
@@ -2230,7 +2215,7 @@ let D3M_problemDoc = problem => ({
     inputs: {
         data: {
             "datasetID": app.workspace.datasetDoc.about.datasetID,
-            "targets": problem.targets.map((target, i) => ({
+            "targets": getTargetVariables(problem).map((target, i) => ({
                 targetIndex: i,
                 resID: problem.resourceId,
                 colIndex: Object.keys(app.variableSummaries).indexOf(target),

@@ -627,6 +627,7 @@ def clear_js():
     # find files
     pat1 = r'^tworavens_(app|styles)\-(\w|-){20,50}\.(js|css)$'
 
+    os.makedirs(webpack_build_dir, exist_ok=True)
     build_file_names = [x for x in os.listdir(webpack_build_dir)
                         if re.match(pat1, x) is not None]
 

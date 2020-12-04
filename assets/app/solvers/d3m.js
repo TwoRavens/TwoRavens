@@ -12,7 +12,7 @@ import {
     getDescription,
     getOrderingVariable,
     getPredictorVariables,
-    getSelectedProblem,
+    getSelectedProblem, getTargetVariables,
     isProblemValid
 } from "../problem";
 
@@ -379,7 +379,14 @@ let stepDenormalize = (metadata, index) => [{
 let stepRemoveColumns = (metadata, index) => {
     let problem = metadata.problem;
     // looks like some TA2s need "d3mIndex"
-    let keep = [...getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
+    let keep = [
+        ...getPredictorVariables(problem),
+        ...getTargetVariables(problem),
+        ...problem.tags.indexes,
+        ...problem.tags.crossSection,
+        getOrderingVariable(problem)
+    ];
+
 
     let indices = [];
 

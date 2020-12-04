@@ -2,7 +2,13 @@ import jsep from 'jsep';
 
 import {alignmentData} from "../app";
 import * as common from "../../common/common";
-import {getGeographicVariables, getNominalVariables, getOrderingVariable, getPredictorVariables} from "../problem";
+import {
+    getGeographicVariables,
+    getNominalVariables,
+    getOrderingVariable,
+    getPredictorVariables,
+    getTargetVariables
+} from "../problem";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -1026,7 +1032,7 @@ export function buildMenu(step) {
             projectionColumns.push(getOrderingVariable(problem), ...problem.tags.crossSection);
 
         if (problem.splitOptions.stratified)
-            projectionColumns.push(problem.targets[0]);
+            projectionColumns.push(getTargetVariables(problem)[0]);
 
         pipeline.push({
             $project: [...new Set(projectionColumns)].reduce((projection, column) => Object.assign({
@@ -1044,7 +1050,7 @@ export function buildMenu(step) {
 
         let splitOptions = problem.splitOptions;
         let predictors = getPredictorVariables(problem);
-        let targets = problem.targets;
+        let targets = getTargetVariables(problem);
         let temporalName = getOrderingVariable(problem);
         let crossSections = problem.tags.crossSection;
         let nominals = getNominalVariables(problem);
@@ -1420,7 +1426,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
     }, doc.dataResources[tableResourceIndex].columns)
         .map(struct => Object.assign(struct, { // relabel roles to reflect the proper target
             role: [
-                problem.targets.includes(struct.colName) ? 'suggestedTarget'
+                getTargetVariables(problem).includes(struct.colName) ? 'suggestedTarget'
                     : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
             ]
         }));
@@ -1429,7 +1435,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
 
     [
         [getPredictorVariables(problem), 'attribute'],
-        [problem.targets, 'suggestedTarget'],
+        [getTargetVariables(problem), 'suggestedTarget'],
         [problem.tags.privileged, 'suggestedPrivilegedData'],
         [problem.tags.crossSection, 'suggestedGroupingKey'],
         [problem.tags.boundary, 'boundaryIndicator'],

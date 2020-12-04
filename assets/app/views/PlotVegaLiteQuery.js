@@ -1,6 +1,8 @@
 import m from 'mithril';
-import PlotVegaLite from "./PlotVegaLite";
 import * as queryMongo from '../manipulations/queryMongo';
+import * as app from '../app';
+import {mongoURL} from "../app";
+import {setMetadata} from "../eventdata/eventdata";
 
 export default class PlotVegaLiteQuery {
     oninit() {
@@ -40,12 +42,17 @@ export default class PlotVegaLiteQuery {
                 if (!(compiled in this.datasets) && !(compiled in this.isLoading)) {
                     this.datasets[compiled] = undefined;
                     this.isLoading[compiled] = true;
-
                     getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
                         setTimeout(m.redraw, 1)
-                    });
+                    })
+
+                    specification.encoding.region && m.request({
+                        url: mongoURL + 'get-metadata',
+                        method: 'POST',
+                        body: {geojson: [app.locationUnits[app.variableSummaries[specification.encoding.region.field].locationUnit][0]]}
+                    }).then(setMetadata).then(m.redraw);
                 }
             });
 

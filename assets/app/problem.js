@@ -99,6 +99,22 @@ import * as utils from './utils';
  * @property {Object} solverState
  */
 
+export let defaultGroupDescriptions = {
+    predictors: 'Predictor variables are used to estimate the target variables.',
+    targets: 'Target variables are the variables of interest.',
+    crossSection: 'Cross sectional variables group observations into treatments.',
+    loose: 'Loose variables are in the modeling space, but are not used in the model.',
+    ordering: 'Ordering variables indicate the order of observations.',
+    location: 'Location variables indicate a geospatial location.',
+    nominal: 'Nominal variables are text-based categorical variables.',
+    ordinal: 'Ordinal variables are categorical, but the categories are ordered.',
+    boundary: 'Boundary variables are a string vector of numeric data points.',
+    weight: 'A weight variable indicates the importance of individual observations.',
+    privileged: 'A privileged variable may or may not exist in the test set.',
+    exogenous: 'An exogenous variable is determined outside of the model.',
+    index: 'An index variable typically has one unique value per observation.'
+};
+
 /**
  * @param {string} problemId
  * @returns {Problem}
@@ -106,8 +122,26 @@ import * as utils from './utils';
 export let buildEmptyProblem = problemId => ({
     problemId,
     system: 'auto',
-    predictors: [],
-    targets: [],
+    groupCount: 2,
+    groups: [
+        {
+            id: 0,
+            name: 'Predictors',
+            color: app.colors.predictor,
+            opacity: 0.3,
+            nodes: [],
+            description: defaultGroupDescriptions.predictors
+        },
+        {
+            id: 1,
+            name: 'Targets',
+            color: app.colors.target,
+            opacity: 0.3,
+            nodes: [],
+            description: defaultGroupDescriptions.targets
+        }
+    ],
+    groupLinks: [{source: 0, target: 1, color: app.colors.predictor}],
     description: '',
     metric: undefined,
     metrics: [],
@@ -229,8 +263,26 @@ export let buildDefaultProblem = problemDoc => {
         problemId: problemDoc.about.problemID,
         system: 'auto',
         version: problemDoc.about.version,
-        predictors: predictors,
-        targets: targets,
+        groupCount: 2,
+        groups: [
+            {
+                id: 0,
+                name: 'Predictors',
+                color: app.colors.predictor,
+                opacity: 0.3,
+                nodes: predictors,
+                description: defaultGroupDescriptions.predictors
+            },
+            {
+                id: 1,
+                name: 'Targets',
+                color: app.colors.target,
+                opacity: 0.3,
+                nodes: targets,
+                description: defaultGroupDescriptions.targets
+            }
+        ],
+        groupLinks: [{source: 0, target: 1, color: app.colors.predictor}],
         description: problemDoc.about.problemDescription,
 
         metric: problemDoc.inputs.performanceMetrics[0].metric,
@@ -304,9 +356,8 @@ export let buildDefaultProblem = problemDoc => {
  * programmatically deselect every selected variable
  */
 export let erase = problem => {
-    problem.predictors = [];
+    problem.groups.forEach(group => group.nodes = [])
     problem.pebbleLinks = [];
-    problem.targets = [];
     problem.manipulations = [];
     Object.keys(problem.tags).forEach(tag => problem.tags[tag] = []);
     if ('d3mIndex' in app.variableSummaries)
@@ -377,9 +428,27 @@ export function standardizeDiscovery(problems) {
             problemId,
             system: "auto",
             description: undefined,
-            // should include all variables (and transformed variables) that are not in target list
-            predictors,
-            targets: prob.targets,
+            groupCount: 2,
+            groups: [
+                {
+                    id: 0,
+                    name: 'Predictors',
+                    color: app.colors.predictor,
+                    opacity: 0.3,
+                    // should include all variables (and transformed variables) that are not in target list
+                    nodes: predictors,
+                    description: defaultGroupDescriptions.predictors
+                },
+                {
+                    id: 1,
+                    name: 'Targets',
+                    color: app.colors.target,
+                    opacity: 0.3,
+                    nodes: prob.targets,
+                    description: defaultGroupDescriptions.targets
+                }
+            ],
+            groupLinks: [{source: 0, target: 1, color: app.colors.predictor}],
             meaningful: false,
             // NOTE: if the target is manipulated, the metric/task could be wrong
             metric: undefined,
@@ -459,8 +528,9 @@ export let getSelectedProblem = () => {
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
-    if (problem.targets.length === 0 || predictors.length === 0) return "Empty problem. Please add some variables to the model via the variables tab.";
-    return `${problem.targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
+    let targets = getTargetVariables(problem);
+    if (targets.length === 0 || predictors.length === 0) return "Empty problem. Please add some variables to the model via the variables tab.";
+    return `${targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 
 /**
@@ -470,18 +540,20 @@ export function getDescription(problem) {
 export let setTask = (task, problem) => {
     if (task === problem.task) return; //  || !(supportedTasks.includes(task))
     problem.task = task;
+    let targets = getTargetVariables(problem);
     if (task.toLowerCase() === 'classification')
-        setSubTask(app.variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass', problem);
+        setSubTask(app.variableSummaries[targets[0]].binary ? 'binary' : 'multiClass', problem);
     else if (task.toLowerCase() === 'regression')
-        setSubTask(problem.targets.length > 1 ? 'multivariate' : 'univariate', problem);
+        setSubTask(targets.length > 1 ? 'multivariate' : 'univariate', problem);
     else if (!(problem.subTask in app.applicableMetrics[task]))
         setSubTask(Object.keys(app.applicableMetrics[task])[0], problem);
 
     if (problem.task === 'forecasting' && problem.tags.ordering.length === 0) {
         problem.tags.ordering = getPredictorVariables(problem)
             .filter(variable => app.variableSummaries[variable].timeUnit)
-        problem.predictors = problem.predictors
-            .filter(predictor => !problem.tags.ordering.includes(predictor))
+        problem.groups
+            .forEach(group => group.nodes = group.nodes
+                .filter(node => !problem.tags.ordering.includes(node)))
     }
     delete problem.unedited;
 };
@@ -547,17 +619,18 @@ export let setD3MTags = (tags, problem) => {
  * @returns {string}
  */
 export let getSubtask = problem => {
+    let targets = getTargetVariables(problem);
     if (problem.task.toLowerCase() === 'regression')
-        return problem.targets.length > 1 ? 'multivariate' : 'univariate';
+        return targets.length > 1 ? 'multivariate' : 'univariate';
 
-    if (!problem.subTask && app.variableSummaries[problem.targets[0]]) {
+    if (!problem.subTask && app.variableSummaries[targets[0]]) {
         if (problem.task.toLowerCase() === 'classification')
-            problem.subTask = app.variableSummaries[problem.targets[0]].binary ? 'binary' : 'multiClass';
+            problem.subTask = app.variableSummaries[targets[0]].binary ? 'binary' : 'multiClass';
         else if (problem.task.toLowerCase() === 'regression')
-            problem.subTask = problem.targets.length > 1 ? 'multivariate' : 'univariate';
+            problem.subTask = targets.length > 1 ? 'multivariate' : 'univariate';
         else
             problem.subTask = Object.keys(app.applicableMetrics[problem.task])[0]
-    } else if (!problem.subTask && !app.variableSummaries[problem.targets[0]])
+    } else if (!problem.subTask && !app.variableSummaries[targets[0]])
         return Object.keys(app.applicableMetrics[problem.task])[0];
 
     return problem.subTask
@@ -591,13 +664,43 @@ export let setMetric = (metric, problem, all = false) => {
  */
 export let getPredictorVariables = problem => {
     if (!problem) return;
+    let targets = getTargetVariables(problem);
     let arrowPredictors = (problem.pebbleLinks || [])
-        .filter(link => problem.targets.includes(link.target) && link.right)
+        .filter(link => targets.includes(link.target) && link.right)
         .map(link => link.source);
 
-    // union arrow predictors with predictor group
-    return [...new Set([...problem.predictors, ...arrowPredictors])]
+    // union arrow predictors with predictor groups
+    return [...new Set([
+        ...getPredictorGroups(problem).flatMap(group => group.nodes),
+        ...arrowPredictors
+    ])]
 };
+
+let getPredictorGroups = problem => {
+    let sources = new Set(problem.groupLinks.map(link => link.source))
+    return problem.groups.filter(group => sources.has(group.id))
+}
+
+export let getTargetVariables = problem => {
+    if (!problem) return;
+    let pebbleSources = new Set((problem.pebbleLinks || [])
+        .filter(link => link.right).map(link => link.source));
+
+    let arrowTargets = (problem.pebbleLinks || [])
+        .filter(link => link.right && !pebbleSources.has(link.target))
+        .map(link => link.target)
+
+    // union arrow targets with target groups
+    return [...new Set([
+        ...getTargetGroups(problem).flatMap(group => group.nodes),
+        ...arrowTargets
+    ])]
+}
+
+export let getTargetGroups = problem => {
+    let targets = new Set(problem.groupLinks.map(link => link.target))
+    return problem.groups.filter(group => targets.has(group.id))
+}
 
 /**
  * Retrieve all variables that are nominal/text
@@ -612,7 +715,7 @@ export let getNominalVariables = problem => {
         ...selectedProblem.tags.nominal,
         // // targets in a classification problem are also nominal
         ...selectedProblem.task.toLowerCase() === 'classification'
-            ? selectedProblem.targets : []
+            ? getTargetVariables(selectedProblem) : []
     ])];
 };
 
@@ -672,8 +775,9 @@ export let getAbstractPipeline = (problem, all) => {
     let modelVariables = [
         ...problem.tags.indexes,
         ...getPredictorVariables(problem),
+        ...problem.tags.crossSection,
         getOrderingVariable(problem),
-        ...problem.targets
+        ...getTargetVariables(problem)
     ].filter(_ => _);
     let nominalCasts = problem.tags.nominals || [];
     // nominal casts need only be applied to variables retained after subsetting
@@ -708,7 +812,7 @@ export let getAbstractPipeline = (problem, all) => {
                 type: 'data',
                 variables: modelVariables,
                 // these are also dropped in the train/test split, but why write the data out?
-                dropNA: problem.targets
+                dropNA: getTargetVariables(problem)
             } : {type: 'data'}
         }
     ].filter(_ => _);
@@ -798,26 +902,29 @@ export let isProblemValid = problem => {
         app.alertError('One variable (even an index) must be tagged as an ordering to solve a time series forecasting problem. ')
         valid = false;
     }
-    if (problem.predictors.length === 0) {
+
+    if (getPredictorVariables(problem).length === 0) {
         app.alertError('At least one predictor is required.');
         valid = false;
     }
     if (problem.task !== "clustering") {
-        if (problem.targets.length === 0) {
+        let targets = getTargetVariables(problem);
+        if (targets.length === 0) {
             app.alertError('At least one target is required.');
             valid = false;
         }
 
-        if (problem.targets.length > 1) {
+        if (targets.length > 1) {
             app.alertError("Only one target variable may be specified at a time.");
             valid = false;
+        }
+
+        if (problem.task === "classification" && app.variableSummaries[targets[0]].uniqueCount > 100) {
+            app.alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
         }
     }
     if (problem.tags.loose.length > 0) {
         app.alertWarn("This problem has loose variables in the modeling space that will not be used in the model: " + String(problem.tags.loose))
-    }
-    if (problem.task === "classification" && app.variableSummaries[problem.targets[0]].uniqueCount > 100) {
-        app.alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
     }
     // this triggers the popup
     if (!valid)
@@ -835,7 +942,7 @@ export let needsManipulationRewritePriorToSolve = problem => {
     Object.keys(app.variableSummaries)
         .filter(variable => app.variableSummaries[variable].numchar === 'character')
         .forEach(variable => newNominalVars.delete(variable));
-    let hasNominalCast = [...problem.targets, ...getPredictorVariables(problem)]
+    let hasNominalCast = [...getTargetVariables(problem), ...getPredictorVariables(problem), ...problem.tags.crossSection]
         .some(variable => newNominalVars.has(variable));
     let hasOrdering = problem.tags.ordering.length > 1;
 

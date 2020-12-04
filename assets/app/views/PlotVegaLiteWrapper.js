@@ -35,12 +35,14 @@ export let preparePanels = state => {
 
     window.configuration = configuration;
 
+    console.log('A')
     let specification;
     try {
         specification = makeSpecification(configuration, varTypes);
     } catch (err) {
         console.warn(err);
     }
+    console.log('B', specification)
 
     let plot;
     if (specification) {
@@ -52,8 +54,10 @@ export let preparePanels = state => {
             ...(specification.hconcat || [])
         ].map(countEncodings).reduce((sum, count) => sum + count, 0);
 
-        // both need to be set for mapping
-        if (mapping && (!specification?.encoding?.latitude?.field || !specification?.encoding?.longitude?.field))
+        // either region or both latitude and longitude need to be set for mapping
+        if (mapping
+            && !specification?.encoding?.region?.field
+            && (!specification?.encoding?.latitude?.field || !specification?.encoding?.longitude?.field))
             encodingsCount = 0
 
         // 5px margin keeps the drag bar visible
@@ -127,6 +131,20 @@ let makeLayer = (layer, varTypes) => {
     }
 
     if (!('nice' in layer)) layer.nice = true;
+
+    if (layer.mark === "region") {
+        spec.transform = spec.transform || [];
+        spec.transform.push({
+            aggregate: channels
+                .filter(channel => channel.name !== "region")
+                .map(channel => ({
+                    op: channel.aggregate || "max",
+                    field: channel.variable,
+                    as: channel.variable
+                })),
+            groupBy: [channels.find(channel => channel.name === "region").variable]
+        })
+    }
 
     spec.encoding = channels.reduce((encodings, channel) => {
         if (channel.name === 'primary axis') {

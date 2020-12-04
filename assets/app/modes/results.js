@@ -40,7 +40,7 @@ import {
     getOrderingVariable,
     getPredictorVariables,
     getSelectedProblem,
-    getSubtask,
+    getSubtask, getTargetVariables,
     setSelectedProblem
 } from "../problem";
 import PlotVegaLiteWrapper, {preparePanels} from "../views/PlotVegaLiteWrapper";
@@ -172,7 +172,7 @@ export let leftpanel = () => {
         m('div', {style: {display: 'inline-block', margin: '1em'}},
             m('h4', `${ravenConfig.selectedProblem} for `, m('div[style=display:inline-block]', m(Dropdown, {
                 id: 'targetDropdown',
-                items: selectedProblem.targets,
+                items: getTargetVariables(selectedProblem),
                 activeItem: resultsPreferences.target,
                 onclickChild: value => resultsPreferences.target = value,
                 style: {'margin-left': '1em'}
@@ -356,7 +356,7 @@ export let leftpanel = () => {
                                 Object.keys(problem.results.solverState || {}).map(systemId => [problem, systemId]))
                             .map(([problem, systemId]) => [
                                 problem.problemId,
-                                problem.targets.join(', '),
+                                getTargetVariables(problem).join(', '),
                                 problem.results.solverState[systemId].searchId,
                                 problem.results.solverState[systemId].thinking ? 'running' : 'stopped',
                                 problem.results.solverState[systemId].thinking && m(Button, {
@@ -759,7 +759,7 @@ export class CanvasSolutions {
                                             summary.confusionMatrix.data,
                                             summary.confusionMatrix.classes,
                                             'Actual', 'Predicted', 'count',
-                                            `Confusion Matrix for ${problem.targets[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`),
+                                            `Confusion Matrix for ${getTargetVariables(problem)[0]}${resultsPreferences.factor ? (' factor ' + resultsPreferences.factor) : ''}`),
                                         listeners: {
                                             "selector": selection => {
                                                 if (Object.keys(selection).length > 0) {
@@ -916,7 +916,7 @@ export class CanvasSolutions {
 
             let interpretationEFDContent = common.loader('ModelInterpretation');
             if (adapters.length === 1) {
-                let interpretationData = problem.predictors.reduce((out, predictor) => Object.assign(out, {
+                let interpretationData = getPredictorVariables(problem).reduce((out, predictor) => Object.assign(out, {
                     [predictor]: adapter.getInterpretationEFD(predictor)
                 }), {});
 
@@ -1284,11 +1284,13 @@ export class CanvasSolutions {
         if (!problem) return;
         if (manipulate.constraintMenu) return;
 
+        let predictors = getPredictorVariables(problem);
+        let targets = getTargetVariables(problem);
         // ensure valid state of selected predictor, target
-        if (!problem.predictors.includes(resultsPreferences.predictor))
-            resultsPreferences.predictor = problem.predictors[0];
-        if (!problem.targets.includes(resultsPreferences.target))
-            resultsPreferences.target = problem.targets[0];
+        if (!predictors.includes(resultsPreferences.predictor))
+            resultsPreferences.predictor = predictors[0];
+        if (!targets.includes(resultsPreferences.target))
+            resultsPreferences.target = targets[0];
 
         let problemSummary = m(Subpanel, {
             style: {margin: '0px 1em'},
@@ -1310,7 +1312,7 @@ export class CanvasSolutions {
             m(Table, {
                 headers: ['Variable', 'Data'],
                 data: [
-                    ['Dependent Variables', problem.targets],
+                    ['Dependent Variables', getTargetVariables(problem)],
                     ['Predictors', getPredictorVariables(problem)],
                     ['Description', utils.preformatted(getDescription(problem))],
                     ['Task', problem.task]
@@ -1807,7 +1809,7 @@ let getComparableProblems = selectedProblem => Object.values(app.workspace.raven
     // comparable problems must have solutions
     .filter(problem => problem !== selectedProblem && problem.results?.solutions)
     // comparable problems must share targets
-    .filter(problem => JSON.stringify(problem.targets.sort()) === JSON.stringify(selectedProblem.targets.sort()))
+    .filter(problem => JSON.stringify(getTargetVariables(problem).sort()) === JSON.stringify(getTargetVariables(selectedProblem).sort()))
     // comparable problems must share scoring configuration
     .filter(problem => JSON.stringify(problem.scoreOptions) === JSON.stringify(selectedProblem.scoreOptions));
 
@@ -2321,7 +2323,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
             body: {
                 data_pointer: producePointer,
                 metadata: {
-                    targets: problem.targets,
+                    targets: getTargetVariables(problem),
                     collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`,
                     datafile: splitPath,
                     query: compiled,
@@ -2415,7 +2417,7 @@ export let loadConfusionData = async (problem, adapter) => {
             body: {
                 data_pointer: producePointer,
                 metadata: {
-                    targets: problem.targets,
+                    targets: getTargetVariables(problem),
                     collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`,
                     datafile: splitPath,
                     query: compiled,
@@ -2499,7 +2501,7 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
     let tempQuery = resultsCache[problem.problemId].id.query;
 
     let splitVariables = [...new Set([
-        ...problem.predictors, ...problem.targets, ...problem.tags.indexes
+        ...getPredictorVariables(problem), ...getTargetVariables(problem), ...problem.tags.indexes
     ])];
 
     let compiled = queryMongo.buildPipeline(
@@ -2511,7 +2513,7 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
                 // collect all the values in the target column into an array, and take the first value in the image column
                 // TODO: "image" should not be hardcoded
                 measuresAccum: [
-                    ...problem.targets.map(target => ({"subset": "push", "column": target})),
+                    ...getTargetVariables(problem).map(target => ({"subset": "push", "column": target})),
                     {'subset': 'first', 'column': 'image'}
                 ]
             },
@@ -2646,7 +2648,7 @@ export let loadFittedData = async (problem, adapter, split) => {
 
     // attempt to parse all data into floats
     let nominals = getNominalVariables(problem);
-    response.data.forEach(row => problem.targets
+    response.data.forEach(row => getTargetVariables(problem)
         .filter(target => !nominals.includes(target))
         .forEach(target => {
             if (!(target in row)) return;
@@ -2735,7 +2737,7 @@ export let loadInterpretationPartialsFittedData = async (adapter) => {
         // for each point along the domain of the predictor
         out[predictor] = response.data.slice(offset, nextOffset)
             // for each target specified in the problem
-            .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
+            .map(point => getTargetVariables(problem).reduce((out_point, target) => Object.assign(out_point, {
                 [target]: app.inferIsCategorical(target) ? point[target] : utils.parseNumeric(point[target])
             }), {}));
         offset = nextOffset;
@@ -2794,7 +2796,7 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
                 data_pointer: dataPointer,
                 metadata: {
                     produceId,
-                    targets: problem.targets,
+                    targets: getTargetVariables(problem),
                     predictors: getPredictorVariables(problem),
                     categoricals: [...getNominalVariables(problem)
                         .filter(variable => problem.results.variablesInitial.includes(variable))],
@@ -2984,7 +2986,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                     data_pointer: dataPointer,
                     metadata: {
                         produceId,
-                        targets: problem.targets,
+                        targets: getTargetVariables(problem),
                         predictors: getPredictorVariables(problem),
                         categoricals: getNominalVariables(problem),
                         datafile: splitPath, // location of the dataset csv
@@ -3027,7 +3029,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
     //         // for each point along the domain of the predictor
     //         out[predictor] = response.data.slice(offset, nextOffset)
     //             // for each target specified in the problem
-    //             .map(point => problem.targets.reduce((out_point, target) => Object.assign(out_point, {
+    //             .map(point => getTargetVariables(problem).reduce((out_point, target) => Object.assign(out_point, {
     //                 [target]: app.inferIsCategorical(target) ? point[target] : utils.parseNumeric(point[target])
     //             }), {}));
     //         offset = nextOffset;
@@ -3081,7 +3083,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         method: 'POST',
         body: {
             efdData: response.data,
-            targets: problem.targets,
+            targets: getTargetVariables(problem),
             categoricals: getNominalVariables(problem),
             task: problem.task
         }
