@@ -188,7 +188,7 @@ export class ExploreBoxes {
 
 export class ExploreVariables {
     view(vnode) {
-        let {explorePreferences, summaries} = vnode.attrs;
+        let {preferences, summaries, callbackGoBack, getData, abstractQuery} = vnode.attrs;
 
         let getPlotScroller = nodeSummaries => {
             return m('div#explorePlotBar', {
@@ -203,14 +203,14 @@ export class ExploreVariables {
                         'white-space': 'nowrap',
                         width: '100%',
                     }
-                }, getRelevantPlots(nodeSummaries, explorePreferences.mode).map(schemaName => m("figure", {style: 'display: inline-block'}, [
+                }, getRelevantPlots(nodeSummaries, preferences.mode).map(schemaName => m("figure", {style: 'display: inline-block'}, [
                         m(`img#${schemaName}_img[alt=${schemaName}][height=140px][width=260px][src=/static/images/${schemaName}.png]`, {
-                            onclick: () => explorePreferences.schemaName = schemaName,
+                            onclick: () => preferences.schemaName = schemaName,
                             style: getThumbnailStyle(nodeSummaries, schemaName)
                         }),
                         m("figcaption",
                             {style: {"text-align": "center"}},
-                            schemaName === explorePreferences.schemaName ? bold(plotMap[schemaName]) : plotMap[schemaName])
+                            schemaName === preferences.schemaName ? bold(plotMap[schemaName]) : plotMap[schemaName])
                     ])
                 )),
                 m('div', {
@@ -227,27 +227,27 @@ export class ExploreVariables {
 
         let getPlot = () => {
 
-            if (explorePreferences.mode === "problems") {
+            if (preferences.mode === "problems") {
                 let predictors = getPredictorVariables(selectedProblem);
                 let targets = getTargetVariables(selectedProblem);
                 if (predictors.length === 0)
                     return "No predictors are selected. Please select some predictors."
 
-                if (!targets.includes(explorePreferences.target))
-                    explorePreferences.target = targets[0]
-                if (!explorePreferences.target)
+                if (!targets.includes(preferences.target))
+                    preferences.target = targets[0]
+                if (!preferences.target)
                     return "No targets are selected. Please select a target."
 
                 let nodeSummaries = [
                     summaries[predictors[0]],
-                    summaries[explorePreferences.target]
+                    summaries[preferences.target]
                 ];
-                let relevantPlots = getRelevantPlots(nodeSummaries, explorePreferences.mode);
-                if (!relevantPlots.includes(explorePreferences.schemaName) || !getIsRecommended(nodeSummaries, explorePreferences.schemaName)) {
-                    explorePreferences.schemaName = relevantPlots[0];
+                let relevantPlots = getRelevantPlots(nodeSummaries, preferences.mode);
+                if (!relevantPlots.includes(preferences.schemaName) || !getIsRecommended(nodeSummaries, preferences.schemaName)) {
+                    preferences.schemaName = relevantPlots[0];
                 }
 
-                let specification = getPlotSpecification();
+                let specification = getPlotSpecification(preferences, summaries, abstractQuery, getData);
 
                 let exploreContent = [];
 
@@ -257,8 +257,8 @@ export class ExploreVariables {
                         id: 'exploreTargetButtonRadio',
                         title: 'select target variable',
                         sections: targets.map(target => ({value: target})),
-                        activeSection: explorePreferences.target,
-                        onclick: target => explorePreferences.target = target,
+                        activeSection: preferences.target,
+                        onclick: target => preferences.target = target,
                         attrsAll: {style: {width: 'auto', margin: '1em'}},
                         attrsButtons: {style: {width: 'auto'}}
                     }))
@@ -272,22 +272,22 @@ export class ExploreVariables {
                             : specification && m('[style=display:block;height:500px]',
                             italicize(specification.annotation),
                             m(PlotVegaLite, {specification})),
-                        limit: explorePreferences.pageLength,
-                        page: explorePreferences.page,
-                        setPage: index => explorePreferences.page = index
+                        limit: preferences.pageLength,
+                        page: preferences.page,
+                        setPage: index => preferences.page = index
                     }));
 
                 return exploreContent
             }
 
-            if (explorePreferences.variables.length === 0) return;
-            let nodeSummaries = explorePreferences.variables.map(variable => summaries[variable]);
+            if (preferences.variables.length === 0) return;
+            let nodeSummaries = preferences.variables.map(variable => summaries[variable]);
             // clear out old state if not relevant
-            let relevantPlots = getRelevantPlots(nodeSummaries, explorePreferences.mode);
-            if (!(relevantPlots.includes(explorePreferences.schemaName)) || !getIsRecommended(nodeSummaries, explorePreferences.schemaName)) {
-                explorePreferences.schemaName = relevantPlots[0];
+            let relevantPlots = getRelevantPlots(nodeSummaries, preferences.mode);
+            if (!(relevantPlots.includes(preferences.schemaName)) || !getIsRecommended(nodeSummaries, preferences.schemaName)) {
+                preferences.schemaName = relevantPlots[0];
             }
-            let specification = getPlotSpecification();
+            let specification = getPlotSpecification(preferences, summaries, abstractQuery, getData);
 
             return m('div',
                 getPlotScroller(nodeSummaries),
@@ -299,13 +299,10 @@ export class ExploreVariables {
             );
         };
 
-        if (['variables', 'problems'].includes(explorePreferences.mode)) return wrapCanvas(
+        if (['variables', 'problems'].includes(preferences.mode)) return wrapCanvas(
             m(Button, {
                     class: 'btn-secondary',
-                    onclick: () => {
-                        m.route.set('/explore');
-                        setTimeout(m.redraw, 20)
-                    },
+                    onclick: callbackGoBack,
                     style: {margin: '.5em'}
                 },
                 m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
@@ -434,8 +431,14 @@ export class CanvasExplore {
         ];
 
         return m(ExploreVariables, {
-            explorePreferences: explorePreferences,
-            summaries: app.variableSummaries
+            preferences: explorePreferences,
+            summaries: app.variableSummaries,
+            callbackGoBack: () => {
+                m.route.set('/explore');
+                setTimeout(m.redraw, 20)
+            },
+            abstractQuery: getAbstractPipeline(selectedProblem, true),
+            getData: app.getData,
         });
     }
 }
@@ -751,7 +754,6 @@ export let explorePreferences = {
     mode: 'variables',
     recordLimit: defaultRecordLimit,
     schemaName: undefined,
-    variate: undefined,
     variables: [],
     page: 0,
     pageLength: 5,
@@ -767,20 +769,20 @@ let exploreCache = {
     specificationIsLoading: false
 }
 
-function getPlotSpecification() {
+function getPlotSpecification(preferences, summaries, abstractQuery, getData) {
     // update and kick off changes to internal state
-    loadPlotSpecification()
+    loadPlotSpecification(preferences, summaries, abstractQuery, getData)
     // if preferences have changed, then this will return undefined until loaded
     return exploreCache.specification
 }
 
-export async function loadPlotSpecification() {
+export async function loadPlotSpecification(preferences, summaries, abstractQuery, getData) {
 
     let problem = getSelectedProblem();
 
     let pendingId = JSON.stringify(Object.assign({
         manipulations: getAbstractPipeline(problem, true)
-    }, explorePreferences));
+    }, preferences));
 
     // data is already current
     if (pendingId === exploreCache.id)
@@ -796,7 +798,7 @@ export async function loadPlotSpecification() {
     exploreCache.specificationIsLoading = true;
 
     // ~~~~ begin building the plot specification
-    let {mode, variables, schemaName} = explorePreferences;
+    let {mode, variables, schemaName} = preferences;
 
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
@@ -809,18 +811,18 @@ export async function loadPlotSpecification() {
 
     if (mode === 'problems') {
         let targets = getTargetVariables(problem);
-        if (explorePreferences.pageLength * (explorePreferences.page - 1) > getPredictorVariables(problem).length)
-            explorePreferences.page = 0
+        if (preferences.pageLength * (preferences.page - 1) > getPredictorVariables(problem).length)
+            preferences.page = 0
 
-        if (!(explorePreferences.target in targets))
-            explorePreferences.target = targets[0];
+        if (!(preferences.target in targets))
+            preferences.target = targets[0];
 
         facetSummaries = getPredictorVariables(problem).map(predictor => [
-            app.variableSummaries[predictor],
-            app.variableSummaries[explorePreferences.target]
-        ]).splice(explorePreferences.page * explorePreferences.pageLength, explorePreferences.pageLength).filter(_ => _)
+            summaries[predictor],
+            summaries[preferences.target]
+        ]).splice(preferences.page * preferences.pageLength, preferences.pageLength).filter(_ => _)
     } else {
-        facetSummaries = [variables.map(variable => app.variableSummaries[variable])]
+        facetSummaries = [variables.map(variable => summaries[variable])]
     }
 
     // build vega-lite specifications for every facet
@@ -832,25 +834,27 @@ export async function loadPlotSpecification() {
 
         let nodeNames = nodeSummaries.map(i => i?.name);
 
-        let compiled = queryMongo.buildPipeline(
+        let {pipeline: compiled, datasets} = queryMongo.buildPipeline(
             [
-                ...getAbstractPipeline(selectedProblem, true),
+                ...abstractQuery,
                 {
                     type: 'menu',
                     metadata: {
                         type: 'data',
                         variables: nodeNames,
                         dropNA: nodeNames,
-                        sample: parseInt(explorePreferences.recordLimit) || defaultRecordLimit
+                        sample: parseInt(preferences.recordLimit) || defaultRecordLimit
                     }
                 }
             ],
-            app.workspace.raven_config.variablesInitial)['pipeline'];
+            app.workspace.raven_config.variablesInitial);
 
-        let dataPathSampled = await app.getData({
+        console.log(datasets);
+        let dataPathSampled = await getData({
             method: 'aggregate',
             query: JSON.stringify(compiled),
-            export: 'csv'
+            export: 'csv',
+            datasets
         });
 
         let jsonout = {plottype: plotType, zd3mdata: dataPathSampled};
@@ -865,13 +869,13 @@ export async function loadPlotSpecification() {
         console.log(compiled, json);
         if (plotType[0].includes('timeseries')) {
             let plotdata = JSON.parse(json.plotdata[0]);
-            let temporalVariables = Object.values(app.variableSummaries)
+            let temporalVariables = Object.values(summaries)
                 .filter(summary => summary.timeUnit)
                 .map(summary => summary.name)
                 .filter(variable => variables.includes(variable))
 
             let parsers = temporalVariables.reduce((out, variable) => {
-                let format = variableSummaries[variable].timeUnit
+                let format = summaries[variable].timeUnit
                 return Object.assign(out, {
                     [variable]: format
                         ? d3.timeParse(format)

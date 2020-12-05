@@ -40,12 +40,12 @@ import {
     getOrderingVariable,
     getPredictorVariables,
     getSelectedProblem,
-    getSubtask, getTargetVariables,
+    getSubtask,
+    getTargetVariables,
     setSelectedProblem
 } from "../problem";
-import PlotVegaLiteWrapper, {preparePanels} from "../views/PlotVegaLiteWrapper";
-import {explorePreferences} from "./explore";
-import {workspace} from "../app";
+import {preparePanels} from "../views/PlotVegaLiteWrapper";
+import {ExploreBoxes, explorePreferences, ExploreVariables} from "./explore";
 
 
 /**
@@ -153,6 +153,13 @@ export let resultsPreferences = {
     crossSectionTemp: 'unset',
     imagePage: 0,
     upload: {},
+    explore: {
+        go: false,
+        mode: 'variables',
+        recordLimit: 5000,
+        variables: [],
+        schemaName: undefined
+    }
 };
 window.resultsPreferences = resultsPreferences;
 
@@ -287,7 +294,7 @@ export let leftpanel = () => {
                             ),
                         })),
                         // headers: ['solver', 'action', 'state'],
-                        tableTags: m('colgroup', {tag: 'colgrouper'},
+                        tableTags: m('colgroup', {key: 'colgrouper'},
                             m('col', {span: 1, width: '15em'}),
                             m('col', {span: 1, width: '3em'}),
                             m('col', {span: 1}))
@@ -1222,6 +1229,71 @@ export class CanvasSolutions {
 
     variableExplore(problem, adapters) {
 
+        // wait until all produces have materialized to disk to prevent an empty join entering the cache
+        if (adapters.some(adapter => !adapter.getProduceDataPath(resultsPreferences.dataSplit)))
+            return common.loader("VariableExplore");
+
+        // names of estimated target variables
+        let foldedVariables = adapters.map(adapter => `${resultsPreferences.target}-${adapter.getSolutionId()}`);
+
+        // we're not recomputing preprocess summaries for joined results data.
+        //   this constructs an approximation of what that would look like
+        let resultsSummaries = Object.assign(
+            foldedVariables.reduce((out, variable) =>
+                Object.assign(out, {[variable]: Object.assign({},
+                        app.variableSummaries[resultsPreferences.target] || {},
+                        {variableName: variable, name: variable})}), {}),
+            problem.results.variablesInitial.reduce((out, variable) =>
+                Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {}));
+
+        // ensure invalid variables are removed
+        resultsPreferences.explore.variables = resultsPreferences.explore.variables
+            .filter(variable => variable in resultsSummaries)
+
+        let hasVariables = resultsPreferences.explore.variables.length > 0;
+        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+
+        return m('div',
+            !resultsPreferences.explore.go && [
+                m(Button, {
+                    id: 'exploreGo',
+                    class: hasVariables && 'btn-success',
+                    style: {margin: '.5em'},
+                    disabled: !hasVariables,
+                    onclick: () => {
+                        if (!hasVariables) return;
+
+                        // behavioral logging
+                        let logParams = {
+                            feature_id: 'RESULTS_EXPLORE_MAKE_PLOTS',
+                            activity_l1: 'MODEL_SELECTION',
+                            activity_l2: 'MODEL_SEARCH',
+                            other: {selected: resultsPreferences.explore.variables}
+                        };
+                        app.saveSystemLogEntry(logParams);
+
+                        resultsPreferences.explore.go = true;
+                    }
+                }, 'go'),
+                m('div', {style: 'display: flex; flex-direction: row; flex-wrap: wrap'},
+                m(ExploreBoxes, {
+                    preferences: resultsPreferences.explore,
+                    summaries: resultsSummaries
+                })),
+            ],
+            resultsPreferences.explore.go && m(ExploreVariables, {
+                preferences: resultsPreferences.explore,
+                summaries: resultsSummaries,
+                callbackGoBack: () => resultsPreferences.explore.go = false,
+                abstractQuery: [
+                    ...getResultsAbstractPipeline(problem, adapters),
+                    ...resultsQuery
+                ],
+                getData: body => app.getData(Object.assign({
+                    datafile: splitPath, // location of the dataset csv
+                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
+                }, body)),
+            }))
     }
 
     customExplore(problem, adapters, mapping) {
@@ -1247,14 +1319,17 @@ export class CanvasSolutions {
         secondaryChannel.variables = [...foldedVariables];
         // add a color channel
         let colorChannel = customConfiguration.channels.find(channel => channel.name === 'color');
-        if (!colorChannel && secondaryChannel.variables.length > 1) customConfiguration.channels.push({name: 'color', variable: secondaryChannel.key || 'field'})
+        if (!colorChannel && secondaryChannel.variables.length > 1) customConfiguration.channels.push({
+            name: 'color',
+            variable: secondaryChannel.key || 'field'
+        })
 
         let nominals = new Set(getNominalVariables(selectedProblem));
         if (problem.task.toLowerCase().includes("classification")) foldedVariables.map(nominals.add);
 
         let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
-        console.log(`${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`);
-        console.log(queryMongo.buildPipeline(getResultsAbstractPipeline(problem, adapters), problem.results.variablesInitial));
+        // console.log(`${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`);
+        // console.log(queryMongo.buildPipeline(getResultsAbstractPipeline(problem, adapters), problem.results.variablesInitial));
 
         let {editor, plot} = preparePanels({
             mapping,
@@ -1506,6 +1581,24 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Upload Dataset'] && this.uploadDataset(problem, selectedAdapters));
 
+        let variableExplore = m(Subpanel, {
+            style: {margin: '0px 1em'},
+            header: 'Variable Exploration',
+            shown: resultsSubpanels['Variable Exploration'],
+            setShown: state => {
+                resultsSubpanels['Variable Exploration'] = state;
+                if (state) {
+                    // behavioral logging
+                    let logParams = {
+                        feature_id: 'VIEW_VARIABLE_EXPLORE',
+                        activity_l1: 'MODEL_SELECTION',
+                        activity_l2: 'MODEL_EXPLANATION'
+                    };
+                    app.saveSystemLogEntry(logParams);
+                }
+            }
+        }, resultsSubpanels['Variable Exploration'] && this.variableExplore(problem, selectedAdapters));
+
         let customExplore = m(Subpanel, {
             style: {margin: '0px 1em'},
             header: 'Data Exploration',
@@ -1515,7 +1608,7 @@ export class CanvasSolutions {
                 if (state) {
                     // behavioral logging
                     let logParams = {
-                        feature_id: 'VIEW_CUSTOM_PRODUCE',
+                        feature_id: 'VIEW_CUSTOM_EXPLORE',
                         activity_l1: 'MODEL_SELECTION',
                         activity_l2: 'MODEL_EXPLANATION'
                     };
@@ -1533,7 +1626,7 @@ export class CanvasSolutions {
                 if (state) {
                     // behavioral logging
                     let logParams = {
-                        feature_id: 'VIEW_CUSTOM_PRODUCE',
+                        feature_id: 'VIEW_MAPPING_EXPLORE',
                         activity_l1: 'MODEL_SELECTION',
                         activity_l2: 'MODEL_EXPLANATION'
                     };
@@ -1636,6 +1729,7 @@ export class CanvasSolutions {
             anovaTables,
             VIF,
             uploadDataset,
+            variableExplore,
             customExplore,
             customExploreMapping
         );
@@ -1945,6 +2039,7 @@ let resultsSubpanels = {
     'Variable Importance': false,
     'Model Interpretation': false,
     'Upload Dataset': false,
+    'Variable Exploration': false,
     'Data Exploration': false,
     'Mapping Exploration': false,
 };
@@ -1975,10 +2070,12 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
 
     if (modelComparison) {
 
-        problem.results.selectedSolutions[systemId].includes(solutionId)
-            ? utils.remove(problem.results.selectedSolutions[systemId], solutionId)
-            : problem.results.selectedSolutions[systemId].push(solutionId);
-
+        if (problem.results.selectedSolutions[systemId].includes(solutionId))
+            utils.remove(problem.results.selectedSolutions[systemId], solutionId);
+        else {
+            problem.results.selectedSolutions[systemId].push(solutionId);
+            utils.add(resultsPreferences.explore.variables, `${resultsPreferences.target}-${solutionId}`);
+        }
         // set behavioral logging
         logParams.feature_id = 'RESULTS_COMPARE_SOLUTIONS';
         logParams.activity_l2 = 'MODEL_COMPARISON';
@@ -1986,6 +2083,7 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
         problem.results.selectedSolutions = Object.keys(problem.results.selectedSolutions)
             .reduce((out, source) => Object.assign(out, {[source]: []}, {}), {});
         problem.results.selectedSolutions[systemId] = [solutionId];
+        utils.add(resultsPreferences.explore.variables, `${resultsPreferences.target}-${solutionId}`);
 
         getSelectedAdapters(getComparableProblems(problem))
             .map(adapter => adapter.getProblem())
@@ -2016,9 +2114,6 @@ export let setSelectedSolution = (problem, systemId, solutionId) => {
         } else {
             console.log('>>>> NOPE! no chosenSolution');
         }
-
-        // ------------------------------------------------
-        // ------------------------------------------------
     }
 
     // record behavioral logging

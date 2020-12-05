@@ -914,7 +914,7 @@ export default class Body_EventData {
                         alert.description
                     ]),
                     style: {'margin-top': '1em'},
-                    tableTags: m('colgroup', {tag: 'colgrouper'},
+                    tableTags: m('colgroup', {key: 'colgrouper'},
                         m('col', {span: 1, width: '10px'}),
                         m('col', {span: 1, width: '75px'}),
                         m('col', {span: 1}))
