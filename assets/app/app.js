@@ -91,6 +91,9 @@ export let colors = {
     boundary: '#d23e3e', // similar to bounding box color?
     privileged: '#996bcc', // royalty?
     exogenous: '#4fc48c',
+    // TODO: these two are not original colors
+    featurize: '#d23e3e',
+    randomize: '#996bcc',
 
     index: '#797478',
     matched: '#330b0b',

@@ -13,6 +13,8 @@
     --tag-exogenous: #fff;
     --tag-index: #fff;
     --tag-matched: #fff;
+    --tag-featurize: #fff;
+    --tag-randomize: #fff;
 }
 
 /* BEGIN BOOTSWATCH MATERIA OVERRIDES */
@@ -484,6 +486,14 @@ tr.item-lineout{
     border-style: solid;
     border-color: var(--tag-matched);
     font-weight: bolder;
+}
+.item-featurize {
+    border-style: solid;
+    border-color: var(--tag-featurize);
+}
+.item-randomize {
+    border-style: solid;
+    border-color: var(--tag-randomize);
 }
 .item-hovered {
     font-weight: bolder;

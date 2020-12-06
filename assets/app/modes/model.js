@@ -256,6 +256,22 @@ export class CanvasModel {
                         width: 1
                     },
                     {
+                        id: "featurizeButton",
+                        vars: selectedProblem.tags.featurize,
+                        name: 'Featurize',
+                        borderColor: app.colors.featurize,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
+                        id: "randomizeButton",
+                        vars: selectedProblem.tags.randomize,
+                        name: 'Randomize',
+                        borderColor: app.colors.randomize,
+                        innerColor: 'white',
+                        width: 1
+                    },
+                    {
                         id: "nomButton",
                         vars: selectedProblem.tags.nominal,
                         name: 'Nominal',
@@ -419,6 +435,8 @@ export let leftpanel = forceData => {
                             'item-weight': selectedProblem.tags.weights,
                             'item-privileged': selectedProblem.tags.privileged,
                             'item-exogenous': selectedProblem.tags.exogenous,
+                            'item-featurize': selectedProblem.tags.featurize,
+                            'item-randomize': selectedProblem.tags.randomize,
                             'item-cross-section': selectedProblem.tags.crossSection,
                             'item-index': selectedProblem.tags.indexes,
                             'item-matched': matchedVariables,
@@ -893,6 +911,18 @@ export let rightpanel = () => {
                         isLocked && hopscotch.startTour(app.lockTour())
                     }, style: 'float: left'
                 },
+                m('label', 'Modeling Mode'),
+                m(ButtonRadio, {
+                    id: 'modelingModeButtonBar',
+                    attrsAll: {style: 'width:180px;margin:1em;margin-top:0'},
+                    onclick: !isLocked && (mode => selectedProblem.modelingMode = mode),
+                    activeSection: selectedProblem.modelingMode || "predict",
+                    sections: [
+                        {value: 'predict', attrsInterface: {disabled: isLocked}},
+                        {value: 'causal', attrsInterface: {disabled: isLocked}},
+                    ]
+                }),
+                m('br'),
                 m('label', 'Task Type'),
                 m(Dropdown, {
                     id: 'taskType',
@@ -1641,11 +1671,11 @@ let variableTagMetadata = (selectedProblem, variableName) => [
         onclick: () => toggleGroup(selectedProblem, 'Ordering', variableName),
         title: defaultGroupDescriptions.ordering
     },
-    {
-        name: 'Location', active: selectedProblem.tags.location.includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, 'Location', variableName),
-        title: defaultGroupDescriptions.location
-    },
+    // {
+    //     name: 'Location', active: selectedProblem.tags.location.includes(variableName),
+    //     onclick: () => toggleGroup(selectedProblem, 'Location', variableName),
+    //     title: defaultGroupDescriptions.location
+    // },
     {
         name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'nominal', variableName),
@@ -1682,11 +1712,21 @@ let variableTagMetadata = (selectedProblem, variableName) => [
         title: defaultGroupDescriptions.exogenous
     },
     {
+        name: 'Featurize', active: selectedProblem.tags.featurize.includes(variableName),
+        onclick: () => toggleTag(selectedProblem, 'featurize', variableName),
+        title: defaultGroupDescriptions.featurize
+    },
+    {
+        name: 'Randomize', active: selectedProblem.tags.randomize.includes(variableName),
+        onclick: () => toggleTag(selectedProblem, 'randomize', variableName),
+        title: defaultGroupDescriptions.randomize
+    },
+    {
         name: 'Index', active: selectedProblem.tags.indexes.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'indexes', variableName),
         title: defaultGroupDescriptions.index
     },
-]
+].filter(_ => _)
 
 // appears when a user attempts to edit when the toggle is set
 let firstSummaryMouseover = true;
@@ -1737,6 +1777,8 @@ export let mutateNodes = problem => (state, context) => {
             weights: new Set(problem.tags.weights),
             privileged: new Set(problem.tags.privileged),
             exogenous: new Set(problem.tags.exogenous),
+            featurize: new Set(problem.tags.featurize),
+            randomize: new Set(problem.tags.randomize),
             crossSection: new Set(problem.tags.crossSection),
             indexes: new Set(problem.tags.indexes),
             matched: new Set(matchedVariables),
@@ -1755,6 +1797,8 @@ export let mutateNodes = problem => (state, context) => {
             weights: 4,
             privileged: 4,
             exogenous: 4,
+            featurize: 4,
+            randomize: 4,
             indexes: 4,
             matched: 4
         });
@@ -1769,6 +1813,8 @@ export let mutateNodes = problem => (state, context) => {
         weights: common.taggedColor,
         privileged: common.taggedColor,
         exogenous: common.taggedColor,
+        featurize: common.taggedColor,
+        randomize: common.taggedColor,
         indexes: common.taggedColor,
         matched: common.taggedColor,
         loose: common.taggedColor,
@@ -1784,6 +1830,8 @@ export let mutateNodes = problem => (state, context) => {
         weights: app.colors.weight,
         privileged: app.colors.privileged,
         exogenous: app.colors.exogenous,
+        featurize: app.colors.featurize,
+        randomize: app.colors.randomize,
         indexes: app.colors.index,
         matched: app.colors.matched
     };
@@ -1850,15 +1898,15 @@ export let forceDiagramLabels = problem => pebble => [
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
-            {
-                id: 'Location',
-                name: 'Loc',
-                attrs: {fill: app.colors.location},
-                onclick: (_, d) => {
-                    toggleGroup(problem, 'Location', d);
-                    forceDiagramState.setSelectedPebble(d);
-                }
-            },
+            // {
+            //     id: 'Location',
+            //     name: 'Loc',
+            //     attrs: {fill: app.colors.location},
+            //     onclick: (_, d) => {
+            //         toggleGroup(problem, 'Location', d);
+            //         forceDiagramState.setSelectedPebble(d);
+            //     }
+            // },
         ].filter(_ => _)
     },
     {
@@ -1890,7 +1938,7 @@ export let forceDiagramLabels = problem => pebble => [
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
-            {
+            problem.modelingMode !== "causal" && {
                 id: 'Weight',
                 name: 'Weight',
                 attrs: {fill: app.colors.weight},
@@ -1899,12 +1947,30 @@ export let forceDiagramLabels = problem => pebble => [
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
-            problem.task === "forecasting" && {
+            problem.modelingMode !== "causal" && problem.task === "forecasting" && {
                 id: 'Exogenous',
                 name: 'Exog',
                 attrs: {fill: app.colors.exogenous},
                 onclick: (_, d) => {
                     toggleTag(problem, 'exogenous', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
+            },
+            problem.modelingMode === "causal" && {
+                id: 'Randomize',
+                name: 'Rand',
+                attrs: {fill: app.colors.randomize},
+                onclick: (_, d) => {
+                    toggleTag(problem, 'randomize', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
+            },
+            problem.modelingMode === "causal" && {
+                id: 'Featurize',
+                name: 'Feat',
+                attrs: {fill: app.colors.featurize},
+                onclick: (_, d) => {
+                    toggleTag(problem, 'featurize', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             }
@@ -2174,6 +2240,18 @@ export let toggleTag = (problem, tag, name) => {
             problem.tags.indexes = [];
         else
             problem.tags.indexes = [name];
+    }
+    else if (tag === 'featurize') {
+        if (!problem.tags.featurize.includes(name)) {
+            remove(problem.tags.indexes, name);
+        }
+        toggle(problem.tags.featurize, name);
+    }
+    else if (tag === 'randomize') {
+        if (!problem.tags.randomize.includes(name)) {
+            remove(problem.tags.indexes, name);
+        }
+        toggle(problem.tags.randomize, name);
     }
     app.resetPeek()
     app.saveSystemLogEntry(logParams);

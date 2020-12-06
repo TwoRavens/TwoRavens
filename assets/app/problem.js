@@ -112,7 +112,10 @@ export let defaultGroupDescriptions = {
     weight: 'A weight variable indicates the importance of individual observations.',
     privileged: 'A privileged variable may or may not exist in the test set.',
     exogenous: 'An exogenous variable is determined outside of the model.',
-    index: 'An index variable typically has one unique value per observation.'
+    index: 'An index variable typically has one unique value per observation.',
+    // TODO: TAG
+    featurize: '',
+    randomize: ''
 };
 
 /**
@@ -149,6 +152,7 @@ export let buildEmptyProblem = problemId => ({
     subTask: undefined,
     supervision: undefined,
     resourceTypes: ['tabular'],
+    modelingMode: 'predict',
     d3mTags: [],
     splitOptions: {
         outOfSampleSplit: true,
@@ -188,6 +192,8 @@ export let buildEmptyProblem = problemId => ({
         ordering: [],
         weights: [], // singleton list
         indexes: ['d3mIndex'],
+        featurize: [],
+        randomize: [],
         privileged: [],
         exogenous: [],
         transformed: [],
@@ -294,6 +300,7 @@ export let buildDefaultProblem = problemDoc => {
         subTask: findSubtask(problemDoc.about.taskKeywords),
         supervision: findSupervision(problemDoc.about.taskKeywords),
         resourceTypes: filterResourceType(problemDoc.about.taskKeywords),
+        modelingMode: 'predict',
         d3mTags: filterD3MTags(problemDoc.about.taskKeywords),
 
         splitOptions: Object.assign({
@@ -339,6 +346,8 @@ export let buildDefaultProblem = problemDoc => {
             ordering: [problemDoc?.inputs?.forecastingHorizon?.colName].filter(_ => _),
             weights: getTagsByRole('instanceWeight'), // singleton list
             indexes,
+            featurize: [],
+            randomize: [],
             privileged: getTagsByRole('suggestedPrivilegedData'), // singleton list
             exogenous: [],
             transformed: [],
@@ -457,6 +466,7 @@ export function standardizeDiscovery(problems) {
             supervision: undefined,
             subTask: undefined,
             resourceTypes: [],
+            modelingMode: 'predict',
             d3mTags: [],
 
             splitOptions: {
@@ -495,6 +505,8 @@ export function standardizeDiscovery(problems) {
                 location: [],
                 ordering,
                 indexes: ['d3mIndex'],
+                featurize: [],
+                randomize: [],
                 privileged: [],
                 exogenous: [],
                 temporal: [],
