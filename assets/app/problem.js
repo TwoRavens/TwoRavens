@@ -15,8 +15,7 @@ import * as utils from './utils';
  * @property {?string} provenanceId - Unique indicator for the problem this was sourced from
  * @property {('auto'|'user'|'solved')} system - Indicates the state of a problem.
  * @property {?boolean} unedited - if true, then the problem may be transiently deleted (when switching away from a temp copy of a discovered problem)
- * @property {string[]} predictors - Variables in the predictors group
- * @property {string[]} targets - Variables in the targets group
+ * @property {VariableGroup[]} groups - groups in the force diagram, typically includes predictors and targets
  * @property {string} description
  * @property {string} metric - Primary metric to fit against
  * @property {string[]} metrics - Secondary metrics to evaluate, but not fit against
@@ -36,6 +35,17 @@ import * as utils from './utils';
  * @property {?string} orderingName - explicit name to give to the ordering variable
  * @property {?ProblemResults} results
  */
+
+/**
+ * VariableGroup
+ * @typedef {Object} VariableGroup
+ * @property {string} description
+ * @property {string} name
+ * @property {string[]} nodes - list of predictor names
+ * @property {string} color
+ * @property {string} opacity
+ */
+
 
 /**
  * @typedef {Object} SplitOptions
@@ -728,6 +738,14 @@ export let getNominalVariables = problem => {
         // // targets in a classification problem are also nominal
         ...selectedProblem.task.toLowerCase() === 'classification'
             ? getTargetVariables(selectedProblem) : []
+    ])];
+};
+
+export let getOrdinalVariables = problem => {
+    let selectedProblem = problem || getSelectedProblem();
+    return [...new Set([
+        ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].nature === "ordinal"),
+        ...selectedProblem.tags.ordinal
     ])];
 };
 

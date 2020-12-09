@@ -410,8 +410,11 @@ export class CanvasExplore {
                     configuration: mappingConfiguration,
                     abstractQuery: getAbstractPipeline(selectedProblem, true),
                     summaries: app.variableSummaries,
+                    setSummaryAttr: app.setVariableSummaryAttr,
                     sampleSize: parseInt(explorePreferences.recordLimit),
-                    variablesInitial: app.workspace.raven_config.variablesInitial
+                    variablesInitial: app.workspace.raven_config.variablesInitial,
+                    initViewport: mappingConfiguration.initViewport,
+                    setInitViewport: value => mappingConfiguration.initViewport = value
                 })),
             explorePreferences.mode === 'custom' && m('div', {
                     style: {
@@ -424,6 +427,7 @@ export class CanvasExplore {
                     configuration: customConfiguration,
                     abstractQuery: getAbstractPipeline(selectedProblem, true),
                     summaries: app.variableSummaries,
+                    setSummaryAttr: app.setVariableSummaryAttr,
                     sampleSize: parseInt(explorePreferences.recordLimit),
                     variablesInitial: app.workspace.raven_config.variablesInitial
                 })

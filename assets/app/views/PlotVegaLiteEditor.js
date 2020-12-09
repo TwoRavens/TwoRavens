@@ -9,13 +9,16 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from '../../common/views/Popper';
 import * as app from "../app";
 import {getSelectedProblem, getTargetVariables} from "../problem";
+import {setDeep} from "../utils";
+import {mapStyles} from "./PlotMapbox";
+import * as common from "../../common/common";
 
 export default class PlotVegaLiteEditor {
-    oninit(vnode) {
+    oninit() {
         this.pendingSecondaryVariable = '';
     }
     view(vnode) {
-        let {configuration, variables, mapping} = vnode.attrs;
+        let {configuration, variables, mapping, summaries, setSummaryAttr, nominals} = vnode.attrs;
 
         // let multi = 'layers' in configuration
         //     ? 'layers'
@@ -31,7 +34,7 @@ export default class PlotVegaLiteEditor {
                     padding: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                 }
-            }, this.layerEditor(configuration, variables, mapping)),
+            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals)),
 
             // !mapping && ([
             //     {
@@ -84,7 +87,7 @@ export default class PlotVegaLiteEditor {
         ];
     }
 
-    layerEditor(configuration, variables, mapping) {
+    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals) {
 
         // maps should be interactive by default
         if (mapping && !('interactive' in configuration)) configuration.interactive = true;
@@ -97,26 +100,6 @@ export default class PlotVegaLiteEditor {
             if (secondaryAxis.variables.length > 1)
                 variables = variables.concat([secondaryAxis.key, secondaryAxis.value]);
         }
-
-        let allChannels = [
-            !mapping && 'primary axis',
-            !mapping && 'secondary axis',
-            mapping && 'longitude',
-            mapping && 'latitude',
-            mapping && 'region',
-            !mapping && 'size',
-            'color',
-            !mapping && 'order',
-            !mapping && 'shape',
-            'opacity',
-            !mapping && 'row',
-            !mapping && 'column',
-            configuration.mark === "line" && 'detail',
-            // 'fillOpacity',
-            // 'strokeWidth',
-            !mapping && configuration.mark === "text" && 'text',
-            'tooltip',
-        ].filter(_=>_);
 
         let allMarks = [
             !mapping && "bar",
@@ -133,6 +116,35 @@ export default class PlotVegaLiteEditor {
             // 'rule'
         ].filter(_=>_);
 
+        // initial load
+        if (mapping && !configuration.mark) {
+            configuration.mark = Object.values(summaries)
+                .some(summary => ['latitude', 'longitude'].includes(summary.locationUnit)) ? 'point' : 'region'
+            let colorVariable = getTargetVariables(getSelectedProblem())[0] || variables.find(variable => summaries[variable].numchar === 'numeric');
+            let colorChannel = configuration.channels.find(channel => channel.name === 'color')
+            if (colorChannel) colorChannel.variable = colorVariable;
+        }
+
+        let allChannels = [
+            !mapping && 'primary axis',
+            !mapping && 'secondary axis',
+            configuration.mark === "point" && mapping && 'longitude',
+            configuration.mark === "point" && mapping && 'latitude',
+            configuration.mark === "region" && mapping && 'region',
+            !mapping && 'size',
+            'color',
+            !mapping && 'order',
+            !mapping && 'shape',
+            'opacity',
+            !mapping && 'row',
+            !mapping && 'column',
+            configuration.mark === "line" && 'detail',
+            // 'fillOpacity',
+            // 'strokeWidth',
+            !mapping && configuration.mark === "text" && 'text',
+            'tooltip',
+        ].filter(_=>_);
+
         let unusedChannels = allChannels
             .filter(channelName => !configuration.channels
                 .find(channel => channel.name === channelName && !channel.delete));
@@ -146,24 +158,13 @@ export default class PlotVegaLiteEditor {
             remove(unusedChannels, 'secondary axis')
         }
 
-        // initial load
-        if (mapping && !configuration.mark) {
-            configuration.mark = Object.values(app.variableSummaries)
-                .some(summary => ['latitude', 'longitude'].includes(summary.locationUnit)) ? 'point' : 'region'
-            let colorVariable = getTargetVariables(getSelectedProblem())[0];
-            if (!colorVariable || app.variableSummaries[colorVariable].numchar !== 'numeric')
-                colorVariable = variables.find(variable => app.variableSummaries[variable].numchar === 'numeric');
-            let colorChannel = configuration.channels.find(channel => channel.name === 'color')
-            if (colorChannel) colorChannel.variable = colorVariable;
-        }
-
         if (mapping && configuration.mark === 'point') {
-            ['longitude', 'latitude'].filter(name => unusedChannels.includes(name))
+            ['latitude', 'longitude'].filter(name => unusedChannels.includes(name))
                 .forEach(name => {
                     let channel = configuration.channels.find(channel => channel.name === name);
                     if (channel) channel.delete = false
                     else configuration.channels.unshift({
-                        name, variable: variables.find(variable => app.variableSummaries[variable].locationUnit === name)
+                        name, variable: variables.find(variable => summaries[variable].locationUnit === name)
                     });
                     remove(unusedChannels, name)
                 })
@@ -174,7 +175,7 @@ export default class PlotVegaLiteEditor {
             let regionUnits = Object.keys(app.locationUnits).filter(unit => !['latitude', 'longitude'].includes(unit));
             configuration.channels.unshift({
                 name: 'region',
-                variable: variables.find(variable => regionUnits.includes(app.variableSummaries[variable].locationUnit))
+                variable: variables.find(variable => regionUnits.includes(summaries[variable].locationUnit))
             });
             remove(unusedChannels, 'region');
             ['longitude', 'latitude'].forEach(name => configuration.channels
@@ -248,7 +249,7 @@ export default class PlotVegaLiteEditor {
                         onclick: point => configuration.point = point === "True",
                         activeSection: configuration.point ? "True" : "False",
                         sections: [{value: 'True'}, {value: 'False'}]
-                    })]
+                    })],
                     // "bin": m(Popper, {
                     //     content: () => configuration.bin
                     //         ? "Bin is enabled, so the x axis is binned. "
@@ -263,6 +264,17 @@ export default class PlotVegaLiteEditor {
                     //         {value: 'False'},
                     //     ]
                     // }))
+                    mapping && ["style", m(TextFieldSuggestion, {
+                        id: `mapboxStyleTextField`,
+                        value: (configuration.pendingMapboxStyle ?? configuration.mapboxStyle) || {light: 'streets', dark: 'dark'}[common.theme],
+                        suggestions: Object.keys(mapStyles),
+                        enforce: true,
+                        oninput: value => configuration.pendingMapboxStyle = value,
+                        onblur: value => {
+                            delete configuration.pendingMapboxStyle;
+                            configuration.mapboxStyle = value
+                        }
+                    })]
                 ]
             }),
             configuration.mark === "text" && "Use the text channel to map text from your dataset to plot points. You may want to use manipulations to create a shortened text column. ",
@@ -274,7 +286,7 @@ export default class PlotVegaLiteEditor {
                 data: [
                     ...configuration.channels
                         .filter(channel => !channel.deleted)
-                        .map(channel => !channel.delete && this.channelEditor(channel, variables, configuration)),
+                        .map(channel => !channel.delete && this.channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals)),
                     unusedChannels.length > 0 && [
                         m(Dropdown, {
                             items: unusedChannels,
@@ -290,7 +302,7 @@ export default class PlotVegaLiteEditor {
         ];
     }
 
-    channelEditor(channel, variables, configuration) {
+    channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals) {
 
         let aggregators = [
             'none',
@@ -314,11 +326,14 @@ export default class PlotVegaLiteEditor {
                 channel.name,
                 m(TextFieldSuggestion, {
                     id: `channel${channel.name}TextField`,
-                    value: channel.variable,
+                    value: channel.pendingVariable ?? channel.variable,
                     suggestions: variables,
                     enforce: true,
-                    oninput: value => channel.variable = value,
-                    onblur: value => channel.variable = value
+                    oninput: value => channel.pendingVariable = value,
+                    onblur: value => {
+                        delete channel.pendingVariable;
+                        channel.variable = value
+                    }
                 }),
                 m(Dropdown, {
                     id: 'targetDropdown',
@@ -333,36 +348,63 @@ export default class PlotVegaLiteEditor {
         }
 
         if (channel.name === "color") {
+            let getDefaultSchemeCategory = variable => variable && (nominals.has(variable) ? 'categorical' : 'sequential-single')
+            let schemeCategory = channel.schemeCategory || getDefaultSchemeCategory(channel.variable);
+
+            channel.scheme = channel.scheme || {};
+
+            let setSchemeCategory = value => {
+                channel.schemeCategory = value;
+                if (!channel.scheme?.[value] && (value in schemes))
+                    setDeep(channel, ['scheme', value], schemes[value][0])
+            };
+
             return [
                 channel.name,
                 m(TextFieldSuggestion, {
                     id: `channel${channel.name}TextField`,
-                    value: channel.variable,
+                    value: channel.pendingVariable ?? channel.variable,
                     suggestions: variables,
                     enforce: true,
-                    oninput: value => channel.variable = value,
-                    onblur: value => channel.variable = value
+                    oninput: value => channel.pendingVariable = value,
+                    onblur: value => {
+                        delete channel.pendingVariable;
+                        channel.variable = value;
+                        let currentNumchar = channel.schemeCategory === 'categorical' ? 'character' : 'numeric';
+                        if (summaries[value]?.numchar !== currentNumchar)
+                            setSchemeCategory(getDefaultSchemeCategory(value));
+                    }
                 }),
-                m('',
-                    configuration.mark === "region" && m('',
+                channel.variable && m('',
+                    configuration.mark === "region" && channel.variable && m('',
                         m('label', 'Aggregation:'),
                         m(Dropdown, {
                             id: `aggregate${channel.name}Dropdown`,
                             items: aggregators,
-                            activeItem: channel.aggregation,
+                            activeItem: channel.aggregation || 'mean',
                             onclickChild: child => channel.aggregation = child
                         })),
+                    m('label', 'Scheme Category:'),
+                    m(TextFieldSuggestion, {
+                        id: 'schemeCategoriesDropdown',
+                        value: schemeCategory,
+                        suggestions: Object.keys(schemes),
+                        enforce: true,
+                        oninput: value => channel.schemeCategory = value,
+                        onblur: setSchemeCategory,
+                        style: {'margin-left': '1em'}
+                    }),
                     m('label', 'Scheme:'),
                     m(TextFieldSuggestion, {
                         id: 'schemeDropdown',
-                        value: channel.scheme || 'default',
-                        suggestions: schemes,
+                        value: channel.scheme[schemeCategory] ?? schemes[schemeCategory]?.[0],
+                        suggestions: schemes[schemeCategory] || [],
                         enforce: true,
-                        oninput: value => channel.scheme = value,
-                        onblur: value => channel.scheme = value,
+                        oninput: value => channel.scheme[schemeCategory] = value,
+                        onblur: value => channel.scheme[schemeCategory] = value,
                         style: {'margin-left': '1em'}
                     })
-                    ),
+                ),
                 m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
                 // undefined
             ]
@@ -378,7 +420,7 @@ export default class PlotVegaLiteEditor {
             return [
                 channel.name,
                 // variables
-                m(Table, {
+                m('', m(Table, {
                     attrsAll: {
                         style: {
                             background: 'rgba(0,0,0,.05)',
@@ -387,34 +429,28 @@ export default class PlotVegaLiteEditor {
                             margin: '10px 0'
                         }
                     },
-                    data: [
-                        ...channel.variables.map(variable => [
-                            variable,
-                            m('div', {onclick: () => remove(channel.variables, variable)}, m(Icon, {name: 'x'}))
-                        ]),
-                        [
-                            m(TextFieldSuggestion, {
-                                id: `channel${channel.name}TextField`,
-                                value: this.pendingSecondaryVariable,
-                                suggestions: variables,
-                                enforce: true,
-                                oninput: value => this.pendingSecondaryVariable = value,
-                                onblur: value => {
-                                    this.pendingSecondaryVariable = '';
-                                    if (!variables.includes(value)) return;
+                    data: channel.variables.map(variable => [
+                        variable,
+                        m('div', {onclick: () => remove(channel.variables, variable)}, m(Icon, {name: 'x'}))
+                    ])
+                }), m(TextFieldSuggestion, {
+                    id: `channel${channel.name}TextField`,
+                    value: this.pendingSecondaryVariable,
+                    suggestions: variables,
+                    enforce: true,
+                    oninput: value => this.pendingSecondaryVariable = value,
+                    onblur: value => {
+                        this.pendingSecondaryVariable = '';
+                        if (!variables.includes(value)) return;
 
-                                    channel.variables.push(value)
+                        channel.variables.push(value)
 
-                                    if (channel.variables.length > 1) {
-                                        let colorChannel = configuration.channels.find(channel => channel.name === 'color');
-                                        if (!colorChannel) configuration.channels.push({name: 'color', variable: channel.key})
-                                    }
-                                }
-                            }),
-                            undefined
-                        ]
-                    ]
-                }),
+                        if (channel.variables.length > 1) {
+                            let colorChannel = configuration.channels.find(channel => channel.name === 'color');
+                            if (!colorChannel) configuration.channels.push({name: 'color', variable: channel.key})
+                        }
+                    }
+                })),
                 m('div',
                     channel.variables.length > 1 && m('div',
                     m('label', 'Key variable:'), m(TextField, {
@@ -465,32 +501,35 @@ export default class PlotVegaLiteEditor {
             channel.name,
             m(TextFieldSuggestion, {
                 id: `channel${channel.name}TextField`,
-                value: channel.variable,
+                value: channel.pendingVariable ?? channel.variable,
                 suggestions: variables,
                 enforce: true,
-                oninput: value => channel.variable = value,
-                onblur: value => channel.variable = value
+                oninput: value => channel.pendingVariable = value,
+                onblur: value => {
+                    delete channel.pendingVariable;
+                    channel.variable = value
+                }
             }),
             m('',
                 m('label', 'Units:'),
                 m(Dropdown, {
                     id: 'locationUnitsDropdown',
                     items: Object.keys(app.locationUnits).filter(unit => !['latitude', 'longitude'].includes(unit)),
-                    activeItem: app.variableSummaries[channel.variable]?.locationUnit || 'unknown',
+                    activeItem: summaries[channel.variable]?.locationUnit || 'unknown',
                     onclickChild: value => {
-                        if (value === app.variableSummaries[channel.variable].locationUnit) return;
-                        app.setVariableSummaryAttr(channel.variable, 'locationUnit', value);
-                        app.setVariableSummaryAttr(channel.variable, 'locationFormat', undefined);
+                        if (value === summaries[channel.variable].locationUnit) return;
+                        setSummaryAttr(channel.variable, 'locationUnit', value);
+                        setSummaryAttr(channel.variable, 'locationFormat', undefined);
                         app.inferLocationFormat(channel.variable)
                     }
                 }),
-                app.variableSummaries[channel.variable]?.locationUnit && m('div',
+                summaries[channel.variable]?.locationUnit && m('div',
                     {style: 'margin-bottom: 1em'},
                 m('label', 'Format:'),
                     m(Dropdown, {
                         id: 'locationFormatDropdown',
-                        items: app.locationUnits[app.variableSummaries[channel.variable].locationUnit],
-                        activeItem: app.variableSummaries[channel.variable].locationFormat,
+                        items: app.locationUnits[summaries[channel.variable].locationUnit],
+                        activeItem: summaries[channel.variable].locationFormat,
                         onclickChild: value => app.setVariableSummaryAttr(channel.variable, 'locationFormat', value)
                     }),
                 ),
@@ -506,18 +545,21 @@ export default class PlotVegaLiteEditor {
             channel.name,
             m(TextFieldSuggestion, {
                 id: `channel${channel.name}TextField`,
-                value: channel.variable,
+                value: channel.pendingVariable ?? channel.variable,
                 suggestions: variables,
                 enforce: true,
-                oninput: value => channel.variable = value,
-                onblur: value => channel.variable = value
+                oninput: value => channel.pendingVariable = value,
+                onblur: value => {
+                    delete channel.pendingVariable;
+                    channel.variable = value
+                }
             }),
-            configuration.mark === "region" && m('',
+            channel.variable && configuration.mark === "region" && m('',
                 m('label', 'Aggregation:'),
                 m(Dropdown, {
                     id: `aggregate${channel.name}Dropdown`,
                     items: aggregators,
-                    activeItem: channel.aggregation,
+                    activeItem: channel.aggregation || 'mean',
                     onclickChild: child => channel.aggregation = child
                 })),
             m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
@@ -530,73 +572,86 @@ export let remove = (arr, obj) => {
     idx !== -1 && arr.splice(idx, 1);
 };
 
-export let schemes = [
-    'none',
-    'accent',
-    'category10',
-    'category20',
-    'category20b',
-    'category20c',
-    'dark2',
-    'paired',
-    'pastel1',
-    'pastel2',
-    'set1',
-    'set2',
-    'set3',
-    'tableau10',
-    'tableau20',
-    'blues',
-    'tealblues',
-    'teals',
-    'greens',
-    'browns',
-    'oranges',
-    'reds',
-    'purples',
-    'warmgreys',
-    'greys',
-    'viridis',
-    'magma',
-    'inferno',
-    'plasma',
-    'cividis',
-    'turbo',
-    'bluegreen',
-    'bluepurple',
-    'goldgreen',
-    'goldorange',
-    'goldred',
-    'greenblue',
-    'orangered',
-    'purplebluegreen',
-    'purpleblue',
-    'purplered',
-    'redpurple',
-    'yellowgreenblue',
-    'yellowgreen',
-    'yelloworangebrown',
-    'yelloworangered',
-    'darkblue',
-    'darkgold',
-    'darkgreen',
-    'darkmulti',
-    'darkred',
-    'lightgreyred',
-    'lightgreyteal',
-    'lightmulti',
-    'lightorange',
-    'lighttealblue',
-    'blueorange',
-    'brownbluegreen',
-    'purplegreen',
-    'pinkyellowgreen',
-    'purpleorange',
-    'redblue',
-    'redgrey',
-    'redyellowblue',
-    'redyellowgreen',
-    'spectral',
-    'rainbow',
-    'sinebow'
-]
+export let schemes = {
+    categorical: [
+        'tableau10',
+        'tableau20',
+        'accent',
+        'category10',
+        'category20',
+        'category20b',
+        'category20c',
+        'dark2',
+        'paired',
+        'pastel1',
+        'pastel2',
+        'set1',
+        'set2',
+        'set3',
+    ],
+    'sequential-single': [
+        'blues',
+        'tealblues',
+        'teals',
+        'greens',
+        'browns',
+        'oranges',
+        'reds',
+        'purples',
+        'warmgreys',
+        'greys',
+    ],
+    'sequential-multi': [
+        'viridis',
+        'magma',
+        'inferno',
+        'plasma',
+        'cividis',
+        'turbo',
+        'bluegreen',
+        'bluepurple',
+        'goldgreen',
+        'goldorange',
+        'goldred',
+        'greenblue',
+        'orangered',
+        'purplebluegreen',
+        'purpleblue',
+        'purplered',
+        'redpurple',
+        'yellowgreenblue',
+        'yellowgreen',
+        'yelloworangebrown',
+        'yelloworangered'
+    ],
+    dark: [
+        'darkblue',
+        'darkgold',
+        'darkgreen',
+        'darkmulti',
+        'darkred',
+    ],
+    light: [
+        'lightgreyred',
+        'lightgreyteal',
+        'lightmulti',
+        'lightorange',
+        'lighttealblue',
+    ],
+    diverging: [
+        'blueorange',
+        'brownbluegreen',
+        'purplegreen',
+        'pinkyellowgreen',
+        'purpleorange',
+        'redblue',
+        'redgrey',
+        'redyellowblue',
+        'redyellowgreen',
+        'spectral',
+    ],
+    rainbow: [
+        'rainbow',
+        'sinebow'
+    ]
+}

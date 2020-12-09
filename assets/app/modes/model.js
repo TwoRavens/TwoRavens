@@ -36,7 +36,7 @@ import {
     getDescription,
     getGeographicVariables,
     getNominalVariables,
-    getOrderingTimeUnit,
+    getOrderingTimeUnit, getOrdinalVariables,
     getPredictorVariables,
     getProblemCopy,
     getSelectedProblem,
@@ -233,7 +233,7 @@ export class CanvasModel {
                     },
                     {
                         id: "ordinalButton",
-                        vars: selectedProblem.tags.ordinal,
+                        vars: getOrdinalVariables(selectedProblem),
                         name: 'Ordinal',
                         borderColor: app.colors.ordinal,
                         innerColor: 'white',
@@ -428,7 +428,7 @@ export let leftpanel = forceData => {
                             // keep this order aligned with params in mutateNodes
                             'item-nominal': getNominalVariables(selectedProblem),
                             'item-location': getGeographicVariables(),
-                            'item-ordinal': selectedProblem.tags.ordinal,
+                            'item-ordinal': getOrdinalVariables(selectedProblem),
                             'item-boundary': selectedProblem.tags.boundary,
                             'item-time': Object.keys(app.variableSummaries)
                                 .filter(variable => app.variableSummaries[variable].timeUnit),
@@ -532,7 +532,6 @@ export let leftpanel = forceData => {
     }
 
     if (selectedProblem) {
-        selectedProblem.causalGroups = selectedProblem.causalGroups || [];
         // TODO: groupLinks
         let {groups, groupLinks} = buildGroupingState(selectedProblem);
 
@@ -851,7 +850,7 @@ export let leftpanel = forceData => {
 
     sections.push({
         value: 'Summary',
-        title: "Select a variable from within the visualization in the center panel to view its summary statistics.",
+        title: "Select" + " a variable from within the visualization in the center panel to view its summary statistics.",
         display: 'none',
         contents: summaryContent
     });
@@ -1671,18 +1670,18 @@ let variableTagMetadata = (selectedProblem, variableName) => [
         onclick: () => toggleGroup(selectedProblem, 'Ordering', variableName),
         title: defaultGroupDescriptions.ordering
     },
-    // {
-    //     name: 'Location', active: selectedProblem.tags.location.includes(variableName),
-    //     onclick: () => toggleGroup(selectedProblem, 'Location', variableName),
-    //     title: defaultGroupDescriptions.location
-    // },
+    {
+        name: 'Location', active: selectedProblem.tags.location.includes(variableName),
+        onclick: () => toggleGroup(selectedProblem, 'Location', variableName),
+        title: defaultGroupDescriptions.location
+    },
     {
         name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
         onclick: () => toggleTag(selectedProblem, 'nominal', variableName),
         title: defaultGroupDescriptions.nominal,
     },
     {
-        name: 'Ordinal', active: selectedProblem.tags.ordinal.includes(variableName),
+        name: 'Ordinal', active: getOrdinalVariables(selectedProblem).includes(variableName),
         onclick: () => toggleGroup(selectedProblem, 'ordinal', variableName),
         title: defaultGroupDescriptions.ordinal
     },
@@ -1770,7 +1769,7 @@ export let mutateNodes = problem => (state, context) => {
             transformed: new Set(problem.tags.transformed),
             nominal: new Set(getNominalVariables(problem)),
             geographic: new Set(getGeographicVariables()),
-            ordinal: new Set(problem.tags.ordinal),
+            ordinal: new Set(getOrdinalVariables(selectedProblem)),
             boundary: new Set(problem.tags.boundary),
             temporal: new Set(Object.keys(app.variableSummaries)
                 .filter(variable => app.variableSummaries[variable].timeUnit)),
@@ -1898,15 +1897,15 @@ export let forceDiagramLabels = problem => pebble => [
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
-            // {
-            //     id: 'Location',
-            //     name: 'Loc',
-            //     attrs: {fill: app.colors.location},
-            //     onclick: (_, d) => {
-            //         toggleGroup(problem, 'Location', d);
-            //         forceDiagramState.setSelectedPebble(d);
-            //     }
-            // },
+            {
+                id: 'Location',
+                name: 'Loc',
+                attrs: {fill: app.colors.location},
+                onclick: (_, d) => {
+                    toggleGroup(problem, 'Location', d);
+                    forceDiagramState.setSelectedPebble(d);
+                }
+            },
         ].filter(_ => _)
     },
     {

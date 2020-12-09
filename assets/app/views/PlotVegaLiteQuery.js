@@ -15,6 +15,8 @@ export default class PlotVegaLiteQuery {
         let {component, getData, specification} = vnode.attrs;
 
         let {abstractQuery, summaries, sampleSize, variablesInitial} = vnode.attrs;
+        let {initViewport, setInitViewport} = vnode.attrs;
+
         if (isNaN(sampleSize)) sampleSize = 5000;
 
         abstractQuery = abstractQuery || [];
@@ -42,17 +44,23 @@ export default class PlotVegaLiteQuery {
                 if (!(compiled in this.datasets) && !(compiled in this.isLoading)) {
                     this.datasets[compiled] = undefined;
                     this.isLoading[compiled] = true;
+                    console.log(compiled);
                     getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
                         setTimeout(m.redraw, 1)
                     })
 
-                    specification.encoding.region && m.request({
-                        url: mongoURL + 'get-metadata',
-                        method: 'POST',
-                        body: {geojson: [app.locationUnits[app.variableSummaries[specification.encoding.region.field].locationUnit][0]]}
-                    }).then(setMetadata).then(m.redraw);
+                    if (specification.encoding.region) {
+                        let unit = summaries[specification.encoding.region.field].locationUnit;
+                        if (unit && (unit in app.locationUnits)) {
+                            m.request({
+                                url: mongoURL + 'get-metadata',
+                                method: 'POST',
+                                body: {geojson: [app.locationUnits[unit][0]]}
+                            }).then(setMetadata).then(m.redraw)
+                        }
+                    }
                 }
             });
 
@@ -85,7 +93,7 @@ export default class PlotVegaLiteQuery {
         pruneSpec('vconcat');
 
         // draw plot
-        return m(component, {specification: specificationStripped})
+        return m(component, {specification: specificationStripped, initViewport, setInitViewport})
     }
 }
 

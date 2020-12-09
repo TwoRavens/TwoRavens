@@ -106,17 +106,17 @@ export default class PlotVegaLite {
         // else if (data && this.dataKeys) this.diff(vnode);
     }
 
-    diff(vnode) {
-        let {data, identifier} = vnode.attrs;
-        let newData = data.filter(datum => !this.dataKeys.has(datum[identifier]));
-
-        this.dataKeys = new Set(data.map(datum => datum[identifier]));
-        this.instance
-            .change('embedded', vega.changeset()
-                .insert(newData)
-                .remove(datum => !this.dataKeys.has(datum[identifier])))
-            .run();
-    }
+    // diff(vnode) {
+    //     let {data, identifier} = vnode.attrs;
+    //     let newData = data.filter(datum => !this.dataKeys.has(datum[identifier]));
+    //
+    //     this.dataKeys = new Set(data.map(datum => datum[identifier]));
+    //     this.instance
+    //         .change('embedded', vega.changeset()
+    //             .insert(newData)
+    //             .remove(datum => !this.dataKeys.has(datum[identifier])))
+    //         .run();
+    // }
 
     oncreate(vnode) {this.plot(vnode)}
     onupdate(vnode) {this.plot(vnode)}

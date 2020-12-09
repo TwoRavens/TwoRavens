@@ -1,14 +1,15 @@
-import * as jStat from "jstat";
+// import * as jStat from "jstat";
 import m from 'mithril';
 
 import * as app from '../app';
 import * as results from "../modes/results";
 import * as utils from '../utils';
 import {
-    getGeographicVariables, getLocationVariables,
+    getLocationVariables,
     getNominalVariables,
     getOrderingVariable,
-    getPredictorVariables, getTargetVariables,
+    getPredictorVariables,
+    getTargetVariables,
     isProblemValid
 } from "../problem";
 

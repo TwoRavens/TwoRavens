@@ -46,6 +46,7 @@ import {
 } from "../problem";
 import {preparePanels} from "../views/PlotVegaLiteWrapper";
 import {ExploreBoxes, explorePreferences, ExploreVariables} from "./explore";
+import {variableSummaries, workspace} from "../app";
 
 
 /**
@@ -1308,6 +1309,7 @@ export class CanvasSolutions {
         //   this constructs the minimal necessary portion of what that would look like
         let resultsSummaries = [...problem.results.variablesInitial, ...foldedVariables]
             .reduce((out, variable) => Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {});
+        Object.assign(resultsSummaries, resultsPreferences.variableSummariesDiffs || {});
 
         // lock secondary axis to estimated target variables
         customConfiguration.channels = customConfiguration.channels || [];
@@ -1338,14 +1340,24 @@ export class CanvasSolutions {
                 collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
             }, body)),
             nominals,
-            configuration: customConfiguration,
+            configuration: mapping ? mappingConfiguration : customConfiguration,
             abstractQuery: [
                 ...getResultsAbstractPipeline(problem, adapters),
                 ...resultsQuery
             ],
             summaries: resultsSummaries,
+            setSummaryAttr: (variable, attr, value) => {
+                if (variable in app.variableSummaries)
+                    app.setVariableSummaryAttr(variable, attr, value)
+                else {
+                    utils.setDeep(resultsPreferences, ['variableSummariesDiffs', variable, attr], value);
+                    utils.setDeep(variableSummaries, [variable, attr], value);
+                }
+            },
             sampleSize: parseInt(explorePreferences.recordLimit),
-            variablesInitial: problem.results.variablesInitial
+            variablesInitial: problem.results.variablesInitial,
+            initViewport: mappingConfiguration.initViewport,
+            setInitViewport: value => mappingConfiguration.initViewport = value
         });
 
         return [
@@ -1617,7 +1629,7 @@ export class CanvasSolutions {
             }
         }, resultsSubpanels['Data Exploration'] && this.customExplore(problem, selectedAdapters));
 
-        let customExploreMapping = problem.tags.location.length > 0 && m(Subpanel, {
+        let customExploreMapping = m(Subpanel, {
             style: {margin: '0px 1em', position: 'relative'},
             header: 'Mapping Exploration',
             shown: resultsSubpanels['Mapping Exploration'],

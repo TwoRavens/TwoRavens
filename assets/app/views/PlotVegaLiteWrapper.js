@@ -7,12 +7,15 @@ import PlotMapbox from "./PlotMapbox";
 import PlotVegaLite from "./PlotVegaLite";
 
 export default class PlotVegaLiteWrapper {
+
     oninit() {
+        let clientWidth = document.body.clientWidth;
         this.rightPanelSize = 70;
+        let leftPixels = Math.max(clientWidth * (1 - this.rightPanelSize / 100), 500);
+        this.rightPanelSize = (clientWidth - leftPixels) / clientWidth * 100;
     }
 
     view(vnode) {
-
         let {editor, plot} = preparePanels(vnode.attrs);
 
         return m(TwoPanel, {
@@ -25,7 +28,10 @@ export default class PlotVegaLiteWrapper {
 }
 
 export let preparePanels = state => {
-    let {mapping, configuration, getData, abstractQuery, summaries, nominals, sampleSize, variablesInitial} = state;
+    let {
+        mapping, configuration, getData, abstractQuery, summaries, setSummaryAttr,
+        nominals, sampleSize, variablesInitial, initViewport, setInitViewport
+    } = state;
     let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
         [variable]: nominals.has(variable)
             ? 'nominal' : summaries[variable].nature === 'ordinal'
@@ -37,7 +43,7 @@ export let preparePanels = state => {
 
     let specification;
     try {
-        specification = makeSpecification(configuration, varTypes);
+        specification = makeSpecification(configuration, varTypes, summaries);
     } catch (err) {
         console.warn(err);
     }
@@ -67,7 +73,8 @@ export let preparePanels = state => {
             summaries,
             sampleSize,
             variablesInitial,
-            mapping
+            mapping,
+            initViewport, setInitViewport
         }))
     }
 
@@ -75,23 +82,25 @@ export let preparePanels = state => {
         editor: m(PlotVegaLiteEditor, {
             mapping,
             configuration,
-            variables: Object.keys(summaries)
+            variables: Object.keys(summaries),
+            summaries, setSummaryAttr,
+            nominals
         }),
         plot
     }
 }
 
-let makeSpecification = (configuration, varTypes) => {
+let makeSpecification = (configuration, varTypes, summaries) => {
 
     let specification = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json"
     };
 
     // base encodings/transforms
-    Object.assign(specification, makeLayer(configuration, varTypes));
+    Object.assign(specification, makeLayer(configuration, varTypes, summaries));
 
     if ('layers' in configuration)
-        specification.layer = configuration.layers.map(layer => makeLayer(layer, varTypes)).filter(_=>_);
+        specification.layer = configuration.layers.map(layer => makeLayer(layer, varTypes, summaries)).filter(_=>_);
 
     let concat = 'vconcat' in configuration ? 'vconcat' : ('hconcat' in configuration) && 'hconcat';
 
@@ -103,7 +112,7 @@ let makeSpecification = (configuration, varTypes) => {
                 encoding: specification.encoding,
                 layer: specification.layer
             },
-            ...configuration[concat].map(layer => makeLayer(layer, varTypes)).filter(_=>_)
+            ...configuration[concat].map(layer => makeLayer(layer, varTypes, summaries)).filter(_=>_)
         ];
         delete specification.mark;
         delete specification.transform;
@@ -115,7 +124,7 @@ let makeSpecification = (configuration, varTypes) => {
 };
 
 
-let makeLayer = (layer, varTypes) => {
+let makeLayer = (layer, varTypes, summaries) => {
     let channels = (layer.channels || [])
         .filter(channel => !channel.delete && (channel.variable || (channel.variables || []).length));
     if (channels.length === 0) return;
@@ -123,6 +132,8 @@ let makeLayer = (layer, varTypes) => {
     let spec = {};
 
     if ('mark' in layer) spec.mark = {type: layer.mark};
+    if ('mapboxStyle' in layer) spec.mapboxStyle = layer.mapboxStyle;
+
     if (['line', 'area'].includes(layer.mark)) {
         if (layer.interpolation) spec.mark.interpolate = layer.interpolation;
         if (layer.point) spec.mark.point = layer.point;
@@ -136,7 +147,7 @@ let makeLayer = (layer, varTypes) => {
             aggregate: channels
                 .filter(channel => channel.name !== "region")
                 .map(channel => ({
-                    op: channel.aggregate || "max",
+                    op: channel.aggregation || "mean",
                     field: channel.variable,
                     as: channel.variable
                 })),
@@ -217,12 +228,15 @@ let makeLayer = (layer, varTypes) => {
         }
 
         if (channel.name === "color") {
+            let varType = varTypes[channel.variable] || 'nominal';
             let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
-            if (schemes.includes(channel.scheme)) scale.scheme = channel.scheme;
+            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "nominal" ? 'categorical' : 'sequential-single');
+            if (schemes[schemeCategory].includes(channel.scheme?.[schemeCategory]))
+                scale.scheme = channel.scheme?.[schemeCategory];
             return Object.assign(encodings, {
                 [channel.name]: {
                     field: channel.variable,
-                    type: varTypes[channel.variable] || 'nominal',
+                    type: varType,
                     scale
                 }
             })
