@@ -6,8 +6,6 @@ import m from 'mithril'
 import * as vega from 'vega';
 import * as d3 from "d3";
 import vegaEmbed from "vega-embed";
-import {geojsonData} from "../eventdata/eventdata";
-import {alignmentData, locationUnits, variableSummaries} from "../app";
 import * as common from "../../common/common";
 
 mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
@@ -45,63 +43,13 @@ export default class PlotMapbox {
         let {specification, initViewport, setInitViewport} = attrs;
         specification.mapboxStyle = specification.mapboxStyle || {light: 'streets', dark: 'dark'}[common.theme];
         let {width, height} = dom.getBoundingClientRect();
-        let data = specification.data.values;
-        if (!data) return
-
-        let isRegional = specification.encoding.region;
-
-        if (isRegional) {
-
-            let unit = variableSummaries[specification.encoding.region.field].locationUnit;
-            // from the format in the geojson file
-            if (!(unit in locationUnits)) return;
-            let fromFormat = locationUnits[unit][0];
-            // to the format currently is use
-            let toFormat = variableSummaries[specification.encoding.region.field].locationFormat;
-
-            let alignment = alignmentData[unit];
-            if (!(fromFormat in geojsonData) || !alignment) return;
-
-            // make a lookup table for the alignment
-            let alignmentLookup = alignment.reduce((out, align) => Object.assign(out, {[align[fromFormat]]: align[toFormat]}), {});
-
-            // console.log('alignmentLookup', alignmentLookup)
-            // make a lookup table for geo features- from current format value to geojson representation
-            let geoLookup = geojsonData[fromFormat].features
-                .reduce((out, feature) => Object.assign(out, {[alignmentLookup[feature.properties[fromFormat]]]: feature}), {});
-
-            // console.log('geoLookup', geoLookup)
-            data = Object.assign({}, geojsonData[fromFormat], {
-                features: data.map(row => {
-                    let toFormatValue = row[specification.encoding.region.field];
-                    return Object.assign({}, geoLookup[toFormatValue], row)
-                })
-            })
-            // console.log('data', data)
-        } else {
-            data.forEach(point => Object.assign(point, {
-                type: 'Feature', geometry: {
-                    type: 'Point',
-                    coordinates: [point[specification.encoding.longitude.field], point[specification.encoding.latitude.field]]
-                }
-            }));
-            data = {features: data};
-        }
-
-        specification.data.format = {property: "features"}
-
-        delete specification.encoding.latitude;
-        delete specification.encoding.longitude;
-        delete specification.encoding.region;
-        specification.mark = {"type": "geoshape", clip: true};
-        if (!specification.encoding.opacity)
-            specification.encoding.opacity = {value: 0.75}
-
-        delete specification.selection;
-
-        if (this.map === undefined && data.features) {
-            let bounds = getOuter(data.features).reduce(([w, s, e, n], [x, y]) =>
-                [Math.min(w, x), Math.min(s, y), Math.max(e, x), Math.max(n, y)],
+        window.specification = specification;
+        if (this.map === undefined) {
+            let bounds = [
+                specification.data?.values?.features || [],
+                ...(specification.layer || []).map(layer => layer.data.values.features)
+            ].flatMap(getOuter).reduce(
+                ([w, s, e, n], [x, y]) => [Math.min(w, x), Math.min(s, y), Math.max(e, x), Math.max(n, y)],
                 [180, 90, -180, -90]);
 
             this.style = specification.mapboxStyle;
@@ -141,7 +89,6 @@ export default class PlotMapbox {
         this.update = () => {
             let center = this.map.getCenter();
             setInitViewport(Object.assign({zoom: this.map.getZoom(), center: [center.lng, center.lat]}));
-            specification.data.values = data;
             vegaEmbed(
                 this.vegaContainer,
                 Object.assign(

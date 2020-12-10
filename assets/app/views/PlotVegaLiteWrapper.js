@@ -50,7 +50,8 @@ export let preparePanels = state => {
 
     let plot;
     if (specification) {
-        let countEncodings = spec => [spec, spec.layers || []]
+
+        let countEncodings = spec => [spec, ...(spec.layer || [])]
             .reduce((sum, layer) => sum + Object.keys(layer.encoding || {}).length, 0);
         let encodingsCount = [
             specification,
@@ -59,21 +60,25 @@ export let preparePanels = state => {
         ].map(countEncodings).reduce((sum, count) => sum + count, 0);
 
         // either region or both latitude and longitude need to be set for mapping
-        if (mapping
-            && !specification?.encoding?.region?.field
-            && (!specification?.encoding?.latitude?.field || !specification?.encoding?.longitude?.field))
-            encodingsCount = 0
+        let isValidMapLayer = spec => spec?.encoding?.region?.field
+            || (spec?.encoding?.latitude?.field && spec?.encoding?.longitude?.field);
+
+        if (mapping) {
+            if (specification.layer) {
+                specification.layer = specification.layer.filter(isValidMapLayer);
+                if (specification.layer.length === 0) encodingsCount = 0;
+            } else if (!isValidMapLayer(specification)) encodingsCount = 0;
+        }
 
         // 5px margin keeps the drag bar visible
         plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
-            component: mapping ? PlotMapbox : PlotVegaLite,
+            mapping,
             getData,
             specification,
             abstractQuery,
             summaries,
             sampleSize,
             variablesInitial,
-            mapping,
             initViewport, setInitViewport
         }))
     }
@@ -99,8 +104,16 @@ let makeSpecification = (configuration, varTypes, summaries) => {
     // base encodings/transforms
     Object.assign(specification, makeLayer(configuration, varTypes, summaries));
 
-    if ('layers' in configuration)
-        specification.layer = configuration.layers.map(layer => makeLayer(layer, varTypes, summaries)).filter(_=>_);
+    if ('layer' in configuration) {
+        specification.layer = configuration.layer.map(layer => makeLayer(layer, varTypes, summaries)).filter(v=>v);
+        let baseLayer = Object.assign({}, specification);
+        let layerKeys = new Set(['data', 'encoding', 'mark', 'transform']);
+        Object.keys(baseLayer).forEach(k => delete (layerKeys.has(k) ? specification : baseLayer)[k])
+        // specification.layer = [baseLayer, ...specification.layer]
+        specification.layer.unshift(baseLayer)
+
+        console.log('configSpec', JSON.parse(JSON.stringify(specification)));
+    }
 
     let concat = 'vconcat' in configuration ? 'vconcat' : ('hconcat' in configuration) && 'hconcat';
 

@@ -1,5 +1,6 @@
 import m from 'mithril';
 
+import Button from "../../common/views/Button";
 import Table from "../../common/views/Table";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import Dropdown from "../../common/views/Dropdown";
@@ -20,12 +21,12 @@ export default class PlotVegaLiteEditor {
     view(vnode) {
         let {configuration, variables, mapping, summaries, setSummaryAttr, nominals} = vnode.attrs;
 
-        // let multi = 'layers' in configuration
-        //     ? 'layers'
-        //     : ('vconcat' in configuration)
-        //         ? 'vconcat'
-        //         : ('hconcat' in configuration)
-        //             ? 'hconcat' : undefined;
+        let multi = 'layer' in configuration
+            ? 'layer'
+            : ('vconcat' in configuration)
+                ? 'vconcat'
+                : ('hconcat' in configuration)
+                    ? 'hconcat' : undefined;
 
         return [
             m('div', {
@@ -34,60 +35,58 @@ export default class PlotVegaLiteEditor {
                     padding: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                 }
-            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals)),
+            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, true)),
 
-            // !mapping && ([
-            //     {
-            //         key: 'layers',
-            //         button: 'Add layer',
-            //         name: 'Layers'
-            //     },
-            //     {
-            //         key: 'vconcat',
-            //         button: 'Add plot below',
-            //         name: 'Vertical Concatenate'
-            //     },
-            //     {
-            //         key: 'hconcat',
-            //         button: 'Add plot beside',
-            //         name: 'Horizontal Stack'
-            //     }
-            // ]).map(multiType => [
-            //     (multi === multiType.key || !multi) && [
-            //         (configuration[multiType.key] || [])
-            //             .map(layer => m('div', {
-            //                     style: {
-            //                         margin: '1em',
-            //                         padding: '1em',
-            //                         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-            //                     }
-            //                 },
-            //                 m(Button, {
-            //                     onclick: () => {
-            //                         remove(configuration[multiType.key], layer);
-            //                         if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
-            //                     }
-            //                 }, m(Icon, {name: 'x'})),
-            //                 this.layerEditor(layer, variables)
-            //             )),
-            //
-            //         m('div[style=margin:1em]',
-            //             m('h4', multiType.name),
-            //             m(Button, {
-            //                 onclick: () => {
-            //                     configuration[multiType.key] = configuration[multiType.key] || [];
-            //                     configuration[multiType.key].push({
-            //                         mark: 'point'
-            //                     })
-            //                 }
-            //             }, multiType.button))
-            //     ],
-            // ])
+            mapping && ([
+                {
+                    key: 'layer',
+                    button: 'Add layer',
+                    name: 'Layer'
+                },
+                // {
+                //     key: 'vconcat',
+                //     button: 'Add plot below',
+                //     name: 'Vertical Concatenate'
+                // },
+                // {
+                //     key: 'hconcat',
+                //     button: 'Add plot beside',
+                //     name: 'Horizontal Stack'
+                // }
+            ]).map(multiType => [
+                (multi === multiType.key || !multi) && [
+                    (configuration[multiType.key] || [])
+                        .map(layer => m('div', {
+                                style: {
+                                    margin: '1em',
+                                    padding: '1em',
+                                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                                }
+                            },
+                            m(Button, {
+                                onclick: () => {
+                                    remove(configuration[multiType.key], layer);
+                                    if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
+                                }
+                            }, m(Icon, {name: 'x'})),
+                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, nominals, false)
+                        )),
+
+                    m('div[style=margin:1em]',
+                        m('h4', multiType.name),
+                        m(Button, {
+                            onclick: () => {
+                                configuration[multiType.key] = configuration[multiType.key] || [];
+                                configuration[multiType.key].push({mark: 'point'})
+                            }
+                        }, multiType.button))
+                ],
+            ])
 
         ];
     }
 
-    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals) {
+    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, global) {
 
         // maps should be interactive by default
         if (mapping && !('interactive' in configuration)) configuration.interactive = true;
@@ -209,7 +208,7 @@ export default class PlotVegaLiteEditor {
                     //         {value: 'False'},
                     //     ]
                     // }))],
-                    !mapping && ["zero", m(Popper, {
+                    global && !mapping && ["zero", m(Popper, {
                         content: () => configuration.zero
                             ? "Zero is enabled, so axes are extended to include zero. "
                             : "Zero is disabled, so axes are not extended to include zero. "
@@ -223,7 +222,7 @@ export default class PlotVegaLiteEditor {
                             {value: 'False'},
                         ]
                     }))],
-                    configuration.mark !== 'bar' && ["interactive", m(Popper, {
+                    global && configuration.mark !== 'bar' && ["interactive", m(Popper, {
                         content: () => configuration.interactive
                             ? "Interactive is enabled, so plots may be dragged/panned to change scales. "
                             : "Interactive is disabled to make scrolling easier. "
@@ -234,7 +233,7 @@ export default class PlotVegaLiteEditor {
                         activeSection: configuration.interactive ? "True" : "False",
                         sections: [{value: 'True'}, {value: 'False'}]
                     }))],
-                    ['line', 'area'].includes(configuration.mark) && ["interpolation", m(Dropdown, {
+                    global && ['line', 'area'].includes(configuration.mark) && ["interpolation", m(Dropdown, {
                         id: 'interpolationOption',
                         items: [
                             "basis", "cardinal", "catmull-rom", "linear", "monotone", "natural",
@@ -243,7 +242,7 @@ export default class PlotVegaLiteEditor {
                         activeItem: configuration.interpolation || 'linear',
                         onclickChild: child => configuration.interpolation = child
                     })],
-                    ['line', 'area'].includes(configuration.mark) && ["point", m(ButtonRadio, {
+                    global && ['line', 'area'].includes(configuration.mark) && ["point", m(ButtonRadio, {
                         id: 'pointOption',
                         attrsAll: {style: {width: '150px'}},
                         onclick: point => configuration.point = point === "True",
@@ -264,7 +263,7 @@ export default class PlotVegaLiteEditor {
                     //         {value: 'False'},
                     //     ]
                     // }))
-                    mapping && ["style", m(TextFieldSuggestion, {
+                    global && mapping && ["style", m(TextFieldSuggestion, {
                         id: `mapboxStyleTextField`,
                         value: (configuration.pendingMapboxStyle ?? configuration.mapboxStyle) || {light: 'streets', dark: 'dark'}[common.theme],
                         suggestions: Object.keys(mapStyles),

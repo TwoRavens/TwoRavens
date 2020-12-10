@@ -1,8 +1,11 @@
 import m from 'mithril';
 import * as queryMongo from '../manipulations/queryMongo';
 import * as app from '../app';
-import {mongoURL} from "../app";
-import {setMetadata} from "../eventdata/eventdata";
+import {alignmentData, locationUnits, mongoURL} from "../app";
+import {geojsonData, setMetadata} from "../eventdata/eventdata";
+import PlotMapbox from "./PlotMapbox";
+import PlotVegaLite from "./PlotVegaLite";
+import {setDeep, setDefaultDeep} from "../utils";
 
 export default class PlotVegaLiteQuery {
     oninit() {
@@ -12,17 +15,13 @@ export default class PlotVegaLiteQuery {
     }
 
     view(vnode) {
-        let {component, getData, specification} = vnode.attrs;
-
+        let {mapping, getData, specification} = vnode.attrs;
         let {abstractQuery, summaries, sampleSize, variablesInitial} = vnode.attrs;
         let {initViewport, setInitViewport} = vnode.attrs;
 
         if (isNaN(sampleSize)) sampleSize = 5000;
 
         abstractQuery = abstractQuery || [];
-
-        window.specification = specification;
-        window.plotState = this;
 
         // unload all if base query changed
         let baseQuery = JSON.stringify(abstractQuery);
@@ -31,28 +30,38 @@ export default class PlotVegaLiteQuery {
             this.datasets = {};
         }
 
+        console.log("PlotVegaLiteQuery", JSON.parse(JSON.stringify(specification)));
+
+        // strip down schema, re-add if data is loaded
+        let specificationStripped = Object.assign({}, specification);
+        delete specificationStripped.layer;
+        delete specificationStripped.vconcat;
+        delete specificationStripped.hconcat;
+
         // load each data source if not loaded
         ([
             specification,
-            ...(specification.layers || []),
+            ...(specification.layer || []),
             ...(specification.vconcat || []),
             ...(specification.hconcat || [])
         ])
             .forEach(layer => {
+                // skip the root level if layers are present
+                if (!layer.encoding) return;
                 let {query, datasets} = getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial);
                 let compiled = JSON.stringify(query);
                 if (!(compiled in this.datasets) && !(compiled in this.isLoading)) {
                     this.datasets[compiled] = undefined;
                     this.isLoading[compiled] = true;
-                    console.log(compiled);
+
                     getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
                         setTimeout(m.redraw, 1)
                     })
 
-                    if (specification.encoding.region) {
-                        let unit = summaries[specification.encoding.region.field].locationUnit;
+                    if (layer.encoding.region) {
+                        let unit = summaries[layer.encoding.region.field].locationUnit;
                         if (unit && (unit in app.locationUnits)) {
                             m.request({
                                 url: mongoURL + 'get-metadata',
@@ -62,38 +71,39 @@ export default class PlotVegaLiteQuery {
                         }
                     }
                 }
+
+                if (this.datasets[compiled]) {
+                    layer.data = {values: this.datasets[compiled]};
+                    delete layer.transform;
+                }
             });
 
-        // strip down schema, re-add if data is loaded
-        let specificationStripped = Object.assign({}, specification);
-        delete specificationStripped.layers;
-        delete specificationStripped.vconcat;
-        delete specificationStripped.hconcat;
-
-        let baseQueryCompiled = JSON.stringify(getQuery(abstractQuery, specification, summaries, sampleSize, variablesInitial).query);
-        if (baseQueryCompiled in this.datasets) {
-            if (!this.datasets[baseQueryCompiled]) return;
-            specificationStripped.data = {values: this.datasets[baseQueryCompiled]};
-            delete specificationStripped.transform;
+        if (specification.data) {
+            specificationStripped.data = specification.data;
+            delete specificationStripped.transform
         }
 
+        console.log("specification", JSON.parse(JSON.stringify(specification)));
+
         let pruneSpec = label => {
-            let subSpec = (specification[label] || [])
-                .filter(layer => JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial).query) in this.datasets)
-                .map(layer => Object.assign({data: {
-                        values: this.datasets[JSON.stringify(getQuery(abstractQuery, layer, summaries, sampleSize, variablesInitial).query)]
-                    }}, layer));
-            if (subSpec.length > 0) {
-                specificationStripped[label] = subSpec;
-                specificationStripped[label].forEach(spec => delete spec.transform);
-            }
+            let subSpec = (specification[label] || []).filter(layer => layer.data?.values);
+            if (subSpec.length > 0) specificationStripped[label] = subSpec;
         };
-        pruneSpec('level');
-        pruneSpec('hconcat');
-        pruneSpec('vconcat');
+        pruneSpec('layer');
+        // pruneSpec('hconcat');
+        // pruneSpec('vconcat');
+
+        console.log("specificationStripped", JSON.parse(JSON.stringify(specificationStripped)));
+        if (mapping) translateGeojson(specificationStripped, summaries);
+        console.log("specificationStrippedTranslated", JSON.parse(JSON.stringify(specificationStripped)));
+
+        let countData = spec => [spec, ...(spec.layer || [])].filter(layer => layer.data?.values).length;
+        if ([specificationStripped, ...(specificationStripped.vconcat || []), ...(specificationStripped.hconcat || [])]
+            .every(layer => countData(layer) === 0))
+            return;
 
         // draw plot
-        return m(component, {specification: specificationStripped, initViewport, setInitViewport})
+        return m(mapping ? PlotMapbox : PlotVegaLite, {specification: specificationStripped, initViewport, setInitViewport})
     }
 }
 
@@ -328,3 +338,57 @@ let getQuery = (abstractQuery, layer, summaries, sampleSize, variablesInitial) =
 
     return {'query': dataQuery, datasets};
 };
+
+let translateGeojson = (specification, summaries) => {
+    if ('layer' in specification)
+        specification.layer = specification.layer.filter(layer => translateGeojsonLayer(layer, summaries))
+    else
+        translateGeojsonLayer(specification, summaries)
+}
+
+let translateGeojsonLayer = (layer, summaries) => {
+    if (!layer.data) return;
+
+    if (layer.encoding?.region) {
+        let unit = summaries[layer.encoding.region.field].locationUnit;
+        // from the format in the geojson file
+        if (!(unit in locationUnits)) return;
+        let fromFormat = locationUnits[unit][0];
+        // to the format currently is use
+        let toFormat = summaries[layer.encoding.region.field].locationFormat;
+
+        let alignment = alignmentData[unit];
+        if (!(fromFormat in geojsonData) || !alignment) return;
+
+        // make a lookup table for the alignment
+        let alignmentLookup = alignment.reduce((out, align) => Object.assign(out, {[align[fromFormat]]: align[toFormat]}), {});
+
+        // make a lookup table for geo features- from current format value to geojson representation
+        let geoLookup = geojsonData[fromFormat].features
+            .reduce((out, feature) => Object.assign(out, {[alignmentLookup[feature.properties[fromFormat]]]: feature}), {});
+
+        layer.data.values = Object.assign({}, geojsonData[fromFormat], {
+            features: layer.data.values.map(row => {
+                let toFormatValue = row[layer.encoding.region.field];
+                return Object.assign({}, geoLookup[toFormatValue], row)
+            })
+        })
+    } else if (layer.encoding?.latitude && layer.encoding?.longitude) {
+        layer.data.values.forEach(point => Object.assign(point, {
+            type: 'Feature', geometry: {
+                type: 'Point',
+                coordinates: [point[layer.encoding.longitude.field], point[layer.encoding.latitude.field]]
+            }
+        }));
+        layer.data.values = {features: layer.data.values};
+    } else return
+
+    setDeep(layer, ['data', 'format', 'property'], 'features');
+    delete layer.encoding?.latitude;
+    delete layer.encoding?.longitude;
+    delete layer.encoding?.region;
+    layer.mark = {"type": "geoshape", clip: true};
+    setDefaultDeep(layer, ['encoding', 'opacity'], {value: 0.75})
+    delete layer.selection;
+    return true
+}
