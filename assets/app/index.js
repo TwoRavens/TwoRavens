@@ -811,7 +811,7 @@ class Body {
             return manipulate.leftpanel();
         if (mode === 'model')
             return model.leftpanel(forceData);
-        if (mode === 'results' && manipulate.constraintMenu)
+        if (['results', 'explore'].includes(mode) && manipulate.constraintMenu)
             return manipulate.leftpanel()
         if (mode === 'results')
             return results.leftpanel();
@@ -823,7 +823,7 @@ class Body {
 
     static manipulations() {
         let selectedProblem = getSelectedProblem();
-        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate') || app.isResultsMode)
+        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate') || app.isResultsMode || app.isExploreMode)
             && manipulate.menu(app.isResultsMode
                 ? [...getAbstractPipeline(selectedProblem), ...results.resultsQuery]
                 : [

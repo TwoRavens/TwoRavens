@@ -30,8 +30,6 @@ export default class PlotVegaLiteQuery {
             this.datasets = {};
         }
 
-        console.log("PlotVegaLiteQuery", JSON.parse(JSON.stringify(specification)));
-
         // strip down schema, re-add if data is loaded
         let specificationStripped = Object.assign({}, specification);
         delete specificationStripped.layer;
@@ -83,19 +81,15 @@ export default class PlotVegaLiteQuery {
             delete specificationStripped.transform
         }
 
-        console.log("specification", JSON.parse(JSON.stringify(specification)));
-
         let pruneSpec = label => {
             let subSpec = (specification[label] || []).filter(layer => layer.data?.values);
             if (subSpec.length > 0) specificationStripped[label] = subSpec;
         };
         pruneSpec('layer');
-        // pruneSpec('hconcat');
-        // pruneSpec('vconcat');
+        pruneSpec('hconcat');
+        pruneSpec('vconcat');
 
-        console.log("specificationStripped", JSON.parse(JSON.stringify(specificationStripped)));
         if (mapping) translateGeojson(specificationStripped, summaries);
-        console.log("specificationStrippedTranslated", JSON.parse(JSON.stringify(specificationStripped)));
 
         let countData = spec => [spec, ...(spec.layer || [])].filter(layer => layer.data?.values).length;
         if ([specificationStripped, ...(specificationStripped.vconcat || []), ...(specificationStripped.hconcat || [])]
@@ -326,7 +320,7 @@ let getQuery = (abstractQuery, layer, summaries, sampleSize, variablesInitial) =
     let datasets;
     let dataQuery = [];
     if (abstractQuery) {
-        let result = queryMongo.buildPipeline(abstractQuery, variablesInitial);
+        let result = queryMongo.buildPipeline([...abstractQuery, ...(layer.manipulations || [])], variablesInitial);
         dataQuery.push(...result['pipeline']);
         datasets = result['datasets'];
     }
@@ -340,8 +334,10 @@ let getQuery = (abstractQuery, layer, summaries, sampleSize, variablesInitial) =
 };
 
 let translateGeojson = (specification, summaries) => {
-    if ('layer' in specification)
-        specification.layer = specification.layer.filter(layer => translateGeojsonLayer(layer, summaries))
+    if ('layer' in specification) {
+        specification.layer = specification.layer.filter(layer => translateGeojsonLayer(layer, summaries));
+        specification.layer.forEach(layer => delete layer.selection);
+    }
     else
         translateGeojsonLayer(specification, summaries)
 }
@@ -389,6 +385,5 @@ let translateGeojsonLayer = (layer, summaries) => {
     delete layer.encoding?.region;
     layer.mark = {"type": "geoshape", clip: true};
     setDefaultDeep(layer, ['encoding', 'opacity'], {value: 0.75})
-    delete layer.selection;
     return true
 }

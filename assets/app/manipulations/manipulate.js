@@ -272,10 +272,37 @@ export function varList() {
     ]
 }
 
+export let makeSubsetTreeMenu = (step, editable, compoundPipeline) => [
+    m(TreeSubset, {step, editable, redraw, setRedraw}),
+
+    editable && [
+        m(Button, {
+            id: 'btnAddConstraint',
+            class: ['btn-sm'],
+            style: {margin: '0.5em'},
+            onclick: () => {
+                setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline});
+                app.setLeftTab('Variables');
+                common.setPanelOpen('left');
+            }
+        }, m(Icon, {name: 'plus'}), ' Constraint'),
+        m(Button, {
+            id: 'btnAddGroup',
+            class: ['btn-sm'],
+            style: {margin: '0.5em'},
+            disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
+            onclick: () => {
+                setQueryUpdated(true);
+                queryAbstract.addGroup(step);
+            }
+        }, m(Icon, {name: 'plus'}), ' Group')
+    ]
+]
+
 export class PipelineFlowchart {
     view(vnode) {
         // compoundPipeline is used for queries, pipeline is the array to be edited
-        let {compoundPipeline, pipeline, editable, hard, resultsMode} = vnode.attrs;
+        let {compoundPipeline, pipeline, editable, hard, subsetOnly} = vnode.attrs;
 
         let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
@@ -349,33 +376,9 @@ export class PipelineFlowchart {
 
                     if (step.type === 'subset') {
                         content = m('div', {style: {'text-align': 'left'}},
-                            !resultsMode && deleteButton,
+                            !subsetOnly && deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeSubset, {step, editable, redraw, setRedraw}),
-
-                            editable && [
-                                m(Button, {
-                                    id: 'btnAddConstraint',
-                                    class: ['btn-sm'],
-                                    style: {margin: '0.5em'},
-                                    onclick: () => {
-                                        setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline});
-                                        app.setLeftTab('Variables');
-                                        common.setPanelOpen('left');
-                                    }
-                                }, plus, ' Constraint'),
-                                m(Button, {
-                                    id: 'btnAddGroup',
-                                    class: ['btn-sm'],
-                                    style: {margin: '0.5em'},
-                                    disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
-                                    onclick: () => {
-                                        setQueryUpdated(true);
-                                        queryAbstract.addGroup(step);
-                                    }
-                                }, plus, ' Group')
-                            ]
-                        )
+                            makeSubsetTreeMenu(step, editable, compoundPipeline))
                     }
 
                     if (step.type === 'aggregate') {
@@ -456,7 +459,7 @@ export class PipelineFlowchart {
                     };
                 })
             }),
-            !resultsMode && editable && [
+            !subsetOnly && editable && [
                 DISPLAY_DATAMART_UI && m(Button, {
                     id: 'btnAddAugment',
                     title: hard ? 'join columns with another dataset' : 'augment is only available in dataset mode',

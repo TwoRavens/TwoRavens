@@ -89,7 +89,8 @@ export let preparePanels = state => {
             configuration,
             variables: Object.keys(summaries),
             summaries, setSummaryAttr,
-            nominals
+            nominals,
+            abstractQuery
         }),
         plot
     }
@@ -107,12 +108,10 @@ let makeSpecification = (configuration, varTypes, summaries) => {
     if ('layer' in configuration) {
         specification.layer = configuration.layer.map(layer => makeLayer(layer, varTypes, summaries)).filter(v=>v);
         let baseLayer = Object.assign({}, specification);
-        let layerKeys = new Set(['data', 'encoding', 'mark', 'transform']);
+        let layerKeys = new Set(['data', 'encoding', 'mark', 'transform', 'manipulations']);
         Object.keys(baseLayer).forEach(k => delete (layerKeys.has(k) ? specification : baseLayer)[k])
-        // specification.layer = [baseLayer, ...specification.layer]
         specification.layer.unshift(baseLayer)
-
-        console.log('configSpec', JSON.parse(JSON.stringify(specification)));
+        specification.resolve = {scale: {color: "independent"}}
     }
 
     let concat = 'vconcat' in configuration ? 'vconcat' : ('hconcat' in configuration) && 'hconcat';
@@ -143,6 +142,7 @@ let makeLayer = (layer, varTypes, summaries) => {
     if (channels.length === 0) return;
     let orientation = channels.find(channel => channel.name === 'primary axis')?.orientation || 'x';
     let spec = {};
+    spec.manipulations = layer.manipulations;
 
     if ('mark' in layer) spec.mark = {type: layer.mark};
     if ('mapboxStyle' in layer) spec.mapboxStyle = layer.mapboxStyle;

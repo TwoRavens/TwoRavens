@@ -44,6 +44,7 @@ export default class PlotMapbox {
         specification.mapboxStyle = specification.mapboxStyle || {light: 'streets', dark: 'dark'}[common.theme];
         let {width, height} = dom.getBoundingClientRect();
         window.specification = specification;
+        delete specification.selection;
         if (this.map === undefined) {
             let bounds = [
                 specification.data?.values?.features || [],

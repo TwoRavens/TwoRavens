@@ -13,13 +13,15 @@ import {getSelectedProblem, getTargetVariables} from "../problem";
 import {setDeep} from "../utils";
 import {mapStyles} from "./PlotMapbox";
 import * as common from "../../common/common";
+import Subpanel from "../../common/views/Subpanel";
+import {makeSubsetTreeMenu} from "../manipulations/manipulate";
 
 export default class PlotVegaLiteEditor {
     oninit() {
         this.pendingSecondaryVariable = '';
     }
     view(vnode) {
-        let {configuration, variables, mapping, summaries, setSummaryAttr, nominals} = vnode.attrs;
+        let {configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery} = vnode.attrs;
 
         let multi = 'layer' in configuration
             ? 'layer'
@@ -29,26 +31,96 @@ export default class PlotVegaLiteEditor {
                     ? 'hconcat' : undefined;
 
         return [
+            m(Subpanel, {
+                header: 'Global Options', defaultShown: false
+            },
+            m(Table, {
+                data: [
+                    !mapping && ["zero", m(Popper, {
+                        content: () => configuration.zero
+                            ? "Zero is enabled, so axes are extended to include zero. "
+                            : "Zero is disabled, so axes are not extended to include zero. "
+                    }, m(ButtonRadio, {
+                        id: 'zeroOption',
+                        attrsAll: {style: {width: '150px'}},
+                        onclick: zero => configuration.zero = zero === "True",
+                        activeSection: configuration.zero ? "True" : "False",
+                        sections: [
+                            {value: 'True'},
+                            {value: 'False'},
+                        ]
+                    }))],
+                    ["nice", m(Popper, {
+                        content: () => configuration.nice
+                            ? "Nice is enabled, so axes are extended to significant numbers. "
+                            : "Nice is disabled, so axes are not extended to significant numbers. "
+                    }, m(ButtonRadio, {
+                        id: 'niceOption',
+                        attrsAll: {style: {width: '150px'}},
+                        onclick: nice => configuration.nice = nice === "True",
+                        activeSection: configuration.nice ? "True" : "False",
+                        sections: [
+                            {value: 'True'},
+                            {value: 'False'},
+                        ]
+                    }))],
+                    configuration.mark !== 'bar' && ["interactive", m(Popper, {
+                        content: () => configuration.interactive
+                            ? "Interactive is enabled, so plots may be dragged/panned to change scales. "
+                            : "Interactive is disabled to make scrolling easier. "
+                    }, m(ButtonRadio, {
+                        id: 'interactiveOption',
+                        attrsAll: {style: {width: '150px'}},
+                        onclick: interactive => configuration.interactive = interactive === "True",
+                        activeSection: configuration.interactive ? "True" : "False",
+                        sections: [{value: 'True'}, {value: 'False'}]
+                    }))],
+                    // "bin": m(Popper, {
+                    //     content: () => configuration.bin
+                    //         ? "Bin is enabled, so the x axis is binned. "
+                    //         : "Bin is disabled, so a sampling is made along the x axis. "
+                    // }, m(ButtonRadio, {
+                    //     id: 'binOption',
+                    //     attrsAll: {style: {width: '150px'}},
+                    //     onclick: bin => configuration.bin = bin === "True",
+                    //     activeSection: configuration.bin ? "True" : "False",
+                    //     sections: [
+                    //         {value: 'True'},
+                    //         {value: 'False'},
+                    //     ]
+                    // }))
+                    mapping && ["style", m(TextFieldSuggestion, {
+                        id: `mapboxStyleTextField`,
+                        value: (configuration.pendingMapboxStyle ?? configuration.mapboxStyle) || {light: 'streets', dark: 'dark'}[common.theme],
+                        suggestions: Object.keys(mapStyles),
+                        enforce: true,
+                        oninput: value => configuration.pendingMapboxStyle = value,
+                        onblur: value => {
+                            delete configuration.pendingMapboxStyle;
+                            configuration.mapboxStyle = value
+                        }
+                    })]
+                ]
+            })),
             m('div', {
                 style: {
                     margin: '1em',
-                    padding: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                 }
-            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, true)),
+            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery)),
 
-            mapping && ([
+            ([
                 {
                     key: 'layer',
                     button: 'Add layer',
                     name: 'Layer'
                 },
-                // {
+                // !mapping && {
                 //     key: 'vconcat',
                 //     button: 'Add plot below',
                 //     name: 'Vertical Concatenate'
                 // },
-                // {
+                // !mapping && {
                 //     key: 'hconcat',
                 //     button: 'Add plot beside',
                 //     name: 'Horizontal Stack'
@@ -59,7 +131,6 @@ export default class PlotVegaLiteEditor {
                         .map(layer => m('div', {
                                 style: {
                                     margin: '1em',
-                                    padding: '1em',
                                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                                 }
                             },
@@ -69,7 +140,7 @@ export default class PlotVegaLiteEditor {
                                     if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
                                 }
                             }, m(Icon, {name: 'x'})),
-                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, nominals, false)
+                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery)
                         )),
 
                     m('div[style=margin:1em]',
@@ -86,7 +157,7 @@ export default class PlotVegaLiteEditor {
         ];
     }
 
-    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, global) {
+    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery) {
 
         // maps should be interactive by default
         if (mapping && !('interactive' in configuration)) configuration.interactive = true;
@@ -185,8 +256,24 @@ export default class PlotVegaLiteEditor {
         if (!('mark' in configuration))
             configuration.mark = 'point';
 
+        configuration.manipulations = configuration.manipulations || [{
+            type: 'subset',
+            id: 0,
+            abstractQuery: [],
+            nodeId: 1,
+            groupId: 1
+        }];
+
+        let warnings = [
+            configuration.mark === "text" && "Use the text channel to map text from your dataset to plot points. You may want to use manipulations to create a shortened text column. ",
+            ['bar', 'area'].includes(configuration.mark) && "If no aggregation is chosen, the maximum of each category is shown. ",
+            mapping && configuration.interactive && "Set interactivity to false to see tooltips.",
+        ].filter(_=>_)
+
         return [
-            m('h4', 'Mark'),
+            m(Subpanel, {
+                header: 'Mark', attrsBody: {style: {padding: 0}}
+            },
             m(Table, {
                 data: [
                     ["type", m(Dropdown, {
@@ -194,46 +281,7 @@ export default class PlotVegaLiteEditor {
                         activeItem: configuration.mark,
                         onclickChild: value => configuration.mark = value
                     })],
-                    // ["nice", m(Popper, {
-                    //     content: () => configuration.nice
-                    //         ? "Nice is enabled, so axes are extended to significant numbers. "
-                    //         : "Nice is disabled, so axes are not extended to significant numbers. "
-                    // }, m(ButtonRadio, {
-                    //     id: 'niceOption',
-                    //     attrsAll: {style: {width: '150px'}},
-                    //     onclick: nice => configuration.nice = nice === "True",
-                    //     activeSection: configuration.nice ? "True" : "False",
-                    //     sections: [
-                    //         {value: 'True'},
-                    //         {value: 'False'},
-                    //     ]
-                    // }))],
-                    global && !mapping && ["zero", m(Popper, {
-                        content: () => configuration.zero
-                            ? "Zero is enabled, so axes are extended to include zero. "
-                            : "Zero is disabled, so axes are not extended to include zero. "
-                    }, m(ButtonRadio, {
-                        id: 'zeroOption',
-                        attrsAll: {style: {width: '150px'}},
-                        onclick: zero => configuration.zero = zero === "True",
-                        activeSection: configuration.zero ? "True" : "False",
-                        sections: [
-                            {value: 'True'},
-                            {value: 'False'},
-                        ]
-                    }))],
-                    global && configuration.mark !== 'bar' && ["interactive", m(Popper, {
-                        content: () => configuration.interactive
-                            ? "Interactive is enabled, so plots may be dragged/panned to change scales. "
-                            : "Interactive is disabled to make scrolling easier. "
-                    }, m(ButtonRadio, {
-                        id: 'interactiveOption',
-                        attrsAll: {style: {width: '150px'}},
-                        onclick: interactive => configuration.interactive = interactive === "True",
-                        activeSection: configuration.interactive ? "True" : "False",
-                        sections: [{value: 'True'}, {value: 'False'}]
-                    }))],
-                    global && ['line', 'area'].includes(configuration.mark) && ["interpolation", m(Dropdown, {
+                    ['line', 'area'].includes(configuration.mark) && ["interpolation", m(Dropdown, {
                         id: 'interpolationOption',
                         items: [
                             "basis", "cardinal", "catmull-rom", "linear", "monotone", "natural",
@@ -242,44 +290,43 @@ export default class PlotVegaLiteEditor {
                         activeItem: configuration.interpolation || 'linear',
                         onclickChild: child => configuration.interpolation = child
                     })],
-                    global && ['line', 'area'].includes(configuration.mark) && ["point", m(ButtonRadio, {
+                    ['line', 'area'].includes(configuration.mark) && ["point", m(ButtonRadio, {
                         id: 'pointOption',
                         attrsAll: {style: {width: '150px'}},
                         onclick: point => configuration.point = point === "True",
                         activeSection: configuration.point ? "True" : "False",
                         sections: [{value: 'True'}, {value: 'False'}]
                     })],
-                    // "bin": m(Popper, {
-                    //     content: () => configuration.bin
-                    //         ? "Bin is enabled, so the x axis is binned. "
-                    //         : "Bin is disabled, so a sampling is made along the x axis. "
-                    // }, m(ButtonRadio, {
-                    //     id: 'binOption',
-                    //     attrsAll: {style: {width: '150px'}},
-                    //     onclick: bin => configuration.bin = bin === "True",
-                    //     activeSection: configuration.bin ? "True" : "False",
-                    //     sections: [
-                    //         {value: 'True'},
-                    //         {value: 'False'},
-                    //     ]
-                    // }))
-                    global && mapping && ["style", m(TextFieldSuggestion, {
-                        id: `mapboxStyleTextField`,
-                        value: (configuration.pendingMapboxStyle ?? configuration.mapboxStyle) || {light: 'streets', dark: 'dark'}[common.theme],
-                        suggestions: Object.keys(mapStyles),
-                        enforce: true,
-                        oninput: value => configuration.pendingMapboxStyle = value,
-                        onblur: value => {
-                            delete configuration.pendingMapboxStyle;
-                            configuration.mapboxStyle = value
-                        }
-                    })]
                 ]
             }),
-            configuration.mark === "text" && "Use the text channel to map text from your dataset to plot points. You may want to use manipulations to create a shortened text column. ",
-            ['bar', 'area'].includes(configuration.mark) && "If no aggregation is chosen, the maximum of each category is shown. ",
-            mapping && configuration.interactive && "Set interactivity to false to see tooltips.",
-            m('h4[style=margin-top:1em]', 'Channels'),
+                warnings.length > 0 && m('[style=padding:1em]', warnings)
+            ),
+
+            m(Subpanel, {
+                header: 'Subset',
+                id: 'exploreSubsetManipulations',
+                defaultShown: false, attrsBody: {style: {padding: 0}}
+            }, m('[style=margin:1em]', makeSubsetTreeMenu(
+                configuration.manipulations[0],
+                true,
+                [
+                    ...abstractQuery,
+                    ...configuration.manipulations
+                ]))
+
+                // m(manipulate.PipelineFlowchart, {
+                //     compoundPipeline: [
+                //         ...abstractQuery,
+                //         ...configuration.manipulations
+                //     ],
+                //     pipeline: configuration.manipulations,
+                //     editable: true,
+                //     subsetOnly: true
+                // })
+            ),
+            m(Subpanel, {
+                header: 'Channels', attrsBody: {style: {padding: 0}}
+            },
             m(Table, {
                 headers: ['channel', 'variables', '', ''],
                 data: [
@@ -297,7 +344,7 @@ export default class PlotVegaLiteEditor {
                             }
                         }), undefined, undefined, undefined]
                 ]
-            }),
+            })),
         ];
     }
 
