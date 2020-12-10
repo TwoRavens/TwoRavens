@@ -466,7 +466,7 @@ export default class PlotVegaLiteEditor {
             return [
                 channel.name,
                 // variables
-                m('', m(Table, {
+                m('', channel.variables.length > 0 && m(Table, {
                     attrsAll: {
                         style: {
                             background: 'rgba(0,0,0,.05)',

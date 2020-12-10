@@ -28,6 +28,9 @@ import Icon from "../../common/views/Icon";
 import {formatVariableSummary} from '../views/VariableSummary';
 
 import {
+    getGeographicVariables,
+    getNominalVariables,
+    getOrdinalVariables,
     getSelectedProblem,
     getTransformVariables,
     loadProblemPreprocess
@@ -185,6 +188,7 @@ export function leftpanel() {
 
 export function varList() {
 
+    let selectedProblem = getSelectedProblem();
     let variables = app.workspace.raven_config.variablesInitial;
     let selectedVariables = constraintMetadata?.columns ?? [];
 
@@ -230,22 +234,48 @@ export function varList() {
         m(PanelList, {
             id: 'varList',
             items: variables,
-            colors: {[app.hexToRgba(common.selVarColor)]: selectedVariables},
+            colors: Object.assign(
+                selectedProblem.groups.reduce((out, group) =>
+                    Object.assign(out, {[app.hexToRgba(group.color, .2)]: group.nodes}), {}),
+                {
+                    [app.hexToRgba(common.selVarColor, .5)]: selectedVariables,
+                    [app.hexToRgba(app.colors.order, .2)]: selectedProblem.tags.ordering,
+                    [app.hexToRgba(app.colors.location, .2)]: selectedProblem.tags.location
+                }),
             classes: {
-                'item-bordered': variableSearch === '' ? []
+                // keep this order aligned with params in mutateNodes
+                'item-nominal': getNominalVariables(selectedProblem),
+                'item-location': getGeographicVariables(),
+                'item-ordinal': getOrdinalVariables(selectedProblem),
+                'item-boundary': selectedProblem.tags.boundary,
+                'item-time': Object.keys(app.variableSummaries)
+                    .filter(variable => app.variableSummaries[variable].timeUnit),
+                'item-weight': selectedProblem.tags.weights,
+                'item-privileged': selectedProblem.tags.privileged,
+                'item-exogenous': selectedProblem.tags.exogenous,
+                'item-featurize': selectedProblem.tags.featurize,
+                'item-randomize': selectedProblem.tags.randomize,
+                'item-cross-section': selectedProblem.tags.crossSection,
+                'item-index': selectedProblem.tags.indexes,
+                'item-matched': variableSearch === '' ? []
                     : variables.filter(variable => variable.toLowerCase().includes(variableSearch))
             },
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: x => m('div',
-                          m('h4', 'Summary Statistics for ' + x),
-                          m(Table, {
-                              class: 'table-sm',
-                              data: formatVariableSummary(app.variableSummaries[x])
-                          })),
+                m('h4', 'Summary Statistics for ' + x),
+                m(Table, {
+                    style: {height: "250px", 'overflow-y': 'scroll', display: 'inline-block', margin: 0},
+                    class: 'table-sm',
+                    data: formatVariableSummary(app.variableSummaries[x])
+                })),
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
-            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+            attrsItems: {
+                'data-placement': 'right',
+                'data-original-title': 'Summary Statistics',
+                style: {'border-width': '2px'}
+            },
             style: {
                 height: 'calc(100% - 110px)',
                 overflow: 'auto'
