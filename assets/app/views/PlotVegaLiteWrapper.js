@@ -3,8 +3,6 @@ import m from 'mithril';
 import TwoPanel from "../../common/views/TwoPanel";
 import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
 import PlotVegaLiteEditor, {schemes} from "./PlotVegaLiteEditor";
-import PlotMapbox from "./PlotMapbox";
-import PlotVegaLite from "./PlotVegaLite";
 
 export default class PlotVegaLiteWrapper {
 
@@ -71,16 +69,17 @@ export let preparePanels = state => {
         }
 
         // 5px margin keeps the drag bar visible
-        plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
-            mapping,
-            getData,
-            specification,
-            abstractQuery,
-            summaries,
-            sampleSize,
-            variablesInitial,
-            initViewport, setInitViewport
-        }))
+        plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]',
+            m(PlotVegaLiteQuery, {
+                mapping,
+                getData,
+                specification,
+                abstractQuery,
+                summaries,
+                sampleSize,
+                variablesInitial,
+                initViewport, setInitViewport
+            }))
     }
 
     return {
@@ -156,6 +155,8 @@ let makeLayer = (layer, varTypes, summaries) => {
 
     if (layer.mark === "region") {
         spec.transform = spec.transform || [];
+        let regionChannel = channels.find(channel => channel.name === "region");
+        if (!regionChannel) return;
         spec.transform.push({
             aggregate: channels
                 .filter(channel => channel.name !== "region")
@@ -164,7 +165,7 @@ let makeLayer = (layer, varTypes, summaries) => {
                     field: channel.variable,
                     as: channel.variable
                 })),
-            groupBy: [channels.find(channel => channel.name === "region").variable]
+            groupBy: [regionChannel.variable]
         })
     }
 

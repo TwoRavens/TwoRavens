@@ -119,6 +119,7 @@ export default class PlotMapbox {
     }
 }
 
+// retrieve the outer layer of points in a flat array. useful for approximating the center
 let getOuter = data => data.flatMap(v => {
     if (v.geometry.type === "Point")
         return [v.geometry.coordinates]

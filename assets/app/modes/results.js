@@ -46,7 +46,6 @@ import {
 } from "../problem";
 import {preparePanels} from "../views/PlotVegaLiteWrapper";
 import {ExploreBoxes, explorePreferences, ExploreVariables} from "./explore";
-import {variableSummaries, workspace} from "../app";
 
 
 /**
@@ -837,14 +836,16 @@ export class CanvasSolutions {
                     .map(solution => getSolutionAdapter(problem, solution)))
 
         return [
-            m('div', m('[style=display:inline-block]', 'Graph'), m(ButtonRadio, {
-                id: 'plotScoresButtonBar',
-                onclick: mode => resultsPreferences.plotScores = mode,
-                activeSection: resultsPreferences.plotScores,
-                sections: [{value: 'all'}, {value: 'selected'}],
-                attrsAll: {style: {'margin': '0 .5em', display: 'inline-block', width: 'auto'}},
-                attrsButtons: {class: 'btn-sm', style: {width: 'auto'}},
-            }), m('[style=display:inline-block]', 'solutions.')),
+            m('div[style=margin-bottom:1em]',
+                m('[style=display:inline-block;]', 'Graph'), m(ButtonRadio, {
+                    id: 'plotScoresButtonBar',
+                    onclick: mode => resultsPreferences.plotScores = mode,
+                    activeSection: resultsPreferences.plotScores,
+                    sections: [{value: 'all'}, {value: 'selected'}],
+                    attrsAll: {style: {'margin': '0 .5em', display: 'inline-block', width: 'auto'}},
+                    attrsButtons: {class: 'btn-sm', style: {width: 'auto'}},
+                }),
+                m('[style=display:inline-block]', 'solutions.')),
             [problem.metric, ...problem.metrics].map(metric => m(PlotVegaLite, {
                 specification: {
                     "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -1241,11 +1242,14 @@ export class CanvasSolutions {
         //   this constructs an approximation of what that would look like
         let resultsSummaries = Object.assign(
             foldedVariables.reduce((out, variable) =>
-                Object.assign(out, {[variable]: Object.assign({},
+                Object.assign(out, {
+                    [variable]: Object.assign({},
                         app.variableSummaries[resultsPreferences.target] || {},
-                        {variableName: variable, name: variable})}), {}),
-            problem.results.variablesInitial.reduce((out, variable) =>
-                Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {}));
+                        {variableName: variable, name: variable})
+                }), {}),
+            // problem.results.variablesInitial.reduce((out, variable) =>
+            //     Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {}),
+            app.variableSummaries);
 
         // ensure invalid variables are removed
         resultsPreferences.explore.variables = resultsPreferences.explore.variables
@@ -1253,6 +1257,12 @@ export class CanvasSolutions {
 
         let hasVariables = resultsPreferences.explore.variables.length > 0;
         let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+        let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`;
+        // TODO: thread initial variables through ExploreVariables
+        let {
+            collectionName, datafile, pipeline, datasets
+        } = getResultsAbstractPipeline(problem, splitCollectionName, splitPath, true);
+
 
         return m('div',
             !resultsPreferences.explore.go && [
@@ -1287,12 +1297,13 @@ export class CanvasSolutions {
                 summaries: resultsSummaries,
                 callbackGoBack: () => resultsPreferences.explore.go = false,
                 abstractQuery: [
-                    ...getResultsAbstractPipeline(problem, adapters),
-                    ...resultsQuery
+                    ...pipeline,
+                    ...getResultsAbstractPipelineTargets(problem, adapters),
                 ],
                 getData: body => app.getData(Object.assign({
-                    datafile: splitPath, // location of the dataset csv
-                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
+                    datafile: datafile, // location of the dataset csv
+                    collection_name: collectionName,
+                    datasets
                 }, body)),
             }))
     }
@@ -1303,11 +1314,20 @@ export class CanvasSolutions {
         if (adapters.some(adapter => !adapter.getProduceDataPath(resultsPreferences.dataSplit)))
             return common.loader("CustomExplore");
 
+        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+        let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
+
+        let {
+            collectionName, datafile, pipeline, variablesInitial, datasets
+        } = getResultsAbstractPipeline(problem, splitCollectionName, splitPath, true);
+
+        let baseVariables = queryMongo.buildPipeline([...pipeline], variablesInitial).variables;
+
         // names of estimated target variables
         let foldedVariables = adapters.map(adapter => `${resultsPreferences.target}-${adapter.getSolutionId()}`);
         // we're not recomputing preprocess summaries for joined results data.
         //   this constructs the minimal necessary portion of what that would look like
-        let resultsSummaries = [...problem.results.variablesInitial, ...foldedVariables]
+        let resultsSummaries = [...baseVariables, ...foldedVariables]
             .reduce((out, variable) => Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {});
         Object.assign(resultsSummaries, resultsPreferences.variableSummariesDiffs || {});
 
@@ -1329,21 +1349,18 @@ export class CanvasSolutions {
         let nominals = new Set(getNominalVariables(selectedProblem));
         if (problem.task.toLowerCase().includes("classification")) foldedVariables.map(nominals.add);
 
-        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
-        // console.log(`${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`);
-        // console.log(queryMongo.buildPipeline(getResultsAbstractPipeline(problem, adapters), problem.results.variablesInitial));
-
         let {editor, plot} = preparePanels({
             mapping,
             getData: body => app.getData(Object.assign({
-                datafile: splitPath, // location of the dataset csv
-                collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
+                datafile: datafile, // location of the dataset csv
+                collection_name: collectionName,
+                datasets
             }, body)),
             nominals,
             configuration: mapping ? mappingConfiguration : customConfiguration,
             abstractQuery: [
-                ...getResultsAbstractPipeline(problem, adapters),
-                ...resultsQuery
+                ...pipeline,
+                ...getResultsAbstractPipelineTargets(problem, adapters),
             ],
             summaries: resultsSummaries,
             setSummaryAttr: (variable, attr, value) => {
@@ -1351,11 +1368,11 @@ export class CanvasSolutions {
                     app.setVariableSummaryAttr(variable, attr, value)
                 else {
                     utils.setDeep(resultsPreferences, ['variableSummariesDiffs', variable, attr], value);
-                    utils.setDeep(variableSummaries, [variable, attr], value);
+                    utils.setDeep(app.variableSummaries, [variable, attr], value);
                 }
             },
             sampleSize: parseInt(explorePreferences.recordLimit),
-            variablesInitial: problem.results.variablesInitial,
+            variablesInitial: variablesInitial,
             initViewport: mappingConfiguration.initViewport,
             setInitViewport: value => mappingConfiguration.initViewport = value
         });
@@ -1408,7 +1425,7 @@ export class CanvasSolutions {
             "Manipulate data that was used to train the model. This can be used to look at prediction summaries, variable importance, EFD, partials and ICE plots from data within specific regions.",
             m(manipulate.PipelineFlowchart, {
                 compoundPipeline: [
-                    ...getAbstractPipeline(problem),
+                    ...getAbstractPipeline(problem, true),
                     ...resultsQuery
                 ],
                 pipeline: resultsQuery,
@@ -1732,6 +1749,9 @@ export class CanvasSolutions {
             problemSummary,
             solutionSummary,
             predictionSummary,
+            customExplore,
+            customExploreMapping,
+            variableExplore,
             scoresSummary,
             variableImportance,
             modelInterpretation,
@@ -1741,9 +1761,6 @@ export class CanvasSolutions {
             anovaTables,
             VIF,
             uploadDataset,
-            variableExplore,
-            customExplore,
-            customExploreMapping
         );
     }
 }
@@ -2302,7 +2319,7 @@ export let customDatasets = {};
  * @param adapters
  * @returns abstract pipeline that joins predictions from adapters into original data
  */
-let getResultsAbstractPipeline = (problem, adapters) => adapters
+let getResultsAbstractPipelineTargets = (problem, adapters) => adapters
     .map(adapter => [adapter, adapter.getProduceDataPath(resultsPreferences.dataSplit)])
     .filter(([_, producePath]) => producePath)
     .map(([adapter, producePath]) => ({
@@ -2314,6 +2331,39 @@ let getResultsAbstractPipeline = (problem, adapters) => adapters
             [`${resultsPreferences.target}-${adapter.getSolutionId()}`]: resultsPreferences.target
         }
     }));
+
+let getResultsAbstractPipeline = (problem, splitCollectionName, splitDatafile, all) => {
+    // if there are variables in the results query that are not included in the data split,
+    //     start from the root dataset, use lookup on split to filter base dataset
+    if (all || resultsQuery[0].abstractQuery.some(node => queryMongo.getSubsetDependencies(node).length > 0)) {
+        return {
+            collectionName: app.workspace.d3m_config.name,
+            datafile: app.workspace.datasetPath,
+            pipeline: [
+                ...getAbstractPipeline(problem, true),
+                {
+                    type: 'join',
+                    from: splitCollectionName,
+                    fromPath: splitDatafile,
+                    index: problem.tags.indexes[0],
+                    variables: problem.results.variablesInitial
+                        .reduce((out, variable) => Object.assign(out, {[variable]: variable}), {})
+                },
+                ...resultsQuery
+            ],
+            variablesInitial: app.workspace.raven_config.variablesInitial,
+            datasets: {[splitCollectionName]: {path: splitDatafile, indexes: problem.tags.indices}}
+        }
+    } else {
+        // if the data split covers the results query, skip manipulations on base dataset
+        return {
+            collectionName: splitCollectionName,
+            datafile: splitDatafile,
+            pipeline: resultsQuery,
+            variablesInitial: app.workspace.raven_config.variablesInitial
+        }
+    }
+}
 
 // manipulations to apply to data after joining predictions
 export let resultsQuery = [
@@ -2415,15 +2465,18 @@ export let loadFittedVsActuals = async (problem, adapter) => {
     resultsCache[problem.problemId].fittedVsActualLoading[adapter.getSolutionId()] = true;
     m.redraw()
 
-    // how to construct actual values after manipulation
-    let compiled = queryMongo.buildPipeline(
-        [...resultsQuery],
-        problem.results.variablesInitial)['pipeline'];
-
     let produceId = utils.generateID(producePointer);
+    let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+    let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`;
+
+    // how to construct actual values after manipulation
+    let {
+        collectionName, datafile, pipeline, variablesInitial, datasets
+    } = getResultsAbstractPipeline(problem, splitCollectionName, splitPath)
+    let compiled = queryMongo.buildPipeline(pipeline, variablesInitial).pipeline;
+
     let tempQuery = resultsCache[problem.problemId].id.query;
     let response;
-    let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-fitted-vs-actuals-data`, {
             method: 'POST',
@@ -2431,10 +2484,12 @@ export let loadFittedVsActuals = async (problem, adapter) => {
                 data_pointer: producePointer,
                 metadata: {
                     targets: getTargetVariables(problem),
-                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`,
-                    datafile: splitPath,
+                    collection_name: collectionName,
+                    datafile,
                     query: compiled,
-                    produceId
+                    produceId,
+                    // auxiliary datasets to join against
+                    datasets
                 }
             }
         });
@@ -2508,16 +2563,19 @@ export let loadConfusionData = async (problem, adapter) => {
     resultsCache[problem.problemId].confusionLoading[adapter.getSolutionId()] = true;
     m.redraw()
 
-    // how to construct actual values after manipulation
-    let compiled = queryMongo.buildPipeline(
-        [...resultsQuery],
-        problem.results.variablesInitial)['pipeline'];
-
     let produceId = utils.generateID(producePointer);
-    let tempQuery = resultsCache[problem.problemId].id.query;
-    let response;
-
     let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+    let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`;
+
+    // how to construct actual values after manipulation
+    let {
+        collectionName, datafile, pipeline, variablesInitial, datasets
+    } = getResultsAbstractPipeline(problem, splitCollectionName, splitPath)
+    let compiled = queryMongo.buildPipeline(pipeline, variablesInitial).pipeline;
+
+    let tempQuery = resultsCache[problem.problemId].id.query;
+
+    let response;
     try {
         response = await m.request(D3M_SVC_URL + `/retrieve-output-confusion-data`, {
             method: 'POST',
@@ -2525,10 +2583,11 @@ export let loadConfusionData = async (problem, adapter) => {
                 data_pointer: producePointer,
                 metadata: {
                     targets: getTargetVariables(problem),
-                    collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`,
-                    datafile: splitPath,
+                    collection_name: collectionName,
+                    datafile: datafile,
                     query: compiled,
-                    produceId
+                    produceId,
+                    datasets
                 }
             }
         });
@@ -2605,56 +2664,58 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
     resultsCache[problem.problemId].dataSampleLoading[split] = true;
     m.redraw()
 
+    let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+    let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`;
+
+    // how to construct actual values after manipulation
+    let {
+        collectionName, datafile, pipeline, variablesInitial, datasets
+    } = getResultsAbstractPipeline(problem, splitCollectionName, splitPath, true)
+
+    let compiled = queryMongo.buildPipeline([
+        pipeline,
+        problem.task === 'objectDetection' && {
+            type: 'aggregate',
+            measuresUnit: problem.tags.indexes.map(index => ({"subset": "discrete", "column": index})),
+            // collect all the values in the target column into an array, and take the first value in the image column
+            // TODO: "image" should not be hardcoded
+            measuresAccum: [
+                ...getTargetVariables(problem).map(target => ({"subset": "push", "column": target})),
+                {'subset': 'first', 'column': 'image'}
+            ]
+        },
+        indices && {
+            type: "subset",
+            abstractQuery: [
+                {
+                    children: indices.map(index => ({value: index})),
+                    column: "d3mIndex",
+                    negate: "false",
+                    operation: "and",
+                    subset: "discrete",
+                    type: "rule"
+                }
+            ]
+        },
+        {
+            type: 'menu',
+            metadata: {
+                type: 'data',
+                sample: resultsPreferences.recordLimit
+            }
+        }], variablesInitial).pipeline;
+
     let tempQuery = resultsCache[problem.problemId].id.query;
 
-    let splitVariables = [...new Set([
-        ...getPredictorVariables(problem), ...getTargetVariables(problem), ...problem.tags.indexes
-    ])];
-
-    let compiled = queryMongo.buildPipeline(
-        [
-            ...resultsCache[problem.problemId].id.query,
-            problem.task === 'objectDetection' && {
-                type: 'aggregate',
-                measuresUnit: problem.tags.indexes.map(index => ({"subset": "discrete", "column": index})),
-                // collect all the values in the target column into an array, and take the first value in the image column
-                // TODO: "image" should not be hardcoded
-                measuresAccum: [
-                    ...getTargetVariables(problem).map(target => ({"subset": "push", "column": target})),
-                    {'subset': 'first', 'column': 'image'}
-                ]
-            },
-            indices && {
-                type: "subset",
-                abstractQuery: [
-                    {
-                        children: indices.map(index => ({value: index})),
-                        column: "d3mIndex",
-                        negate: "false",
-                        operation: "and",
-                        subset: "discrete",
-                        type: "rule"
-                    }
-                ]
-            },
-            {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    sample: resultsPreferences.recordLimit
-                }
-            },
-        ].filter(_ => _), splitVariables)['pipeline'];
-
     let response;
-    let splitPath = problem.results.datasetPaths[split];
     try {
         response = await app.getData({
             method: 'aggregate',
-            datafile: splitPath,
-            collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
+            datafile: datafile,
+            collection_name: collectionName,
             reload: false,
-            query: JSON.stringify(compiled)
+            query: JSON.stringify(compiled),
+            datasets
         })
     } catch (err) {
         console.warn("retrieve data sample error");

@@ -55,7 +55,7 @@ export default class PlotVegaLiteQuery {
                     getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
-                        setTimeout(m.redraw, 1)
+                        setTimeout(m.redraw, 10)
                     })
 
                     if (layer.encoding.region) {

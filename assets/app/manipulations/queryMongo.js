@@ -425,6 +425,9 @@ function processGroup(group) {
     return group_query;
 }
 
+export let operators = {'>=': '$gte', '>': '$gt', '<=': '$lte', '<': '$lt', '==': '$eq', '!=': '$ne'};
+export let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
+
 // Return a mongoDB query for a rule data structure
 function processRule(rule) {
     let rule_query = {};
@@ -463,8 +466,6 @@ function processRule(rule) {
     }
 
     if (rule.subset === 'automated') {
-        let operators = {'>=': '$gte', '>': '$gt', '<=': '$lte', '<': '$lt', '==': '$eq', '!=': '$ne'};
-        let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
 
         let [variable, constraint, condition] = rule.name.split(operatorRegex).map(_ => _.trim());
         rule_query[variable] = {[operators[constraint]]: buildEquation(condition)['query']}
@@ -552,6 +553,32 @@ function processRule(rule) {
     }
 
     return rule_query;
+}
+
+/// Return the list of variables used by the subset query
+export let getSubsetDependencies = node => {
+    if (['group', 'query'].includes(node.type) && node.children)
+        return node.children.flatMap(getSubsetDependencies)
+    if (node.subset === 'date')
+        return node.children.map(child => child.column)
+    if (node.subset === 'automated') {
+        let [variable, _, condition] = node.name.split(operatorRegex).map(_ => _.trim());
+        return [variable, ...buildEquation(condition).usedTerms.variables]
+    }
+    if (['continuous', 'discrete', 'discrete_grouped'].includes(node.subset))
+        return [node.column]
+    if (['dyad', 'link'].includes(node.subset))
+        return node.children.flatMap(getSubsetDependencies)
+    if (node.subset === 'node')
+        return [node.column]
+    if (node.subset === 'coordinates')
+        return node.children.map(child => child.column)
+    if (node.subset === 'custom')
+        // TODO: parse from query?
+        return [undefined]
+    // should not be possible to reach this
+    console.warn("unknown subset type", node)
+    return []
 }
 
 // ~~~~ AGGREGATIONS ~~~~

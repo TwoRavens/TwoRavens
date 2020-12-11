@@ -784,8 +784,6 @@ export let getLocationVariables = problem => {
     return selectedProblem.tags.location;
 }
 
-export let getLocationUnit = variable => app.variableSummaries[variable].locationUnit;
-export let getLocationFormat = variable => app.variableSummaries[variable].locationFormat;
 export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     if (step.type !== 'transform') return out;
 

@@ -11,6 +11,18 @@ import pandas as pd
 
 
 def util_results_real_clustered(data_pointer, metadata):
+
+    # ensure auxiliary datasets are present
+    #
+    if metadata.get('datasets'):
+        for collection_name, meta in metadata['datasets'].items():
+            EventJobUtil.import_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                collection_name,
+                data_path=meta['path'],
+                indexes=meta.get('indexes'),
+                reload=metadata.get('reload', None))
+
     GRID_SIZE = 100
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
@@ -164,6 +176,17 @@ def util_results_confusion_matrix(data_pointer, metadata):
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
         metadata['datafile'])
+
+    # ensure auxiliary datasets are present
+    #
+    if metadata.get('datasets'):
+        for collection_name, meta in metadata['datasets'].items():
+            EventJobUtil.import_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                collection_name,
+                data_path=meta['path'],
+                indexes=meta.get('indexes'),
+                reload=metadata.get('reload', None))
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
