@@ -1,3 +1,5 @@
+// UI for making/editing a plot configuration
+
 import m from 'mithril';
 
 import Button from "../../common/views/Button";

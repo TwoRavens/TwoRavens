@@ -1,4 +1,5 @@
-// import * as mbxClient from '@mapbox/mapbox-sdk';
+// render a vega-lite specification over a mapbox layer
+
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css'
 import geoViewport from '@mapbox/geo-viewport';

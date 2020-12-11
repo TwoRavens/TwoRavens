@@ -1,3 +1,5 @@
+// render a vega-lite specification
+
 import m from 'mithril';
 import vegaEmbed from "vega-embed";
 

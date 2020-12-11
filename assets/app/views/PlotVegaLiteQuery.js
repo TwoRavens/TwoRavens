@@ -1,3 +1,7 @@
+// retrieve data for, and render a vega-lite specification
+// replaces data transforms with equivalent mongo queries
+// transforms are replaced by database queries so that aggregations and sampling are applied before loading data on the frontend
+
 import m from 'mithril';
 import * as queryMongo from '../manipulations/queryMongo';
 import * as app from '../app';

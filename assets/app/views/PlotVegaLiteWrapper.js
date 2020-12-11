@@ -1,3 +1,6 @@
+// wrapper for using PlotVegaLiteQuery and PlotVegaLiteEditor together
+// translates a tworavens plot configuration to a vega-lite plot specification
+
 import m from 'mithril';
 
 import TwoPanel from "../../common/views/TwoPanel";

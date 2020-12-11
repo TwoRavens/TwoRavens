@@ -15,6 +15,7 @@ import {
     getSelectedProblem, getTargetVariables,
     isProblemValid
 } from "../problem";
+import {setDefault} from "../utils";
 
 
 export let getSolverSpecification = async problem => {
@@ -49,6 +50,7 @@ export let getD3MAdapter = problem => ({
         if (!IS_D3M_DOMAIN) return;
 
         // return if current problem is already being solved
+        problem.results.solverState = problem.results.solverState || {};
         if ('d3m' in problem.results.solverState) return;
         if (!isProblemValid(problem)) return;
         problem.system = 'solved';
@@ -528,7 +530,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     let GRPC_ProblemPerformanceMetric = metric => {
         let performanceMetric = {metric: app.d3mMetrics[metric]};
         if (['f1', 'precision', 'recall'].includes(metric))
-            performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
+            performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[getTargetVariables(problem)[0]].plotValues || {}))[0];
         if (problem.metric === 'precisionAtTopK')
             performanceMetric.k = problem.precisionAtTopK || 5;
         return performanceMetric;
@@ -570,7 +572,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
 
     let GRPC_ProblemInput = {
         datasetId: datasetDoc.about.datasetID,
-        targets: problem.targets.map((target, i) => ({
+        targets: getTargetVariables(problem).map((target, i) => ({
             // targetIndex: i,
             resourceId: learningResource.resID,
             columnIndex: getColIndex(target),
