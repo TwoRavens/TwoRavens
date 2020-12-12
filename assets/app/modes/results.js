@@ -1256,7 +1256,8 @@ export class CanvasSolutions {
             .filter(variable => variable in resultsSummaries)
 
         let hasVariables = resultsPreferences.explore.variables.length > 0;
-        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+        let splitPath = problem.results.datasetPaths?.[resultsPreferences.dataSplit];
+        if (!splitPath) return;
         let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`;
         // TODO: thread initial variables through ExploreVariables
         let {
@@ -1314,7 +1315,8 @@ export class CanvasSolutions {
         if (adapters.some(adapter => !adapter.getProduceDataPath(resultsPreferences.dataSplit)))
             return common.loader("CustomExplore");
 
-        let splitPath = problem.results.datasetPaths[resultsPreferences.dataSplit];
+        let splitPath = problem.results.datasetPaths?.[resultsPreferences.dataSplit];
+        if (!splitPath) return;
         let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
 
         let {

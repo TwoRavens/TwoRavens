@@ -33,7 +33,7 @@ redis==3.2.0
 #
 Twisted[tls,http2]==18.9.0
 channels==2.2.0
-channels_redis==2.3.1
+channels_redis==3.2.0
 
 # pymongo
 #
@@ -52,8 +52,8 @@ social-auth-core==1.7.0
 # D3M library, for dataset loading
 # - Includes requests and pandas
 # ---------------------------------------
-d3m==2020.5.18
-# requests==2.23.0
+# bounds requests, sklearn, mlbox above
+d3m==2020.11.3
 # for eventdata and d3m results joins and tpot
 # pandas>=0.24.2
 
@@ -69,29 +69,26 @@ tworavens-preprocess==1.1.4
 # -----------------------
 # For the TwoRavens Solver
 # -----------------------
-statsmodels==0.11.1
-scipy>=1.1.0
-scikit-learn>=0.23.1
+statsmodels==0.12.1
+scipy==1.4.1
+# this is bounded above by d3m
+scikit-learn==0.22.1
 
 # -----------------------
 # Wrapped solvers
 # -----------------------
-TPOT==0.11.5
-# mlbox installs tensorflow
-mlbox>=0.8.4
-
-#
-# ludwig - disabled for now, see https://github.com/TwoRavens/TwoRavens/issues/868#issuecomment-654368781
-# ludwig
-#
-# mljar-supervised - disabled for now, see https://github.com/TwoRavens/TwoRavens/issues/868#issuecomment-654368781
-#mljar-supervised
-
-# Is dill needed?
-#dill>=0.3.2
-
-#h2o
-# -e git+https://github.com/automl/auto-sklearn.git@b5b16f398cc218dfdaf991fa3638782756e8222b#egg=auto_sklearn
+# # compatible
+TPOT==0.11.6.post2
+# # compatible - requires tensorflow 2.0.0
+mlbox==0.8.5
+# # compatible - requires tensorflow 2.3.1
+# ludwig==0.3.1
+# # incompatible - requires sklearn 0.23
+# mljar-supervised
+# # compatible - deploy difficult with h2o because of java
+# h2o==3.32.0.2
+# # incompatible - requires sklearn 0.23, build fails on mac due to pyrfr
+# auto_sklearn==0.6.0
 
 
 # for image problems
@@ -100,9 +97,3 @@ Pillow>=7.0.0
 # Using Postgres, even in dev
 #
 psycopg2-binary>=2.8.5
-
-
-# 7/6 - handled in D3M
-# https://github.com/gitpython-developers/GitPython/issues/983
-#   - GitPython==3.1. to overwrite the d3m version
-#GitPython==3.1
