@@ -858,8 +858,8 @@ class MainCarousel {
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                'padding-left': common.panelOcclusion['left'],
-                'padding-right': common.panelOcclusion['right'],
+                'padding-left': `calc(${common.panelOcclusion['left']} - ${common.panelMargin})`,
+                'padding-right': `calc(${common.panelOcclusion['right']} - ${common.panelMargin})`,
                 overflow: 'auto'
             }}, vnode.children)
     }

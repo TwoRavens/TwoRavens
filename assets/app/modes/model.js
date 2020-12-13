@@ -183,7 +183,7 @@ export class CanvasModel {
                 setShown: () => selectedLinks.forEach(link => delete link.selected),
                 style: {
                     left: app.panelWidth['left'],
-                    bottom: `calc(2*${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
+                    bottom: `calc(${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
                     position: 'absolute',
                     width: '200px'
                 }
@@ -213,7 +213,7 @@ export class CanvasModel {
                     id: 'legend', header: 'Legend', class: 'legend',
                     style: {
                         right: app.panelWidth['right'],
-                        bottom: `calc(2*${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
+                        bottom: `calc(${common.panelMargin} + ${app.peekInlineShown ? app.peekInlineHeight + ' + 23px' : '0px'})`,
                         position: 'absolute',
                         width: '150px'
                     }

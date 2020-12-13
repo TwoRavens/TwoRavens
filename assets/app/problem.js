@@ -7,12 +7,14 @@ import * as manipulate from "./manipulations/manipulate";
 import * as results from "./modes/results";
 import * as app from "./app";
 import * as utils from './utils';
+import {setVariableSummaryAttr, workspace} from "./app";
 
 /**
  * Problem
  * @typedef {Object} Problem
  * @property {string} problemId - Unique indicator for the problem
  * @property {?string} provenanceId - Unique indicator for the problem this was sourced from
+ * @property {string} modelingMode - "predict" or "causal"
  * @property {('auto'|'user'|'solved')} system - Indicates the state of a problem.
  * @property {?boolean} unedited - if true, then the problem may be transiently deleted (when switching away from a temp copy of a discovered problem)
  * @property {VariableGroup[]} groups - groups in the force diagram, typically includes predictors and targets
@@ -275,36 +277,17 @@ export let buildDefaultProblem = problemDoc => {
     }
 
     // defaultProblem
-    return {
+    let problem = {
         problemId: problemDoc.about.problemID,
         system: 'auto',
         version: problemDoc.about.version,
-        groupCount: 2,
-        groups: [
-            {
-                id: 0,
-                name: 'Predictors',
-                color: app.colors.predictor,
-                opacity: 0.3,
-                nodes: predictors,
-                description: defaultGroupDescriptions.predictors
-            },
-            {
-                id: 1,
-                name: 'Targets',
-                color: app.colors.target,
-                opacity: 0.3,
-                nodes: targets,
-                description: defaultGroupDescriptions.targets
-            }
-        ],
-        groupLinks: [{source: 0, target: 1, color: app.colors.predictor}],
+
         description: problemDoc.about.problemDescription,
 
-        metric: problemDoc.inputs.performanceMetrics[0].metric,
-        metrics: problemDoc.inputs.performanceMetrics.slice(1).map(elem => elem.metric),
-        positiveLabel: (problemDoc.inputs.performanceMetrics.find(metric => 'posLabel' in metric) || {}).posLabel,
-        precisionAtTopK: (problemDoc.inputs.performanceMetrics.find(metric => 'K' in metric) || {}).K,
+        metric: problemDoc.inputs.performanceMetrics?.[0]?.metric,
+        metrics: (problemDoc.inputs.performanceMetrics ?? []).slice(1).map(elem => elem.metric),
+        positiveLabel: (problemDoc.inputs.performanceMetrics?.find?.(metric => 'posLabel' in metric) || {}).posLabel,
+        precisionAtTopK: (problemDoc.inputs.performanceMetrics?.find?.(metric => 'K' in metric) || {}).K,
 
         task: findTask(problemDoc.about.taskKeywords),
         subTask: findSubtask(problemDoc.about.taskKeywords),
@@ -369,6 +352,70 @@ export let buildDefaultProblem = problemDoc => {
             .find(resource => resource.resType === 'table')?.columns?.find?.(column => column.timeGranularity)?.timeGranularity || {},
         forecastingHorizon: problemDoc.inputs.forecastingHorizon?.horizonValue
     };
+
+    if (problemDoc.statements) {
+        let pebbleLinks = {};
+        problemDoc.statements.forEach(statement => {
+            let source = Object.values(app.variableSummaries)
+                .find(summary => summary.worldModelers?.full_concept_name === statement.subj.db_refs.concept).variableName;
+            let target = Object.values(app.variableSummaries)
+                .find(summary => summary.worldModelers?.full_concept_name === statement.obj.db_refs.concept).variableName
+            let id = JSON.stringify([source, target]);
+
+            let link = pebbleLinks[id] = pebbleLinks[id] || {source, target, right: true};
+            link.sign = statement.obj_delta.polarity > 0 ? "plus" : 'minus';
+            link.color = link.sign === "plus" ? app.colors.location : app.colors.boundary;
+            link.beliefs = link.beliefs || [];
+            link.beliefs.push(statement.belief)
+
+            // link.opacity = Math.min(link.opacity || 0, statement.belief);
+            link.messages = link.messages || []
+            link.messages.push(`${statement.subj.name} -> ${statement.obj.name}`)
+        })
+
+        Object.values(pebbleLinks)
+            .forEach(link => link.opacity = link.beliefs.reduce((sum, v) => sum + v, 0) / link.beliefs.length);
+
+        let groups = Object.values(app.variableSummaries)
+            .filter(summary => summary.worldModelers)
+            .map((summary, i) => ({
+                id: summary.variableName,
+                name: summary.variableName,
+                description: "",
+                color: common.colorPalette[i % (common.colorPalette.length - 1)],
+                nodes: [summary.variableName],
+                opacity: 0.3
+            }));
+        return Object.assign(problem, {
+            groupCount: groups.length,
+            groups: groups,
+            groupLinks: Object.values(pebbleLinks),
+            pebbleLinks: [],
+            modelingMode: 'causal'
+        })
+    }
+    return Object.assign(problem, {
+        groupCount: 2,
+        groups: [
+            {
+                id: 0,
+                name: 'Predictors',
+                color: app.colors.predictor,
+                opacity: 0.3,
+                nodes: predictors,
+                description: defaultGroupDescriptions.predictors
+            },
+            {
+                id: 1,
+                name: 'Targets',
+                color: app.colors.target,
+                opacity: 0.3,
+                nodes: targets,
+                description: defaultGroupDescriptions.targets
+            }
+        ],
+        groupLinks: [{source: 0, target: 1, color: app.colors.predictor}]
+    })
 };
 
 /**
@@ -857,6 +904,7 @@ export let loadProblemPreprocess = async problem =>
  * @param {string} problemId
  */
 export function setSelectedProblem(problemId) {
+    console.trace("selected", problemId)
     let ravenConfig = app.workspace.raven_config;
 
     if (!problemId || ravenConfig.selectedProblem === problemId) return;

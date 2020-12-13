@@ -4,6 +4,7 @@ import * as jStat from 'jstat';
 
 import * as common from "../../common/common";
 import m from "mithril";
+import {hexToRgba} from "../app";
 
 export default class ForceDiagram {
     oninit() {
@@ -1196,7 +1197,7 @@ export let groupLinkBuilder = (attrs, context) => {
         newGroupLinkDefs
             .append("path")
             .attr('d', path)
-            .style("fill", groupLink => groupLink.color);
+            .style("fill", groupLink => hexToRgba(groupLink.color, groupLink.opacity ?? 1));
 
         context.selectors[key] = newGroupLinkDefs.merge(context.selectors[key]);
     })
@@ -1205,8 +1206,8 @@ export let groupLinkBuilder = (attrs, context) => {
     context.selectors.groupLinks = context.selectors.groupLinks.enter()
         .append("line")
         .style('fill', 'none')
-        .style('stroke', groupLink => groupLink.color)
-        .style('stroke-width', 5)
+        .style('stroke', groupLink => hexToRgba(groupLink.color, groupLink.opacity ?? 1))
+        .style('stroke-width', groupLink => (groupLink.opacity ?? 1) * 5)
         .on('mousedown', attrs.onclickGroupLink || Function)
         .merge(context.selectors.groupLinks);
 

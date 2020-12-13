@@ -1403,8 +1403,19 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
 
     // PREPROCESS
     let promisePreprocess = promiseSampledDatasetPath
-        .then(() => loadPreprocess(datasetQuery))
+        .then(() => loadPreprocess(datasetQuery)) // first call to preprocess
         .then(setPreprocess)
+        // pull worldModelers data in from datasetDoc if defined
+        .then(() => {
+            let learningDataResource = workspace.datasetDoc.dataResources
+                .find(resource => resource.resID === "learningData");
+
+            if (!learningDataResource) return;
+            learningDataResource.columns
+                .filter(columnSchema => columnSchema.worldModelers)
+                .forEach(columnSchema => setVariableSummaryAttr(
+                    columnSchema.colName, 'worldModelers', columnSchema.worldModelers))
+        })
         .then(m.redraw)
         .catch(err => {
             console.error(err);
@@ -1473,6 +1484,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
                 let problemCopy = getProblemCopy(problemFirst);
                 problemCopy.provenanceId = undefined;
                 workspace.raven_config.problems[problemCopy.problemId] = problemCopy;
+                // second call to preprocess
                 setSelectedProblem(problemCopy.problemId);
 
                 console.log('Task 1: Initiating');
@@ -1503,7 +1515,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
                  *   setSelectedProblem -> loadMenu (manipulate.js) -> getData (manipulate.js)
                  */
                 setSelectedProblem(problemCopy.problemId);
-            } else if (!(workspace.raven_config.selectedProblem in workspace.raven_config)) {
+            } else if (!(workspace.raven_config.selectedProblem in workspace.raven_config.problems)) {
                 await promiseDiscovery;
                 setSelectedProblem(Object.keys(workspace.raven_config.problems)[0])
             }
@@ -1514,6 +1526,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
     let selectedProblemPromise = Promise.all([promiseProblemDoc, promiseDiscovery])
         .then(() => {
             let problem = getSelectedProblem();
+            if (problem.modelingMode === "causal") return
             let targets = getTargetVariables(problem);
             let predictors = getPredictorVariables(problem);
 
@@ -1521,7 +1534,9 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
                 setSelectedProblem(Object.values(workspace.raven_config.problems)
                     .find(problem => getPredictorVariables(problem).length !== 0)?.problemId)
             }
+            // only modify the problem if problem is in predict mode
             else if (problem.unedited) {
+                // set default predictors based on first discovered problem
                 let newPredictors = getPredictorVariables(workspace.raven_config.problems['problem 1'])
                     ?.filter?.(variable => !targets.includes(variable));
                 if (newPredictors?.length > 0) problem.groups.find(group => group.name === "Predictors").nodes = newPredictors;
