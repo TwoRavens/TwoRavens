@@ -791,7 +791,7 @@ export let getNominalVariables = problem => {
 export let getOrdinalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
-        ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].nature === "ordinal"),
+        // ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].nature === "ordinal"),
         ...selectedProblem.tags.ordinal
     ])];
 };

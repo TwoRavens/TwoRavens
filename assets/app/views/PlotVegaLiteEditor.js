@@ -352,21 +352,31 @@ export default class PlotVegaLiteEditor {
 
     channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals) {
 
-        let aggregators = [
+        let numericAggregators = [
             'none',
+            'mean',
+            'absolute mean',
             'count',
             'valid',
             'missing',
             'sum',
-            'mean',
             // 'average',
-            // 'stdDev',
-            // 'variance',
+            'stdDev',
+            'variance',
             'min',
             'max',
-            // 'q1',
-            // 'median',
-            // 'q3'
+            'q1',
+            'median',
+            'q3'
+        ]
+        let nominalAggregators = [
+            'none',
+            'count',
+            'valid',
+            'missing',
+            'first',
+            'last',
+            'addToSet'
         ];
 
         if (channel.name === 'primary axis') {
@@ -407,6 +417,9 @@ export default class PlotVegaLiteEditor {
                     setDeep(channel, ['scheme', value], schemes[value][0])
             };
 
+            let aggregators = nominals.has(channel.variable) ? nominalAggregators : numericAggregators;
+            if (!aggregators.includes(channel.aggregation)) channel.aggregation = aggregators[1];
+
             return [
                 channel.name,
                 m(TextFieldSuggestion, {
@@ -429,7 +442,7 @@ export default class PlotVegaLiteEditor {
                         m(Dropdown, {
                             id: `aggregate${channel.name}Dropdown`,
                             items: aggregators,
-                            activeItem: channel.aggregation || 'mean',
+                            activeItem: channel.aggregation,
                             onclickChild: child => channel.aggregation = child
                         })),
                     m('label', 'Scheme Category:'),
@@ -465,6 +478,10 @@ export default class PlotVegaLiteEditor {
             if (!channel.aggregation) channel.aggregation = 'none';
             if (['bar', 'area'].includes(configuration.mark) && channel.aggregation === 'none')
                 channel.aggregation = 'max';
+
+            let aggregators = nominals.has(channel.variable) ? nominalAggregators : numericAggregators;
+            if (!aggregators.includes(channel.aggregation)) channel.aggregation = aggregators[0];
+
             return [
                 channel.name,
                 // variables
@@ -589,6 +606,11 @@ export default class PlotVegaLiteEditor {
         if (configuration.mark === "region" && ['latitude', 'longitude'].includes(channel.name))
             return
 
+        let aggregators;
+        if (configuration.mark === "region") {
+            aggregators = nominals.has(channel.variable) ? nominalAggregators : numericAggregators;
+            if (!aggregators.includes(channel.aggregation)) channel.aggregation = aggregators[1];
+        }
         return [
             channel.name,
             m(TextFieldSuggestion, {

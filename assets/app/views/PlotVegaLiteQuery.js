@@ -68,7 +68,7 @@ export default class PlotVegaLiteQuery {
                             m.request({
                                 url: mongoURL + 'get-metadata',
                                 method: 'POST',
-                                body: {geojson: [app.locationUnits[unit][0]]}
+                                body: {alignments: [unit], geojson: [app.locationUnits[unit][0]]}
                             }).then(setMetadata).then(m.redraw)
                         }
                     }
@@ -93,7 +93,7 @@ export default class PlotVegaLiteQuery {
         pruneSpec('hconcat');
         pruneSpec('vconcat');
 
-        if (mapping) translateGeojson(specificationStripped, summaries);
+        if (mapping && !translateGeojson(specificationStripped, summaries)) return;
 
         let countData = spec => [spec, ...(spec.layer || [])].filter(layer => layer.data?.values).length;
         if ([specificationStripped, ...(specificationStripped.vconcat || []), ...(specificationStripped.hconcat || [])]
@@ -138,10 +138,8 @@ let translateVegaLite = (transforms, summaries) => transforms.flatMap(transform 
 
         let getAggregator = measure => {
             // postprocess stdDev to variance
-            if (measure.op === 'variance') pipelinePost.push(
-                {$addFields: {variance: {$pow: ['$' + measure.field, 2]}}},
-                {$project: {[measure.field]: 0}},
-            );
+            if (measure.op === 'variance')
+                pipelinePost.push({$addFields: {[measure.as]: {$pow: ['$' + measure.as, 2]}}});
 
             if (isOrderStatistic(measure)) {
                 let countMeasure = transform.aggregate.find(measure => measure.op === 'count');
@@ -164,13 +162,19 @@ let translateVegaLite = (transforms, summaries) => transforms.flatMap(transform 
                 missing: {$sum: {$cond: [{$ne: ['$' + measure.field, undefined]}, 0, 1]}},
                 sum: {$sum: '$' + measure.field},
                 mean: {$avg: '$' + measure.field},
+                'absolute mean': {$avg: {$abs: '$' + measure.field}},
                 average: {$avg: '$' + measure.field},
-                stdDev: {$stdDevSamp: measure.field},
+                stdDev: {$stdDevSamp: '$' + measure.field},
+                variance: {$stdDevSamp: '$' + measure.field}, // this is postprocessed by pipelinePost
                 min: {$min: '$' + measure.field},
                 max: {$max: '$' + measure.field},
-                q1: {$push: measure.field},
-                median: {$push: measure.field},
-                q3: {$push: measure.field}
+                q1: {$push: '$' + measure.field},
+                median: {$push: '$' + measure.field},
+                q3: {$push: '$' + measure.field},
+                first: {$first: '$' + measure.field},
+                last: {$last: '$' + measure.field},
+                push: {$push: '$' + measure.field},
+                addToSet: {$addToSet: '$' + measure.field}
             })[measure.op];
         };
 
@@ -341,9 +345,10 @@ let translateGeojson = (specification, summaries) => {
     if ('layer' in specification) {
         specification.layer = specification.layer.filter(layer => translateGeojsonLayer(layer, summaries));
         specification.layer.forEach(layer => delete layer.selection);
+        return true
     }
     else
-        translateGeojsonLayer(specification, summaries)
+        return translateGeojsonLayer(specification, summaries)
 }
 
 let translateGeojsonLayer = (layer, summaries) => {

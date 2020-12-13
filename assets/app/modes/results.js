@@ -46,6 +46,7 @@ import {
 } from "../problem";
 import {preparePanels} from "../views/PlotVegaLiteWrapper";
 import {ExploreBoxes, explorePreferences, ExploreVariables} from "./explore";
+import Checkbox from "../../common/views/Checkbox";
 
 
 /**
@@ -1315,6 +1316,8 @@ export class CanvasSolutions {
         if (adapters.some(adapter => !adapter.getProduceDataPath(resultsPreferences.dataSplit)))
             return common.loader("CustomExplore");
 
+        let isClassification = ['classification', 'vertexclassification'].includes(problem.task.toLowerCase());
+
         let splitPath = problem.results.datasetPaths?.[resultsPreferences.dataSplit];
         if (!splitPath) return;
         let splitCollectionName = `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`
@@ -1323,33 +1326,52 @@ export class CanvasSolutions {
             collectionName, datafile, pipeline, variablesInitial, datasets
         } = getResultsAbstractPipeline(problem, splitCollectionName, splitPath, true);
 
-        let baseVariables = queryMongo.buildPipeline([...pipeline], variablesInitial).variables;
-
         // names of estimated target variables
-        let foldedVariables = adapters.map(adapter => `${resultsPreferences.target}-${adapter.getSolutionId()}`);
+        let foldedVariables = adapters.map(adapter => `${resultsPreferences.target}_${adapter.getSolutionId()}`);
+        let errorVariables = foldedVariables.map(variable => 'Error_' + variable);
+
+        let baseVariables = queryMongo.buildPipeline([...pipeline], variablesInitial).variables;
         // we're not recomputing preprocess summaries for joined results data.
         //   this constructs the minimal necessary portion of what that would look like
-        let resultsSummaries = [...baseVariables, ...foldedVariables]
-            .reduce((out, variable) => Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {});
+        let resultsSummaries = [
+            ...baseVariables, ...foldedVariables, ...errorVariables
+        ].reduce((out, variable) => Object.assign(out, {[variable]: app.variableSummaries[variable] || {}}), {});
+
         Object.assign(resultsSummaries, resultsPreferences.variableSummariesDiffs || {});
 
         // lock secondary axis to estimated target variables
         customConfiguration.channels = customConfiguration.channels || [];
-        let secondaryChannel = customConfiguration.channels.find(channel => channel.name === "secondary axis");
-        if (!secondaryChannel) {
-            secondaryChannel = {name: 'secondary axis'}
-            customConfiguration.channels.push(secondaryChannel);
+        if (resultsPreferences.lockExplorePlot) {
+            if (mapping) {
+                let colorChannel = mappingConfiguration.channels.find(channel => channel.name === 'color');
+                if (!colorChannel) {
+                    colorChannel = {name: 'color'};
+                    mappingConfiguration.channels.push(colorChannel);
+                }
+                if (!errorVariables.includes(colorChannel.variable))
+                    colorChannel.variable = errorVariables[0]
+                colorChannel.aggregation = isClassification ? 'count' : 'variance';
+                colorChannel.schemeCategory = "sequential-single"
+                colorChannel.scheme = colorChannel.scheme || {};
+                colorChannel.scheme['sequential-single'] = 'reds';
+            } else {
+                let secondaryChannel = customConfiguration.channels.find(channel => channel.name === "secondary axis");
+                if (!secondaryChannel) {
+                    secondaryChannel = {name: 'secondary axis'}
+                    customConfiguration.channels.push(secondaryChannel);
+                }
+                secondaryChannel.variables = [...foldedVariables];
+                // add a color channel
+                let colorChannel = customConfiguration.channels.find(channel => channel.name === 'color');
+                if (!colorChannel && secondaryChannel.variables.length > 1) customConfiguration.channels.push({
+                    name: 'color',
+                    variable: secondaryChannel.key || 'field'
+                })
+            }
         }
-        secondaryChannel.variables = [...foldedVariables];
-        // add a color channel
-        let colorChannel = customConfiguration.channels.find(channel => channel.name === 'color');
-        if (!colorChannel && secondaryChannel.variables.length > 1) customConfiguration.channels.push({
-            name: 'color',
-            variable: secondaryChannel.key || 'field'
-        })
 
-        let nominals = new Set(getNominalVariables(selectedProblem));
-        if (problem.task.toLowerCase().includes("classification")) foldedVariables.map(nominals.add);
+        let nominals = new Set(getNominalVariables(problem));
+        if (isClassification) foldedVariables.map(v => nominals.add(v));
 
         let {editor, plot} = preparePanels({
             mapping,
@@ -1363,6 +1385,15 @@ export class CanvasSolutions {
             abstractQuery: [
                 ...pipeline,
                 ...getResultsAbstractPipelineTargets(problem, adapters),
+                {
+                    type: "transform",
+                    transforms: foldedVariables.map(variable => ({
+                        "name": `Error_${variable}`,
+                        "equation": isClassification ?
+                            `toInt(eq(${variable}, ${resultsPreferences.target}))`
+                            : `${variable} - ${resultsPreferences.target}`
+                    }))
+                }
             ],
             summaries: resultsSummaries,
             setSummaryAttr: (variable, attr, value) => {
@@ -1380,6 +1411,13 @@ export class CanvasSolutions {
         });
 
         return [
+            m('div', m(Checkbox, {
+                id: 'showErrorCheck',
+                onclick: () => resultsPreferences.lockExplorePlot = !resultsPreferences.lockExplorePlot,
+                checked: resultsPreferences.lockExplorePlot
+            }), m('[style=margin:1em;display:inline-block]', mapping
+                ? 'Lock to error visualization for the current model.'
+                : 'Lock secondary axis to fitted values.')),
             editor,
             m('', {style: {height: '800px'}}, plot)
         ]
@@ -2330,7 +2368,7 @@ let getResultsAbstractPipelineTargets = (problem, adapters) => adapters
         fromPath: producePath,
         index: problem.tags.indexes[0],
         variables: {
-            [`${resultsPreferences.target}-${adapter.getSolutionId()}`]: resultsPreferences.target
+            [`${resultsPreferences.target}_${adapter.getSolutionId()}`]: resultsPreferences.target
         }
     }));
 
