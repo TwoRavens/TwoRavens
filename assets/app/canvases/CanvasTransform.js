@@ -592,7 +592,8 @@ class MenuManual {
                 makePage: keys => m(Table, {
                     id: 'tableManualVariable',
                     headers: [preferences.variableIndicator, preferences.variableName],
-                    data: keys.map((key, i) => [key, userInput(i)])
+                    data: keys.map((key, i) => [key, userInput(i)]),
+                    keyed: true
                 }),
                 limit: 100,
                 page: preferences.page || 0,

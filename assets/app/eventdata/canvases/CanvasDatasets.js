@@ -98,6 +98,7 @@ export default class CanvasDatasets {
                 }),
                 bold("Subsets:"),
                 m(Table, {
+                    keyed: true,
                     headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
                     data: Object.keys(tempDataset['subsets'] || {}).map(label => {
 

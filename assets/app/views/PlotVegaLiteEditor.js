@@ -37,6 +37,7 @@ export default class PlotVegaLiteEditor {
                 header: 'Global Options', defaultShown: false
             },
             m(Table, {
+                keyed: true,
                 data: [
                     !mapping && ["zero", m(Popper, {
                         content: () => configuration.zero
@@ -277,6 +278,7 @@ export default class PlotVegaLiteEditor {
                 header: 'Mark', attrsBody: {style: {padding: 0}}
             },
             m(Table, {
+                keyed: true,
                 data: [
                     ["type", m(Dropdown, {
                         items: allMarks,
@@ -330,6 +332,7 @@ export default class PlotVegaLiteEditor {
                 header: 'Channels', attrsBody: {style: {padding: 0}}
             },
             m(Table, {
+                keyed: true,
                 headers: ['channel', 'variables', '', ''],
                 data: [
                     ...configuration.channels
@@ -486,6 +489,7 @@ export default class PlotVegaLiteEditor {
                 channel.name,
                 // variables
                 m('', channel.variables.length > 0 && m(Table, {
+                    keyed: true,
                     attrsAll: {
                         style: {
                             background: 'rgba(0,0,0,.05)',
