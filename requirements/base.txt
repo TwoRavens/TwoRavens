@@ -33,7 +33,8 @@ redis==3.2.0
 #
 Twisted[tls,http2]==18.9.0
 channels==2.2.0
-channels_redis==3.2.0
+channels_redis==2.4.2
+#channels_redis==3.2.0
 
 # pymongo
 #

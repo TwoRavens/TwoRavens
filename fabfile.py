@@ -746,7 +746,8 @@ def run_grpc_tests():
 @task
 def redis_run():
     """Run the local redis server"""
-    redis_cmd = 'redis-server /usr/local/etc/redis.conf'
+    #redis_cmd = 'redis-server /usr/local/etc/redis.conf'
+    redis_cmd = 'docker run --rm --name raven-redis -p 6379:6379 -d redis:6'
 
     with settings(warn_only=True):
         result = local(redis_cmd, capture=True)
@@ -770,7 +771,8 @@ def redis_clear():
 def redis_stop():
     """Clear data from the *running* local redis server"""
 
-    redis_cmd = 'pkill -f redis'
+    #redis_cmd = 'pkill -f redis'
+    redis_cmd = 'docker stop raven-redis'
     with settings(warn_only=True):
         result = local(redis_cmd, capture=True)
 
