@@ -3,8 +3,8 @@ FROM python:3.6.8
 MAINTAINER TwoRavens http://2ra.vn/
 
 LABEL organization="Two Ravens" \
-      2ra.vn.version="0.0.6-beta" \
-      2ra.vn.release-date="2018-01-11" \
+      2ra.vn.version="0.8" \
+      2ra.vn.release-date="2020-12-17" \
       description="Image for the Two Ravens python service which serves the UI."
 
 # -------------------------------------
