@@ -1039,7 +1039,7 @@ export let rightpanel = () => {
                     m('label', 'Positive Class. Used for f1, precision, and recall metrics.'),
                     m(Dropdown, {
                         id: 'positiveClass',
-                        items: Object.keys(app.variableSummaries[getTargetVariables(targets)[0]]?.plotValues || {}),
+                        items: Object.keys(app.variableSummaries[getTargetVariables(selectedProblem)[0]]?.plotValues || {}),
                         activeItem: selectedProblem.positiveLabel,
                         onclickChild: label => selectedProblem.positiveLabel = label,
                         style: {'margin': '1em', 'margin-top': '0'},
