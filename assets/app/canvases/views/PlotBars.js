@@ -69,21 +69,21 @@ export default class PlotBars {
             .attr("y", 6)
             .attr("dy", "0.71em");
 
-        let barClick = d =>  {
+        let barClick = (e, d) =>  {
             if (!callbackBar) return;
             callbackBar(d);
             m.redraw();
         };
 
-        let tooltipMove = (d) => {
+        let tooltipMove = (e, d) => {
             // only show the tooltip if a title has been set
             if (!d.title) return;
             tooltip.transition()
                 .duration(200)
                 .style("opacity", .9);
             tooltip.html(d.title)
-                .style("left", (d3.event.pageX) + "px")
-                .style("top", (d3.event.pageY - 28) + "px");
+                .style("left", (e.pageX) + "px")
+                .style("top", (e.pageY - 28) + "px");
         };
 
         let tooltipOut = () => {

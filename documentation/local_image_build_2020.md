@@ -24,6 +24,7 @@ workon 2ravens;
 
 # raven_solver update
 cd tworaven_solver/
+git checkout master
 git pull
 cd ..
 # git submodule update --init --recursive
@@ -39,17 +40,17 @@ fab webpack_prod
 fab run_with_ta2
 
 # Build main TA3
-docker build -t tworavens/ravens-main:comfrey-2020-1202 .
-docker push tworavens/ravens-main:comfrey-2020-1202
+docker build -t tworavens/ravens-main:yarrow-2020-1217 .
+docker push tworavens/ravens-main:yarrow-2020-1217
 
 # Build rook service
-docker build -t tworavens/ravens-r-service:comfrey-2020-1202 -f Dockerfile-flask-r .
-docker push tworavens/ravens-r-service:comfrey-2020-1202;
+docker build -t tworavens/ravens-r-service:yarrow-2020-1217 -f Dockerfile-flask-r .
+docker push tworavens/ravens-r-service:yarrow-2020-1217;
 
 # Build nginx service
 cd setup/nginx/;
-docker build -f ./Dockerfile -t tworavens/ravens-nginx:comfrey-2020-1202 .
-docker push tworavens/ravens-nginx:comfrey-2020-1202
+docker build -f ./Dockerfile -t tworavens/ravens-nginx:yarrow-2020-1217 .
+docker push tworavens/ravens-nginx:yarrow-2020-1217
 cd ../../;
 
 
@@ -58,17 +59,17 @@ cd ../../;
 # ----------------------------
 # ravens-main
 docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
-docker tag tworavens/ravens-main:comfrey-2020-1202 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
+docker tag tworavens/ravens-main:yarrow-2020-1217 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
 docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
 
 # ravens-r-service
 docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
-docker tag tworavens/ravens-r-service:comfrey-2020-1202 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
+docker tag tworavens/ravens-r-service:yarrow-2020-1217 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
 docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
 
 # ravens-nginx
 docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
-docker tag tworavens/ravens-nginx:comfrey-2020-1202 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
+docker tag tworavens/ravens-nginx:yarrow-2020-1217 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
 docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
 
 

@@ -18,8 +18,8 @@ import * as results from './modes/results';
 
 import * as manipulate from './manipulations/manipulate';
 
-import * as solverWrapped from "./solvers/wrapped";
 import * as solverD3M from "./solvers/d3m";
+import * as utils from "./utils";
 
 import * as common from '../common/common';
 import ButtonRadio from '../common/views/ButtonRadio';
@@ -33,8 +33,7 @@ import ModalVanilla from "../common/views/ModalVanilla";
 import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
-import Popper from '../common/views/Popper';
-import {ModalDatamart} from "./datamart/Datamart";
+import {Datamart, ModalDatamart} from "./datamart/Datamart";
 
 import Icon from '../common/views/Icon';
 import ModalWorkspace from "./views/ModalWorkspace";
@@ -42,29 +41,13 @@ import ModalWorkspace from "./views/ModalWorkspace";
 // ALTERNATE WINDOWS
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
-
-import {getSelectedProblem, newWorkspaceMessage} from "./app";
-import {buildCsvUrl} from "./app";
-import {alertWarn} from "./app";
-import ButtonLadda from "./views/ButtonLadda";
-import {datasetPreferences} from "./modes/dataset";
 import Body_Deploy from "./views/Body_Deploy";
-
-export let bold = value => m('div', {style: {'font-weight': 'bold', display: 'inline'}}, value);
-export let boldPlain = value => m('b', value);
-export let italicize = value => m('div', {style: {'font-style': 'italic', display: 'inline'}}, value);
-export let link = url => m('a', {href: url, style: {color: 'darkblue'}, target: '_blank', display: 'inline'}, url);
-export let linkURL = url => m('a', {href: url, style: {color: 'blue'}, }, url);
-export let linkURLwithText = (url, text) => m('a', {href: url, style: {color: 'blue'}, }, text);
-export let preformatted = text => m('pre', text);
-export let abbreviate = (text, length) => text.length > length
-    ? m('div', {'data-toggle': 'tooltip', title: text}, text.substring(0, length - 3).trim() + '...')
-    : text;
+import {getAbstractPipeline, getSelectedProblem} from "./problem";
 
 
 class Body {
     oninit() {
-        app.setRightTab('Manipulate');
+        app.setRightTab('Problem');
         app.setSelectedMode('model');
         m.route.set('/model');
         this.TA2URL = D3M_SVC_URL + '/SearchDescribeFitScoreSolutions';
@@ -91,10 +74,14 @@ class Body {
 
         let overflow = app.isExploreMode ? 'auto' : 'hidden';
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         let drawForceDiagram = (app.isModelMode || app.isExploreMode) && selectedProblem && Object.keys(app.variableSummaries).length > 0;
         let forceData = drawForceDiagram && model.buildForceData(selectedProblem);
+
+        let backgroundColor = app.swandive ? 'grey'
+            : app.isExploreMode ? {"light": '#ffffff', "dark": "#474747"}[common.theme]
+                : common.baseColor;
 
         return m('main',
 
@@ -106,6 +93,7 @@ class Body {
             app.workspace && manipulate.constraintMenu && Body.manipulations(),
             app.peekInlineShown && this.peekTable(),
 
+
             m(`#main`, {
                     style: {
                         overflow,
@@ -113,7 +101,8 @@ class Body {
                         height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
                         bottom: common.heightFooter,
                         display: (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
-                        'background-color': app.swandive ? 'grey' : 'transparent'
+                        'background-color': backgroundColor,
+                        color: common.textColor
                     }
                 },
 
@@ -146,7 +135,7 @@ class Body {
             linkInfo.newWin === true ? window.open(linkInfo.url) : window.location.href = linkInfo.url;
         }
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         let createBreadcrumb = () => {
             let path = [
@@ -154,7 +143,7 @@ class Body {
                             style: {display: 'inline-block', margin: '.25em 1em'},
                             onclick: () => {
                                 app.setSelectedMode('dataset')
-                                datasetPreferences.datasourceMode = "Current"
+                                dataset.datasetPreferences.datasourceMode = "Current"
                             }
                         },
                         app.workspace.d3m_config.name || 'Dataset Name', m('br'),
@@ -192,7 +181,7 @@ class Body {
                     'In the Norse, their names were "Thought" and "Memory". ' +
                     'In our coming release, our thought-raven automatically advises on statistical model selection, ' +
                     'while our memory-raven accumulates previous statistical models from Dataverse, to provide cumulative guidance and meta-analysis.',
-                attrsInterface: {style: app.isExploreMode ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
+                attrsInterface: {style: app.isExploreMode && common.theme === "light" ? {'background-image': '-webkit-linear-gradient(top, #fff 0, rgb(227, 242, 254) 100%)'} : {}}
             },
             m('div', {style: {'flex-grow': 1}}),
 
@@ -201,13 +190,13 @@ class Body {
             m('div', {style: {'flex-grow': 1}}),
 
 
-            app.isResultsMode && selectedProblem && Object.keys(selectedProblem?.results?.solutions?.d3m || {}).length > 0 && m(ButtonLadda, {
-                id: 'btnEndSession',
-                class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
-                onclick: solverD3M.endSession,
-                activeLadda: app.taskPreferences.isSubmittingPipelines,
-                style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
-            }, 'Mark Problem Finished'),
+            // app.isResultsMode && selectedProblem && Object.keys(selectedProblem?.results?.solutions?.d3m || {}).length > 0 && m(ButtonLadda, {
+            //     id: 'btnEndSession',
+            //     class: 'ladda-label ladda-button ' + (app.taskPreferences.task2_finished ? 'btn-secondary' : 'btn-success'),
+            //     onclick: solverD3M.endSession,
+            //     activeLadda: app.taskPreferences.isSubmittingPipelines,
+            //     style: {margin: '0.25em 1em', 'data-spinner-color': 'black', 'data-style': 'zoom-in'}
+            // }, 'Mark Problem Finished'),
 
             m(ButtonRadio, {
                 id: 'modeButtonBar',
@@ -239,14 +228,13 @@ class Body {
     }
 
     peekTable() {
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
         if (!selectedProblem) return;
 
-        let pipeline = [
-            ...app.workspace.raven_config.hardManipulations,
-            ...(app.isModelMode ? selectedProblem.manipulations : [])
-        ];
-        if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(pipeline);
+        let abstractQuery = app.isModelMode
+            ? getAbstractPipeline(selectedProblem)
+            : [...app.workspace.raven_config.hardManipulations];
+        if (app.peekInlineShown && !app.peekData && !app.peekIsExhausted) app.resetPeek(abstractQuery);
 
         return m('div#previewTable', {
                 style: {
@@ -258,7 +246,7 @@ class Body {
                     "overflow-y": "scroll",
                     "overflow-x": "auto",
                     'z-index': 100,
-                    'background': 'rgba(255,255,255,.8)'
+                    'background': {'light': 'rgba(255,255,255,.8)', 'dark': 'rgba(115,115,115,0.8)'}[common.theme]
                 },
                 onscroll: () => {
                     // don't apply infinite scrolling when list is empty
@@ -266,7 +254,7 @@ class Body {
 
                     let container = document.querySelector('#previewTable');
                     let scrollHeight = container.scrollHeight - container.scrollTop;
-                    if (scrollHeight < container.offsetHeight + 100) app.updatePeek(pipeline);
+                    if (scrollHeight < container.offsetHeight + 100) app.updatePeek(abstractQuery);
                 }
             },
             m('#horizontalDrag', {
@@ -366,7 +354,7 @@ class Body {
 
             // m("span", {"class": "footer-info-break"}, "|"),
             // m("a", {"href" : "/dev-raven-links", "target": "=_blank"}, "raven-links"),
-            app.peekInlineShown && italicize(app.peekLabel),
+            app.peekInlineShown && utils.italicize(app.peekLabel),
 
             m('div.btn-group', {style: 'float: right; padding: 0px;margin:5px;margin-top:7px'},
 
@@ -432,8 +420,8 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildCsvUrl(problem, manipulate.constraintMenu.step);
-                                    if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
+                                    let datasetUrl = await app.buildCsvPath(problem, manipulate.constraintMenu.step);
+                                    if (!datasetUrl) app.alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl)
                                 }
                             }, 'Download'),
@@ -445,8 +433,8 @@ class Body {
                                 class: 'btn-sm',
                                 onclick: async () => {
                                     let problem = getSelectedProblem();
-                                    let datasetUrl = await buildCsvUrl(problem);
-                                    if (!datasetUrl) alertWarn('Unable to prepare dataset for download.');
+                                    let datasetUrl = await app.buildCsvPath(problem);
+                                    if (!datasetUrl) app.alertWarn('Unable to prepare dataset for download.');
                                     app.downloadFile(datasetUrl);
                                 }
                             }, 'Download'),
@@ -580,7 +568,7 @@ class Body {
                                 id: 'btnModalSaveAsNewWorkspace',
                                 class: 'btn-sm btn-primary',
                                 onclick: _ => {
-                                    console.log('save clicked...');
+                                    // console.log('save clicked...');
 
                                     // clear any error messages
                                     app.setNewWorkspaceMessageSuccess('Attempting to save...')
@@ -605,7 +593,7 @@ class Body {
                 m('h4', 'Organize all models/datasets'),
                 m(Button, {
                     onclick: () => {
-                        let problem = app.getSelectedProblem();
+                        let problem = getSelectedProblem();
                         m.request(D3M_SVC_URL + '/ExportSolutions', {
                             method: 'POST',
                             body: results.getSummaryData(problem)
@@ -622,7 +610,7 @@ class Body {
                 m(Button, {
                     style: {margin: '1em'},
                     onclick: async () => {
-                        this.TA2Post = JSON.stringify(await solverD3M.getSolverSpecification(app.getSelectedProblem()));
+                        this.TA2Post = JSON.stringify(await solverD3M.getSolverSpecification(getSelectedProblem()));
                         m.redraw()
                     }
                 }, 'Prepare'),
@@ -659,7 +647,7 @@ class Body {
                 ),
                 m('div#solutions', {style: {margin: '1em'}},
                     'Solutions',
-                    m(TextField, {value: JSON.stringify(app.getSelectedProblem().solutions.d3m)}))
+                    m(TextField, {value: JSON.stringify(getSelectedProblem().solutions.d3m)}))
             )
         ]
     }
@@ -819,9 +807,14 @@ class Body {
      */
 
     static leftpanel(mode, forceData) {
-        if (mode === 'dataset') return manipulate.leftpanel();
-        if (mode === 'results') return results.leftpanel();
-        if (mode === 'model') return model.leftpanel(forceData);
+        if (mode === 'dataset')
+            return manipulate.leftpanel();
+        if (mode === 'model')
+            return model.leftpanel(forceData);
+        if (['results', 'explore'].includes(mode) && manipulate.constraintMenu)
+            return manipulate.leftpanel()
+        if (mode === 'results')
+            return results.leftpanel();
     }
 
     static rightpanel(mode) {
@@ -829,11 +822,14 @@ class Body {
     }
 
     static manipulations() {
-        let selectedProblem = app.getSelectedProblem();
-        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate')) && manipulate.menu([
-            ...app.workspace.raven_config.hardManipulations,
-            ...(app.isModelMode ? selectedProblem.manipulations : [])
-        ])  // the identifier for which pipeline to edit
+        let selectedProblem = getSelectedProblem();
+        return (app.isDatasetMode || (app.isModelMode && app.rightTab === 'Manipulate') || app.isResultsMode || app.isExploreMode)
+            && manipulate.menu(app.isResultsMode
+                ? [...getAbstractPipeline(selectedProblem), ...results.resultsQuery]
+                : [
+                    ...app.workspace.raven_config.hardManipulations,
+                    ...(app.isModelMode ? selectedProblem.manipulations : [])
+                ])
     }
 }
 
@@ -862,8 +858,8 @@ class MainCarousel {
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                'padding-left': common.panelOcclusion['left'],
-                'padding-right': common.panelOcclusion['right'],
+                'padding-left': `calc(${common.panelOcclusion['left']} - ${common.panelMargin})`,
+                'padding-right': `calc(${common.panelOcclusion['right']} - ${common.panelMargin})`,
                 overflow: 'auto'
             }}, vnode.children)
     }

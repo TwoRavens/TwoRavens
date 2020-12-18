@@ -11,26 +11,38 @@ import pandas as pd
 
 
 def util_results_real_clustered(data_pointer, metadata):
+
+    # ensure auxiliary datasets are present
+    #
+    if metadata.get('datasets'):
+        for collection_name, meta in metadata['datasets'].items():
+            EventJobUtil.import_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                collection_name,
+                data_path=meta['path'],
+                indexes=meta.get('indexes'),
+                reload=metadata.get('reload', None))
+
     GRID_SIZE = 100
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
-        metadata['collectionName'],
-        metadata['collectionPath'])
+        metadata['collection_name'],
+        metadata['datafile'])
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
+    results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     mongo_util_base = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if mongo_util_base.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_base.get_error_message()}
 
     mongo_util_fitted = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if mongo_util_fitted.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_fitted.get_error_message()}
 
@@ -121,7 +133,7 @@ def util_results_real_clustered(data_pointer, metadata):
                     **{
                         'actual_' + name: f"${name}" for name in metadata['targets']
                     },
-                    **{"_id": 0}}
+                    **{"_id": 0, "d3mIndex": 1}}
             },
             {
                 "$facet": {
@@ -132,11 +144,13 @@ def util_results_real_clustered(data_pointer, metadata):
                                     'x': {'$toInt': normalize(f'$fitted_{target}', *bounds['fitted'][target], GRID_SIZE)},
                                     'y': {'$toInt': normalize(f'$actual_{target}', *bounds['actual'][target], GRID_SIZE)}
                                 },
-                                'Fitted Values': {"$avg": f'$fitted_{target}'},
-                                'Actual Values': {"$avg": f'$actual_{target}'},
-                                'count': {'$sum': 1}
+                                'Fitted Value': {"$avg": f'$fitted_{target}'},
+                                'Actual Value': {"$avg": f'$actual_{target}'},
+                                'count': {'$sum': 1},
+                                'd3mIndex': {'$push': '$d3mIndex'}
                             }
                         },
+                        {'$addFields': {'d3mIndex': {"$slice": ["$d3mIndex", 0, 10]}}},
                         {'$project': {'_id': 0}}
                     ]
                     for target in metadata['targets']}
@@ -160,17 +174,28 @@ def util_results_confusion_matrix(data_pointer, metadata):
     """
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
-        metadata['collectionName'],
-        metadata['collectionPath'])
+        metadata['collection_name'],
+        metadata['datafile'])
+
+    # ensure auxiliary datasets are present
+    #
+    if metadata.get('datasets'):
+        for collection_name, meta in metadata['datasets'].items():
+            EventJobUtil.import_dataset(
+                settings.TWORAVENS_MONGO_DB_NAME,
+                collection_name,
+                data_path=meta['path'],
+                indexes=meta.get('indexes'),
+                reload=metadata.get('reload', None))
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
+    results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
@@ -204,7 +229,7 @@ def util_results_confusion_matrix(data_pointer, metadata):
                 **{
                     'Actual_' + name: f"${name}" for name in metadata['targets']
                 },
-                **{"_id": 0}}
+                **{"_id": 0, "d3mIndex": 1}}
         },
         {
             '$facet': {
@@ -212,7 +237,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
                     {
                         "$group": {
                             '_id': {'Actual': f'$Actual_{target}', 'Predicted': f'$Predicted_{target}'},
-                            'count': {'$sum': 1}
+                            'count': {'$sum': 1},
+                            'd3mIndex': {'$push': '$d3mIndex'}
                         }
                     },
                     {
@@ -220,6 +246,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
                             'Actual': '$_id\\.Actual',
                             'Predicted': '$_id\\.Predicted',
                             'count': 1,
+                            # presence of a 51st element indicates slicing
+                            'd3mIndex': {"$slice": ["$d3mIndex", 0, 51]},
                             '_id': 0
                         }
                     },
@@ -275,9 +303,10 @@ def util_results_confusion_matrix(data_pointer, metadata):
         classes = next(response[1])
 
     finally:
-        EventJobUtil.delete_dataset(
-            settings.TWORAVENS_MONGO_DB_NAME,
-            results_collection_name)
+        pass
+        # EventJobUtil.delete_dataset(
+        #     settings.TWORAVENS_MONGO_DB_NAME,
+        #     results_collection_name)
 
     return {
         KEY_SUCCESS: response[0],
@@ -296,14 +325,14 @@ def util_results_importance_efd(data_pointer, metadata):
     # make sure the base dataset is loaded
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
-        metadata['collectionName'],
-        data_path=metadata['collectionPath'])
+        metadata['collection_name'],
+        data_path=metadata['datafile'])
 
-    results_collection_name = metadata['collectionName'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
+    results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collectionName'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
@@ -336,7 +365,7 @@ def util_results_importance_efd(data_pointer, metadata):
         'actual ' + key: levels[key] for key in levels
     })
 
-    # print('metadata levels', levels)
+    print('metadata levels', levels)
 
     def is_categorical(variable, levels):
         return variable in levels

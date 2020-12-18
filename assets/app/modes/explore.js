@@ -1,6 +1,5 @@
 import m from "mithril";
 import * as d3 from 'd3';
-
 import * as app from '../app';
 
 import aggbar from '../vega-schemas/aggbar.json';
@@ -15,7 +14,6 @@ import box2d from '../vega-schemas/box2d.json';
 import bubbleqqq from '../vega-schemas/trivariate/bubbleqqq.json';
 import bubbletri from '../vega-schemas/trivariate/bubbletri.json';
 import densityschema from '../vega-schemas/univariate/density'
-import densitycdfschema from '../vega-schemas/univariate/densitycdf'
 import dot from '../vega-schemas/univariate/dot.json';
 import dotdashqqn from '../vega-schemas/trivariate/dotdashqqn.json';
 import facetbox from '../vega-schemas/trivariate/facetbox.json';
@@ -56,10 +54,19 @@ import * as queryMongo from "../manipulations/queryMongo";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Popper from "../../common/views/Popper";
 import Paginated from "../../common/views/Paginated";
-import {bold, italicize} from "../index";
 import PlotVegaLite from "../views/PlotVegaLite";
 import TextField from "../../common/views/TextField";
 import PlotVegaLiteWrapper from "../views/PlotVegaLiteWrapper";
+import {bold, italicize, remove, toggle} from "../utils";
+import {
+    getAbstractPipeline,
+    getNominalVariables,
+    getPredictorVariables,
+    getSelectedProblem, getTargetVariables,
+    setSelectedProblem
+} from "../problem";
+
+window.timeParse = d3.timeParse;
 
 // adds some padding, sets the size so the content fills nicely in the page
 let wrapCanvas = (...contents) => m('div#canvasExplore', {
@@ -76,13 +83,13 @@ let wrapCanvas = (...contents) => m('div#canvasExplore', {
 let get_node_label = problemOrVariableName => {
     if (explorePreferences.mode === 'problems') {
         let exploreProblem = 'problems' in app.workspace.raven_config && app.workspace.raven_config.problems[problemOrVariableName];
-        let predictorVariables = app.getPredictorVariables(exploreProblem);
-
-        if (exploreProblem.targets.length === 0)
+        let predictorVariables = getPredictorVariables(exploreProblem);
+        let targetVariables = getTargetVariables(exploreProblem);
+        if (targetVariables.length === 0)
             return
 
         let problemText = predictorVariables
-            && [exploreProblem.targets.join(','), m(Icon, {
+            && [targetVariables.join(','), m(Icon, {
                 style: 'margin:.5em;margin-top:.25em',
                 name: 'arrow-left'
             }), predictorVariables.join(', ')];
@@ -98,6 +105,213 @@ let get_node_label = problemOrVariableName => {
                 String.fromCharCode(pos + 97);
     return `${problemOrVariableName} (${str})`;
 };
+
+export class ExploreBoxes {
+    view(vnode) {
+        let {preferences, summaries} = vnode.attrs;
+        let exploreBoxIds = Object.keys(preferences.mode === "problems" ? app.workspace.raven_config.problems : summaries);
+
+        // boxId could either be a problemId or a variable name
+        return exploreBoxIds.map(boxId => {
+            let selected = preferences.mode === 'problems'
+                ? boxId === selectedProblem.problemId
+                : preferences.variables.includes(boxId);
+
+            let node = summaries[boxId];
+            let kind = node?.timeUnit ? 'temporal' :
+                node?.locationUnit ? 'geographic' :
+                    null;
+
+            let nodeLabel = get_node_label(boxId);
+            if (!nodeLabel)
+                return
+
+            // tile for each variable or problem
+            return m('span#exploreNodeBox', {
+                    onclick: () => {
+                        if (preferences.mode === 'problems') {
+                            setSelectedProblem(boxId);
+                            preferences.variables = [boxId];
+                            return;
+                        }
+
+                        toggle(preferences.variables, boxId);
+                    },
+                    style: {
+                        // border: '1px solid rgba(0, 0, 0, .2)',
+                        'border-radius': '5px',
+                        'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
+                        display: 'flex',
+                        'flex-direction': 'column',
+                        height: '250px',
+                        margin: '.5em',
+                        width: '250px',
+                        'align-items': 'center',
+                        'background-color': selected ? app.hexToRgba(common.selVarColor) : common.baseColor
+                    }
+                },
+                m('#exploreNodePlot', {
+                    oninit() {
+                        this.node = summaries[boxId];
+                    },
+                    oncreate(vnode) {
+                        let plot = (this.node || {}).pdfPlotType === 'continuous' ? densityNode : barsNode;
+                        this.node && plot(this.node, vnode.dom, 110, true);
+                    },
+                    onupdate(vnode) {
+                        let targetName = preferences.mode === 'problems'
+                            ? getTargetVariables(app.workspace.raven_config.problems[boxId])[0]
+                            : boxId;
+                        let node = summaries[targetName];
+                        if (node && node !== this.node) {
+                            let plot = node.pdfPlotType === 'continuous' ? densityNode : barsNode;
+                            plot(node, vnode.dom, 110, true);
+                            this.node = node;
+                        }
+                    },
+                    style: 'height: 65%'
+                }),
+                m('#exploreNodeLabel', {
+                        style: {
+                            margin: '.5em',
+                            'max-width': '230px',
+                            'overflow-wrap': 'break-word',
+                            overflow: 'auto'
+                        }
+                    },
+                    nodeLabel),
+                kind && m('div', m('em', kind))
+            );
+        })
+    }
+}
+
+export class ExploreVariables {
+    view(vnode) {
+        let {preferences, summaries, callbackGoBack, getData, abstractQuery} = vnode.attrs;
+
+        let getPlotScroller = nodeSummaries => {
+            return m('div#explorePlotBar', {
+                    style: {
+                        'margin-bottom': '1em',
+                        position: 'relative'
+                    }
+                },
+                m('div', {
+                    style: {
+                        'overflow-x': 'scroll',
+                        'white-space': 'nowrap',
+                        width: '100%',
+                    }
+                }, getRelevantPlots(nodeSummaries, preferences.mode).map(schemaName => m("figure", {style: 'display: inline-block'}, [
+                        m(`img#${schemaName}_img[alt=${schemaName}][height=140px][width=260px][src=/static/images/${schemaName}.png]`, {
+                            onclick: () => preferences.schemaName = schemaName,
+                            style: getThumbnailStyle(nodeSummaries, schemaName)
+                        }),
+                        m("figcaption",
+                            {style: {"text-align": "center"}},
+                            schemaName === preferences.schemaName ? bold(plotMap[schemaName]) : plotMap[schemaName])
+                    ])
+                )),
+                m('div', {
+                    style: {
+                        'position': 'absolute',
+                        'width': '100%',
+                        'height': '100%',
+                        'box-shadow': 'inset -10px 0 10px -10px #333, inset 10px 0 10px -10px #333',
+                        'top': '0',
+                        'left': '0', 'pointer-events': 'none'
+                    }
+                }))
+        }
+
+        let getPlot = () => {
+
+            if (preferences.mode === "problems") {
+                let predictors = getPredictorVariables(selectedProblem);
+                let targets = getTargetVariables(selectedProblem);
+                if (predictors.length === 0)
+                    return "No predictors are selected. Please select some predictors."
+
+                if (!targets.includes(preferences.target))
+                    preferences.target = targets[0]
+                if (!preferences.target)
+                    return "No targets are selected. Please select a target."
+
+                let nodeSummaries = [
+                    summaries[predictors[0]],
+                    summaries[preferences.target]
+                ];
+                let relevantPlots = getRelevantPlots(nodeSummaries, preferences.mode);
+                if (!relevantPlots.includes(preferences.schemaName) || !getIsRecommended(nodeSummaries, preferences.schemaName)) {
+                    preferences.schemaName = relevantPlots[0];
+                }
+
+                let specification = getPlotSpecification(preferences, summaries, abstractQuery, getData);
+
+                let exploreContent = [];
+
+                if (targets.length > 1) exploreContent.push(
+                    m('div', {style: {display: 'inline-block'}}, bold("Target:")),
+                    m(ButtonRadio, {
+                        id: 'exploreTargetButtonRadio',
+                        title: 'select target variable',
+                        sections: targets.map(target => ({value: target})),
+                        activeSection: preferences.target,
+                        onclick: target => preferences.target = target,
+                        attrsAll: {style: {width: 'auto', margin: '1em'}},
+                        attrsButtons: {style: {width: 'auto'}}
+                    }))
+
+                exploreContent.push(
+                    getPlotScroller(nodeSummaries),
+                    m(Paginated, {
+                        data: predictors,
+                        makePage: () => exploreCache.specificationIsLoading
+                            ? [italicize("Loading data exploration."), common.loader('explore')]
+                            : specification && m('[style=display:block;height:500px]',
+                            italicize(specification.annotation),
+                            m(PlotVegaLite, {specification})),
+                        limit: preferences.pageLength,
+                        page: preferences.page,
+                        setPage: index => preferences.page = index
+                    }));
+
+                return exploreContent
+            }
+
+            if (preferences.variables.length === 0) return;
+            let nodeSummaries = preferences.variables.map(variable => summaries[variable]);
+            // clear out old state if not relevant
+            let relevantPlots = getRelevantPlots(nodeSummaries, preferences.mode);
+            if (!(relevantPlots.includes(preferences.schemaName)) || !getIsRecommended(nodeSummaries, preferences.schemaName)) {
+                preferences.schemaName = relevantPlots[0];
+            }
+            let specification = getPlotSpecification(preferences, summaries, abstractQuery, getData);
+
+            return m('div',
+                getPlotScroller(nodeSummaries),
+                exploreCache.specificationIsLoading
+                    ? [italicize("Loading data exploration."), common.loader('explore')]
+                    : specification && m('[style=display:block;height:500px]',
+                    italicize(specification.annotation),
+                    m(PlotVegaLite, {specification}))
+            );
+        };
+
+        if (['variables', 'problems'].includes(preferences.mode)) return wrapCanvas(
+            m(Button, {
+                    class: 'btn-secondary',
+                    onclick: callbackGoBack,
+                    style: {margin: '.5em'}
+                },
+                m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
+                'back to variables'),
+            m('br'),
+            getPlot()
+        );
+    }
+}
 
 export class CanvasExplore {
     view(vnode) {
@@ -117,24 +331,25 @@ export class CanvasExplore {
             explorePreferences.go = false;
         }
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         if (!explorePreferences.go) return [wrapCanvas(
             m(ButtonRadio, {
                 id: 'problemVariateButtonRadio',
-                attrsAll: {style: {width: '300px', margin: '.5em', position: 'fixed'}},
+                attrsAll: {style: {width: '330px', margin: '.5em', position: 'fixed'}},
                 activeSection: explorePreferences.mode,
                 onclick: value => explorePreferences.mode = value.toLowerCase(),
                 sections: [
                     {value: 'Variables'},
                     {value: 'Problems'},
-                    {value: 'Custom'}
+                    {value: 'Custom'},
+                    {value: 'Mapping'}
                 ]
             }),
-            explorePreferences.mode !== 'custom' && m(Button, {
+            !['custom', 'mapping'].includes(explorePreferences.mode) && m(Button, {
                 id: 'exploreGo',
                 class: 'btn-success',
-                style: {margin: '.5em', 'margin-left': 'calc(300px + 1.5em)', position: 'fixed'},
+                style: {margin: '.5em', 'margin-left': 'calc(330px + 1.5em)', position: 'fixed'},
                 onclick: () => {
                     let selected = explorePreferences.mode === 'problems'
                         ? [app.workspace.raven_config.selectedProblem]
@@ -154,240 +369,81 @@ export class CanvasExplore {
                 }
             }, 'go'),
 
-            m(Popper, {
-                content: () => `Up to ${explorePreferences.recordLimit} records are sampled from the dataset.`
-            }, m('label', {
-                style: {
-                    margin: '20px 0',
-                    'margin-left': 'calc(460px + 1.5em)',
-                    position: 'fixed'
-                }
-            }, bold('Record Limit'))),
-            m(TextField, {
-                id: 'recordLimit',
-                value: explorePreferences.recordLimit || '',
-                oninput: value => explorePreferences.recordLimit = value.replace(/[^\d.-]/g, ''),
-                onblur: value => explorePreferences.recordLimit = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined,
-                style: {margin: '.5em', 'margin-left': 'calc(570px + 1.5em)', position: 'fixed', width: "200px"}
-            }),
+            m('div', {
+                    style: {
+                        'margin-left': 'calc(460px + 1.5em)',
+                        'margin-top': '0.5em',
+                        position: 'fixed',
+                        background: common.lightGrayColor,
+                        'border-radius': '3px',
+                        'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)'
+                    }
+                },
+                m('div', {style: {display: 'inline-block'}}, m(Popper, {
+                    content: () => explorePreferences.recordLimit ? `Up to ${explorePreferences.recordLimit} records are sampled from the dataset.` : 'An unlimited number of records are included in the plots.'
+                }, m('label', {style: {margin: '0 1em'}}, bold('Record Limit')))),
+                m(TextField, {
+                    id: 'recordLimit',
+                    value: explorePreferences.recordLimit || '',
+                    oninput: value => explorePreferences.recordLimit = value.replace(/[^\d.-]/g, ''),
+                    onblur: value => explorePreferences.recordLimit = parseFloat(value.replace(/[^\d.-]/g, '')) || undefined,
+                    style: {margin: 0, width: "200px", display: 'inline-block'}
+                })),
 
             m('br'),
-            explorePreferences.mode === 'custom'
-                ? ''
-                : m('', {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
-                // x could either be a problemId or a variable name
-                (explorePreferences.mode === 'problems' ? Object.keys(app.workspace.raven_config.problems) : Object.keys(app.variableSummaries)).map(x => {
-                    let selected = explorePreferences.mode === 'problems'
-                        ? x === selectedProblem.problemId
-                        : explorePreferences.variables.includes(x);
-
-                    let node = app.variableSummaries[x];
-                    let kind = node && node.temporal ? 'temporal' :
-                        node && node.geographic ? 'geographic' :
-                            null;
-
-                    let nodeLabel = get_node_label(x);
-                    if (!nodeLabel)
-                        return
-
-                    // tile for each variable or problem
-                    let tile = m('span#exploreNodeBox', {
-                            onclick: () => {
-                                if (explorePreferences.mode === 'problems') {
-                                    app.setSelectedProblem(x);
-                                    explorePreferences.variables = [x];
-                                    return;
-                                }
-
-                                app.toggle(explorePreferences.variables, x);
-                            },
-                            style: {
-                                // border: '1px solid rgba(0, 0, 0, .2)',
-                                'border-radius': '5px',
-                                'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
-                                display: 'flex',
-                                'flex-direction': 'column',
-                                height: '250px',
-                                margin: '.5em',
-                                width: '250px',
-                                'align-items': 'center',
-                                'background-color': selected ? app.hexToRgba(common.selVarColor) : common.menuColor
-                            }
-                        },
-                        m('#exploreNodePlot', {
-                            oninit() {
-                                this.node = app.variableSummaries[x];
-                            },
-                            oncreate(vnode) {
-                                let plot = (this.node || {}).pdfPlotType === 'continuous' ? densityNode : barsNode;
-                                this.node && plot(this.node, vnode.dom, 110, true);
-                            },
-                            onupdate(vnode) {
-                                let targetName = explorePreferences.mode === 'problems'
-                                    ? app.workspace.raven_config.problems[x].targets[0]
-                                    : x;
-                                let node = app.variableSummaries[targetName];
-                                if (node && node !== this.node) {
-                                    let plot = node.pdfPlotType === 'continuous' ? densityNode : barsNode;
-                                    plot(node, vnode.dom, 110, true);
-                                    this.node = node;
-                                }
-                            },
-                            style: 'height: 65%'
-                        }),
-                        m('#exploreNodeLabel', {
-                                style: {
-                                    margin: '.5em',
-                                    'max-width': '230px',
-                                    'overflow-wrap': 'break-word',
-                                    overflow: 'auto'
-                                }
-                            },
-                            nodeLabel),
-                        kind && m('div', m('em', kind))
-                    );
-                    return tile;
+            !['custom', 'mapping'].includes(explorePreferences.mode) && m('',
+            {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
+                m(ExploreBoxes, {
+                    preferences: explorePreferences,
+                    summaries: app.variableSummaries,
                 }))
         ),
-            explorePreferences.mode === 'custom' && m('div', {style: {
-                    position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
-                }}, m(PlotVegaLiteWrapper, {
-                getData: app.getData,
-                variables: Object.keys(app.variableSummaries),
-                nominals: new Set(app.getNominalVariables(selectedProblem)),
-                configuration: customConfiguration,
-                abstractQuery: [
-                    ...app.workspace.raven_config.hardManipulations || [],
-                    ...selectedProblem.manipulations || []
-                ],
-                summaries: app.variableSummaries,
-                sampleSize: parseInt(explorePreferences.recordLimit),
-                variablesInitial: app.workspace.raven_config.variablesInitial
-            }))
+            explorePreferences.mode === 'mapping' && m('div', {
+                    style: {
+                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
+                    }
+                },
+                m(PlotVegaLiteWrapper, {
+                    mapping: true,
+                    getData: app.getData,
+                    nominals: new Set(getNominalVariables(selectedProblem)),
+                    configuration: mappingConfiguration,
+                    abstractQuery: getAbstractPipeline(selectedProblem, true),
+                    summaries: app.variableSummaries,
+                    setSummaryAttr: app.setVariableSummaryAttr,
+                    sampleSize: parseInt(explorePreferences.recordLimit),
+                    variablesInitial: app.workspace.raven_config.variablesInitial,
+                    initViewport: mappingConfiguration.initViewport,
+                    setInitViewport: value => mappingConfiguration.initViewport = value
+                })),
+            explorePreferences.mode === 'custom' && m('div', {
+                    style: {
+                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
+                    }
+                },
+                m(PlotVegaLiteWrapper, {
+                    getData: app.getData,
+                    nominals: new Set(getNominalVariables(selectedProblem)),
+                    configuration: customConfiguration,
+                    abstractQuery: getAbstractPipeline(selectedProblem, true),
+                    summaries: app.variableSummaries,
+                    setSummaryAttr: app.setVariableSummaryAttr,
+                    sampleSize: parseInt(explorePreferences.recordLimit),
+                    variablesInitial: app.workspace.raven_config.variablesInitial
+                })
+            )
         ];
 
-        let getPlotBar = nodeSummaries => {
-            return m('div#explorePlotBar', {
-                    style: {
-                        'margin-bottom': '1em',
-                        position: 'relative'
-                    }
-                },
-                m('div', {
-                    style: {
-                        'overflow-x': 'scroll',
-                        'white-space': 'nowrap',
-                        width: '100%',
-                    }
-                }, getRelevantPlots(nodeSummaries, explorePreferences.mode).map(schemaName => m("figure", {style: 'display: inline-block'}, [
-                        m(`img#${schemaName}_img[alt=${schemaName}][height=140px][width=260px][src=/static/images/${schemaName}.png]`, {
-                            onclick: () => explorePreferences.schemaName = schemaName,
-                            style: getThumbnailStyle(nodeSummaries, schemaName)
-                        }),
-                        m("figcaption",
-                            {style: {"text-align": "center"}},
-                            schemaName === explorePreferences.schemaName ? bold(plotMap[schemaName]) : plotMap[schemaName])
-                    ])
-                )),
-                m('div', {
-                    style: {
-                        'position': 'absolute',
-                        'width': '100%',
-                        'height': '100%',
-                        'box-shadow': 'inset -10px 0 10px -10px #333, inset 10px 0 10px -10px #333',
-                        'top': '0',
-                        'left': '0', 'pointer-events': 'none'
-                    }
-                }))
-        }
-
-        let getPlot = () => {
-
-            if (explorePreferences.mode === "problems") {
-                let predictors = app.getPredictorVariables(selectedProblem);
-                if (predictors.length === 0)
-                    return "No predictors are selected. Please select some predictors."
-
-                if (!selectedProblem.targets.includes(explorePreferences.target))
-                    explorePreferences.target = selectedProblem.targets[0]
-                if (!explorePreferences.target)
-                    return "No targets are selected. Please select a target."
-
-                let nodeSummaries = [
-                    app.variableSummaries[predictors[0]],
-                    app.variableSummaries[explorePreferences.target]
-                ];
-                let relevantPlots = getRelevantPlots(nodeSummaries, explorePreferences.mode);
-                if (!relevantPlots.includes(explorePreferences.schemaName) || !getIsRecommended(nodeSummaries, explorePreferences.schemaName)) {
-                    explorePreferences.schemaName = relevantPlots[0];
-                }
-
-                let specification = getPlotSpecification();
-
-                let exploreContent = [];
-
-                if (selectedProblem.targets.length > 1) exploreContent.push(
-                    m('div', {style: {display: 'inline-block'}}, bold("Target:")),
-                    m(ButtonRadio, {
-                        id: 'exploreTargetButtonRadio',
-                        title: 'select target variable',
-                        sections: selectedProblem.targets.map(target => ({value: target})),
-                        activeSection: explorePreferences.target,
-                        onclick: target => explorePreferences.target = target,
-                        attrsAll: {style: {width: 'auto', margin: '1em'}},
-                        attrsButtons: {style: {width: 'auto'}}
-                    }))
-
-                exploreContent.push(
-                    getPlotBar(nodeSummaries),
-                    m(Paginated, {
-                        data: predictors,
-                        makePage: () => exploreCache.specificationIsLoading
-                            ? [italicize("Loading data exploration."), common.loader('explore')]
-                            : specification && m('[style=display:block;height:500px]',
-                            italicize(specification.annotation),
-                            m(PlotVegaLite, {specification})),
-                        limit: explorePreferences.pageLength,
-                        page: explorePreferences.page,
-                        setPage: index => explorePreferences.page = index
-                    }));
-
-                return exploreContent
-            }
-
-            if (variables.length === 0) return;
-            let nodeSummaries = variables.map(variable => app.variableSummaries[variable]);
-            // clear out old state if not relevant
-            let relevantPlots = getRelevantPlots(nodeSummaries, explorePreferences.mode);
-            if (!(relevantPlots.includes(explorePreferences.schemaName)) || !getIsRecommended(nodeSummaries, explorePreferences.schemaName)) {
-                explorePreferences.schemaName = relevantPlots[0];
-            }
-            let specification = getPlotSpecification();
-
-            return m('div',
-                getPlotBar(nodeSummaries),
-                exploreCache.specificationIsLoading
-                    ? [italicize("Loading data exploration."), common.loader('explore')]
-                    : specification && m('[style=display:block;height:500px]',
-                    italicize(specification.annotation),
-                    m(PlotVegaLite, {specification}))
-            );
-        };
-
-        if (['variables', 'problems'].includes(explorePreferences.mode)) return wrapCanvas(
-            m(Button, {
-                    class: 'btn-secondary',
-                    onclick: () => {
-                        m.route.set('/explore');
-                        setTimeout(m.redraw, 20)
-                    },
-                    style: {margin: '.5em'}
-                },
-                m(Icon, {name: 'chevron-left', style: 'margin-right:.5em;transform:scale(1.5)'}),
-                'back to variables'),
-            m('br'),
-            getPlot()
-        );
+        return m(ExploreVariables, {
+            preferences: explorePreferences,
+            summaries: app.variableSummaries,
+            callbackGoBack: () => {
+                m.route.set('/explore');
+                setTimeout(m.redraw, 20)
+            },
+            abstractQuery: getAbstractPipeline(selectedProblem, true),
+            getData: app.getData,
+        });
     }
 }
 
@@ -412,7 +468,7 @@ export let getRelevantPlots = (nodeSummaries, mode) => {
     // MIKE: the plot returned by inferPlotType is always moved to the front
     let finalOrder = Object.values(plotGroups).flatMap(_ => _);
     let bestPlot = inferPlotType(nodeSummaries)[0];
-    app.remove(finalOrder, bestPlot);
+    remove(finalOrder, bestPlot);
     finalOrder.unshift(bestPlot);
     return finalOrder;
 };
@@ -553,7 +609,7 @@ let inferPlotType = (nodeSummaries, schemaName) => {
         }[natures], natures]
     }
 
-    let isTemporal = nodeSummaries[0].temporal || app.getTemporalVariables(app.getSelectedProblem()).includes(nodeSummaries[0].name);
+    let isTemporal = !!nodeSummaries[0].timeUnit;
 
     if (nodeSummaries.length === 2) {
         if (isTemporal)
@@ -686,14 +742,22 @@ let fillVegaSchema = (schema, data, flip) => {
     return JSON.parse(stringified);
 };
 
+let defaultRecordLimit = 5000;
 let customConfiguration = {};
 window.customConfiguration = customConfiguration;
+let mappingConfiguration = {
+    channels: [
+        {name: 'color'},
+        {name: 'opacity'},
+        {name: 'tooltip'}
+    ]
+};
+window.mappingConfiguration = mappingConfiguration;
 export let explorePreferences = {
     go: false,
     mode: 'variables',
-    recordLimit: 5000,
+    recordLimit: defaultRecordLimit,
     schemaName: undefined,
-    variate: undefined,
     variables: [],
     page: 0,
     pageLength: 5,
@@ -709,22 +773,20 @@ let exploreCache = {
     specificationIsLoading: false
 }
 
-function getPlotSpecification() {
+function getPlotSpecification(preferences, summaries, abstractQuery, getData) {
     // update and kick off changes to internal state
-    loadPlotSpecification()
+    loadPlotSpecification(preferences, summaries, abstractQuery, getData)
     // if preferences have changed, then this will return undefined until loaded
     return exploreCache.specification
 }
 
-export async function loadPlotSpecification() {
+export async function loadPlotSpecification(preferences, summaries, abstractQuery, getData) {
 
-    let problem = app.getSelectedProblem();
+    let problem = getSelectedProblem();
+
     let pendingId = JSON.stringify(Object.assign({
-        manipulations: [
-            ...app.workspace.raven_config.hardManipulations || [],
-            ...problem.manipulations || []
-        ]
-    }, explorePreferences));
+        manipulations: getAbstractPipeline(problem, true)
+    }, preferences));
 
     // data is already current
     if (pendingId === exploreCache.id)
@@ -740,7 +802,7 @@ export async function loadPlotSpecification() {
     exploreCache.specificationIsLoading = true;
 
     // ~~~~ begin building the plot specification
-    let {mode, variables, schemaName} = explorePreferences;
+    let {mode, variables, schemaName} = preferences;
 
     // function returns whether to flip a plot. for example, if plot expects 'nq' and users gives 'qn', flip should return true. this may have to be generalized for 3+ dimension plots
     let plotflip = (pt) => {
@@ -752,18 +814,19 @@ export async function loadPlotSpecification() {
     let facetSummaries;
 
     if (mode === 'problems') {
-        if (explorePreferences.pageLength * (explorePreferences.page - 1) > app.getPredictorVariables(problem).length)
-            explorePreferences.page = 0
+        let targets = getTargetVariables(problem);
+        if (preferences.pageLength * (preferences.page - 1) > getPredictorVariables(problem).length)
+            preferences.page = 0
 
-        if (!(explorePreferences.target in problem.targets))
-            explorePreferences.target = problem.targets[0];
+        if (!(preferences.target in targets))
+            preferences.target = targets[0];
 
-        facetSummaries = app.getPredictorVariables(problem).map(predictor => [
-            app.variableSummaries[predictor],
-            app.variableSummaries[explorePreferences.target]
-        ]).splice(explorePreferences.page * explorePreferences.pageLength, explorePreferences.pageLength).filter(_ => _)
+        facetSummaries = getPredictorVariables(problem).map(predictor => [
+            summaries[predictor],
+            summaries[preferences.target]
+        ]).splice(preferences.page * preferences.pageLength, preferences.pageLength).filter(_ => _)
     } else {
-        facetSummaries = [variables.map(variable => app.variableSummaries[variable])]
+        facetSummaries = [variables.map(variable => summaries[variable])]
     }
 
     // build vega-lite specifications for every facet
@@ -775,22 +838,27 @@ export async function loadPlotSpecification() {
 
         let nodeNames = nodeSummaries.map(i => i?.name);
 
-        let compiled = queryMongo.buildPipeline(
-            [...app.workspace.raven_config.hardManipulations || [], ...problem.manipulations || [], {
-                type: 'menu',
-                metadata: {
-                    type: 'data',
-                    variables: nodeNames,
-                    dropNA: nodeNames,
-                    sample: parseInt(explorePreferences.recordLimit) || 5000
+        let {pipeline: compiled, datasets} = queryMongo.buildPipeline(
+            [
+                ...abstractQuery,
+                {
+                    type: 'menu',
+                    metadata: {
+                        type: 'data',
+                        variables: nodeNames,
+                        dropNA: nodeNames,
+                        sample: parseInt(preferences.recordLimit) || defaultRecordLimit
+                    }
                 }
-            }],
-            app.workspace.raven_config.variablesInitial)['pipeline'];
+            ],
+            app.workspace.raven_config.variablesInitial);
 
-        let dataPathSampled = await app.getData({
+        console.log(datasets);
+        let dataPathSampled = await getData({
             method: 'aggregate',
             query: JSON.stringify(compiled),
-            export: 'csv'
+            export: 'csv',
+            datasets
         });
 
         let jsonout = {plottype: plotType, zd3mdata: dataPathSampled};
@@ -805,15 +873,17 @@ export async function loadPlotSpecification() {
         console.log(compiled, json);
         if (plotType[0].includes('timeseries')) {
             let plotdata = JSON.parse(json.plotdata[0]);
-            let temporalVariables = app.getTemporalVariables(app.getSelectedProblem())
-                .filter(variable => variable in plotdata[0]);
+            let temporalVariables = Object.values(summaries)
+                .filter(summary => summary.timeUnit)
+                .map(summary => summary.name)
+                .filter(variable => variables.includes(variable))
 
             let parsers = temporalVariables.reduce((out, variable) => {
-                let format = variableSummaries[variable].timeUnit
+                let format = summaries[variable].timeUnit
                 return Object.assign(out, {
                     [variable]: format
                         ? d3.timeParse(format)
-                        : text => new Date(Date.parse(text))
+                        : _ => _ // text => new Date(Date.parse(text))
                 })
             }, {})
 
@@ -822,7 +892,8 @@ export async function loadPlotSpecification() {
                     temporalVariables.forEach(variable => plotdata
                         .forEach(obs => obs[variable] = parsers[variable](obs[variable]).toString()));
                     json.plotdata = [JSON.stringify(plotdata)];
-                } catch (_) {}
+                } catch (_) {
+                }
             }
         }
 
@@ -857,7 +928,7 @@ function getThumbnailStyle(nodeSummaries, schemaName) {
     };
 
     styling.border = isRecommended
-        ? "2px solid " + common.csColor
+        ? "2px solid " + common.successColor
         : "2px solid " + common.errorColor;
 
     return styling;
@@ -942,9 +1013,9 @@ export function barsNode(node, obj, radius, explore) {
 
     // Data
     var keys = Object.keys(node.plotValues);
-    var yVals = new Array;
-    var xVals = new Array;
-    var yValKey = new Array;
+    var yVals = [];
+    var xVals = [];
+    var yValKey = [];
 
     if (node.nature === "nominal") {
         var xi = 0;

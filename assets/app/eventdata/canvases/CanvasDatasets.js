@@ -29,7 +29,7 @@ export default class CanvasDatasets {
         let tempDataset = this.dataset ? eventdata.genericMetadata[this.dataset] : {};
 
         let colgroupDataset = () => {
-            return m('colgroup',
+            return m('colgroup', {key: 'colgrouper'},
                 m('col', {span: 1}),
                 m('col', {span: 1}),
                 m('col', {span: 1}),
@@ -98,6 +98,7 @@ export default class CanvasDatasets {
                 }),
                 bold("Subsets:"),
                 m(Table, {
+                    keyed: true,
                     headers: ['label', 'subset', 'alignments', 'formats', 'columns'].map(name => m('[style=margin:0 0.5em]', name)),
                     data: Object.keys(tempDataset['subsets'] || {}).map(label => {
 
@@ -108,17 +109,14 @@ export default class CanvasDatasets {
                             tempDataset['subsets'][label]['type'],
                             alignments.length !== 0 && m(ListTags, {
                                 tags: alignments,
-                                readonly: true,
                                 attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                             }),
                             formats.length !== 0 && m(ListTags, {
                                 tags: formats,
-                                readonly: true,
                                 attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                             }),
                             columns.length !== 0 && m(ListTags, {
                                 tags: columnFilter(columns),
-                                readonly: true,
                                 attrsTags: {style: {'padding-left': '4px', background: 'rgba(192, 192, 192, 0.5)'}}
                             })
                         ]

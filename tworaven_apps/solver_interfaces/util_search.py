@@ -525,7 +525,7 @@ class SearchTwoRavens(Search):
 
         # make sure time isn't in the predictor or target variables
         problem_specification = self.specification['problem']
-        time_column = problem_specification.get('time')
+        time_column = problem_specification.get('forecastingHorizon', {}).get("column")
         for variable_set in ['targets', 'predictors']:
             if time_column and time_column in problem_specification[variable_set]:
                 problem_specification[variable_set].remove(time_column)
@@ -534,14 +534,14 @@ class SearchTwoRavens(Search):
         #     # make time series regular
         #     dataframe = tworaven_solver.format_dataframe_time_index(
         #         dataframe=tworaven_solver.Dataset(self.specification['input']).get_dataframe(),
-        #         date=next(iter(self.specification['problem'].get('time', [])), None),
+        #         date=time_column,
         #         granularity_specification=self.specification['problem'].get('timeGranularity'))
         #
         #     # save regular time series to disk
         #     imputed_dataframe_dir = os.path.join(self.specification['temp_directory'], self.search_id)
         #     imputed_dataframe_path = os.path.join(imputed_dataframe_dir, 'trainData.csv')
         #     os.makedirs(imputed_dataframe_dir, exist_ok=True)
-        #     dataframe.to_csv(imputed_dataframe_path)
+        #     dataframe.to_csv(imputed_dataframe_path, quoting=csv.QUOTE_NONNUMERIC)
         #
         #     # update specification to point to new time series
         #     self.specification['input'] = {

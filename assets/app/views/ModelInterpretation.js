@@ -1,18 +1,17 @@
 import m from 'mithril';
 import PlotVegaLite from "./PlotVegaLite";
-import * as app from "../app";
-import * as common from '../../common/common';
+import {getNominalVariables} from "../problem";
 
 let axisLabels = false;
 
 export default class ModelInterpretation {
     plotEFD(vnode) {
         // target doesn't matter, all are plotted together
-        let {problem, data, predictor, target, summary} = vnode.attrs;
+        let {problem, data, predictor, target, summary, levels} = vnode.attrs;
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
-        let nominals = app.getNominalVariables(problem);
+        let nominals = getNominalVariables(problem);
 
         // HEAT MAP
         if (nominals.includes(predictor) && nominals.includes(target)) {
@@ -43,10 +42,10 @@ export default class ModelInterpretation {
                                 ]
                             }
                         },
-                        predictor in problem.levels ? {
+                        predictor in levels ? {
                             'mark': 'rect',
                             'data': {
-                                'values': problem.levels[predictor]
+                                'values': levels[predictor]
                             },
                             'encoding': {
                                 'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
@@ -54,7 +53,7 @@ export default class ModelInterpretation {
                                     'field': 'count',
                                     'type': 'quantitative',
                                     'scale': {
-                                        domain: [0, Math.max(0, ...problem.levels[predictor].map(point => point.count))],
+                                        domain: [0, Math.max(0, ...levels[predictor].map(point => point.count))],
                                         range: [0, 1]
                                     },
                                     'legend': false
@@ -215,12 +214,12 @@ export default class ModelInterpretation {
 
     plotPartials(vnode) {
         // target doesn't matter, all are plotted together
-        let {problem, data, predictor, target, summary} = vnode.attrs;
+        let {problem, data, predictor, target, summary, levels} = vnode.attrs;
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
 
-        let nominals = app.getNominalVariables(problem);
+        let nominals = getNominalVariables(problem);
 
         data = data.filter(point => point[variableLabel] === target);
 
@@ -248,10 +247,10 @@ export default class ModelInterpretation {
                             ]
                         }
                     },
-                    predictor in problem.levels ? {
+                    predictor in levels ? {
                         'mark': 'rect',
                         'data': {
-                            'values': problem.levels[predictor]
+                            'values': levels[predictor]
                         },
                         'encoding': {
                             'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
@@ -259,7 +258,7 @@ export default class ModelInterpretation {
                                 'field': 'count',
                                 'type': 'quantitative',
                                 'scale': {
-                                    domain: [0, Math.max(...problem.levels[predictor].map(point => point.count))],
+                                    domain: [0, Math.max(...levels[predictor].map(point => point.count))],
                                     range: [0, 1]
                                 },
                                 'legend': false
@@ -408,7 +407,7 @@ export default class ModelInterpretation {
     plotICE(vnode) {
         // target doesn't matter, all are plotted together
         let {problem, data, predictor, target, summary} = vnode.attrs;
-        let nominals = app.getNominalVariables(problem);
+        let nominals = getNominalVariables(problem);
 
         if (nominals.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
 

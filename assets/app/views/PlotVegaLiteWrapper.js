@@ -1,71 +1,120 @@
+// wrapper for using PlotVegaLiteQuery and PlotVegaLiteEditor together
+// translates a tworavens plot configuration to a vega-lite plot specification
+
 import m from 'mithril';
 
 import TwoPanel from "../../common/views/TwoPanel";
 import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
-import PlotVegaLiteEditor from "./PlotVegaLiteEditor";
+import PlotVegaLiteEditor, {schemes} from "./PlotVegaLiteEditor";
 
 export default class PlotVegaLiteWrapper {
 
+    oninit() {
+        let clientWidth = document.body.clientWidth;
+        this.rightPanelSize = 70;
+        let leftPixels = Math.max(clientWidth * (1 - this.rightPanelSize / 100), 500);
+        this.rightPanelSize = (clientWidth - leftPixels) / clientWidth * 100;
+    }
+
     view(vnode) {
-        let {configuration, getData, abstractQuery, summaries, nominals, sampleSize, variablesInitial} = vnode.attrs;
-        let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
-            [variable]: nominals.has(variable)
-                ? 'nominal' : summaries[variable].nature === 'ordinal'
-                    ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
-                    : 'quantitative'
-        }), {});
-
-        window.configuration = configuration;
-
-        let specification;
-        try {
-            specification = makeSpecification(configuration, varTypes);
-        } catch (err) {
-            console.warn(err);
-        }
-
-        let plot;
-        if (specification) {
-            let countEncodings = spec => [spec, spec.layers || []]
-                .reduce((sum, layer) => sum + Object.keys(layer.encoding || {}).length, 0);
-            let encodingsCount = [
-                specification,
-                ...(specification.vconcat || []),
-                ...(specification.hconcat || [])
-            ].map(countEncodings).reduce((sum, count) => sum + count, 0);
-
-            // 5px margin keeps the drag bar visible
-            plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]', m(PlotVegaLiteQuery, {
-                getData,
-                specification,
-                abstractQuery,
-                summaries,
-                sampleSize,
-                variablesInitial
-            }))
-        }
+        let {editor, plot} = preparePanels(vnode.attrs);
 
         return m(TwoPanel, {
-            left: m(PlotVegaLiteEditor, {
-                configuration,
-                variables: Object.keys(summaries)
-            }),
+            rightPanelSize: this.rightPanelSize,
+            setRightPanelSize: value => this.rightPanelSize = value,
+            left: editor,
             right: plot
         })
     }
 }
 
-let makeSpecification = (configuration, varTypes) => {
+export let preparePanels = state => {
+    let {
+        mapping, configuration, getData, abstractQuery, summaries, setSummaryAttr,
+        nominals, sampleSize, variablesInitial, initViewport, setInitViewport
+    } = state;
+    let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
+        [variable]: nominals.has(variable)
+            ? 'nominal' : summaries[variable].nature === 'ordinal'
+                ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
+                : 'quantitative'
+    }), {});
+
+    window.configuration = configuration;
+
+    let specification;
+    try {
+        specification = makeSpecification(configuration, varTypes, summaries);
+    } catch (err) {
+        console.warn(err);
+    }
+
+    let plot;
+    if (specification) {
+
+        let countEncodings = spec => [spec, ...(spec.layer || [])]
+            .reduce((sum, layer) => sum + Object.keys(layer.encoding || {}).length, 0);
+        let encodingsCount = [
+            specification,
+            ...(specification.vconcat || []),
+            ...(specification.hconcat || [])
+        ].map(countEncodings).reduce((sum, count) => sum + count, 0);
+
+        // either region or both latitude and longitude need to be set for mapping
+        let isValidMapLayer = spec => spec?.encoding?.region?.field
+            || (spec?.encoding?.latitude?.field && spec?.encoding?.longitude?.field);
+
+        if (mapping) {
+            if (specification.layer) {
+                specification.layer = specification.layer.filter(isValidMapLayer);
+                if (specification.layer.length === 0) encodingsCount = 0;
+            } else if (!isValidMapLayer(specification)) encodingsCount = 0;
+        }
+
+        // 5px margin keeps the drag bar visible
+        plot = encodingsCount > 0 && m('div[style=margin-left:5px;height:100%]',
+            m(PlotVegaLiteQuery, {
+                mapping,
+                getData,
+                specification,
+                abstractQuery,
+                summaries,
+                sampleSize,
+                variablesInitial,
+                initViewport, setInitViewport
+            }))
+    }
+
+    return {
+        editor: m(PlotVegaLiteEditor, {
+            mapping,
+            configuration,
+            variables: Object.keys(summaries),
+            summaries, setSummaryAttr,
+            nominals,
+            abstractQuery
+        }),
+        plot
+    }
+}
+
+let makeSpecification = (configuration, varTypes, summaries) => {
 
     let specification = {
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json"
     };
 
     // base encodings/transforms
-    Object.assign(specification, makeLayer(configuration, varTypes));
+    Object.assign(specification, makeLayer(configuration, varTypes, summaries));
 
-    if ('layers' in configuration)
-        specification.layer = configuration.layers.map(layer => makeLayer(layer, varTypes)).filter(_=>_);
+    if ('layer' in configuration) {
+        specification.layer = configuration.layer.map(layer => makeLayer(layer, varTypes, summaries)).filter(v=>v);
+        let baseLayer = Object.assign({}, specification);
+        let layerKeys = new Set(['data', 'encoding', 'mark', 'transform', 'manipulations']);
+        Object.keys(baseLayer).forEach(k => delete (layerKeys.has(k) ? specification : baseLayer)[k])
+        specification.layer.unshift(baseLayer)
+        specification.resolve = {scale: {color: "independent"}}
+    }
 
     let concat = 'vconcat' in configuration ? 'vconcat' : ('hconcat' in configuration) && 'hconcat';
 
@@ -77,7 +126,7 @@ let makeSpecification = (configuration, varTypes) => {
                 encoding: specification.encoding,
                 layer: specification.layer
             },
-            ...configuration[concat].map(layer => makeLayer(layer, varTypes)).filter(_=>_)
+            ...configuration[concat].map(layer => makeLayer(layer, varTypes, summaries)).filter(_=>_)
         ];
         delete specification.mark;
         delete specification.transform;
@@ -89,14 +138,17 @@ let makeSpecification = (configuration, varTypes) => {
 };
 
 
-let makeLayer = (layer, varTypes) => {
+let makeLayer = (layer, varTypes, summaries) => {
     let channels = (layer.channels || [])
         .filter(channel => !channel.delete && (channel.variable || (channel.variables || []).length));
     if (channels.length === 0) return;
-    let orientation = channels.find(channel => channel.name === 'primary axis').orientation || 'x';
+    let orientation = channels.find(channel => channel.name === 'primary axis')?.orientation || 'x';
     let spec = {};
+    spec.manipulations = layer.manipulations;
 
     if ('mark' in layer) spec.mark = {type: layer.mark};
+    if ('mapboxStyle' in layer) spec.mapboxStyle = layer.mapboxStyle;
+
     if (['line', 'area'].includes(layer.mark)) {
         if (layer.interpolation) spec.mark.interpolate = layer.interpolation;
         if (layer.point) spec.mark.point = layer.point;
@@ -104,11 +156,27 @@ let makeLayer = (layer, varTypes) => {
 
     if (!('nice' in layer)) layer.nice = true;
 
+    if (layer.mark === "region") {
+        spec.transform = spec.transform || [];
+        let regionChannel = channels.find(channel => channel.name === "region");
+        if (!regionChannel) return;
+        spec.transform.push({
+            aggregate: channels
+                .filter(channel => channel.name !== "region")
+                .map(channel => ({
+                    op: channel.aggregation || "mean",
+                    field: channel.variable,
+                    as: channel.variable
+                })),
+            groupBy: [regionChannel.variable]
+        })
+    }
+
     spec.encoding = channels.reduce((encodings, channel) => {
         if (channel.name === 'primary axis') {
             return Object.assign(encodings, {
                 [orientation]: {
-                    bin: configuration.bin,
+                    // bin: configuration.bin,
                     field: channel.variable,
                     type: varTypes[channel.variable],
                     scale: {zero: layer.zero ?? false, nice: layer.nice ?? false}
@@ -172,6 +240,21 @@ let makeLayer = (layer, varTypes) => {
                     field: channel.value,
                     type: varTypes[channel.variables[0]],
                     scale: {zero: layer.zero ?? false, nice: layer.nice ?? false}
+                }
+            })
+        }
+
+        if (channel.name === "color") {
+            let varType = varTypes[channel.variable] || 'nominal';
+            let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
+            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "nominal" ? 'categorical' : 'sequential-single');
+            if (schemes[schemeCategory].includes(channel.scheme?.[schemeCategory]))
+                scale.scheme = channel.scheme?.[schemeCategory];
+            return Object.assign(encodings, {
+                [channel.name]: {
+                    field: channel.variable,
+                    type: varType,
+                    scale
                 }
             })
         }

@@ -101,7 +101,9 @@ def view_pebbles_home(request):
                  #
                  DOCKER_BUILD_TIMESTAMP=settings.DOCKER_BUILD_TIMESTAMP,
                  DATA_UPLOAD_MAX_MEMORY_SIZE=settings.DATA_UPLOAD_MAX_MEMORY_SIZE,
-                 NGINX_MAX_UPLOAD_SIZE=settings.NGINX_MAX_UPLOAD_SIZE)
+                 NGINX_MAX_UPLOAD_SIZE=settings.NGINX_MAX_UPLOAD_SIZE,
+                 #
+                 MAPBOX_ACCESS_TOKEN=settings.MAPBOX_ACCESS_TOKEN,)
 
 
 

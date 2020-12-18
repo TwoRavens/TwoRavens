@@ -2,13 +2,21 @@ import m from "mithril";
 
 import * as app from '../app.js';
 import * as results from "../modes/results";
+import * as utils from '../utils';
 
 import {alertError, alertWarn, debugLog, swandive} from "../app";
 
 import {setModal} from "../../common/views/Modal";
 import Table from "../../common/views/Table";
-import {findProblem, getBestSolution} from "../modes/results";
-import {resetPeek} from "../app.js";
+import {
+    getDescription,
+    getOrderingVariable,
+    getPredictorVariables,
+    getSelectedProblem, getTargetVariables,
+    isProblemValid
+} from "../problem";
+import {setDefault} from "../utils";
+
 
 export let getSolverSpecification = async problem => {
 
@@ -27,10 +35,11 @@ export let getSolverSpecification = async problem => {
         searchSolutionParams: GRPC_SearchSolutionsRequest(problem, trainDatasetSchema, trainDatasetSchemaPath),
         fitSolutionDefaultParams: GRPC_GetFitSolutionRequest(trainDatasetSchemaPath),
         scoreSolutionDefaultParams: problem.scoreOptions.userSpecified && GRPC_ScoreSolutionRequest(problem, datasetSchemaPaths.all),
-        produceSolutionDefaultParams: Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
-            .reduce((produces, dataSplit) => Object.assign(produces, {
-                [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
-            }), {})
+        produceSolutionDefaultParams: {}
+            // Object.keys(datasetSchemaPaths) // ['train', 'test', 'all']
+            //     .reduce((produces, dataSplit) => Object.assign(produces, {
+            //         [dataSplit]: GRPC_ProduceSolutionRequest(datasetSchemaPaths[dataSplit])
+            //     }), {})
     };
 
     return allParams;
@@ -41,8 +50,9 @@ export let getD3MAdapter = problem => ({
         if (!IS_D3M_DOMAIN) return;
 
         // return if current problem is already being solved
+        problem.results.solverState = problem.results.solverState || {};
         if ('d3m' in problem.results.solverState) return;
-        if (!app.isProblemValid(problem)) return;
+        if (!isProblemValid(problem)) return;
         problem.system = 'solved';
         console.log("solving:", problem);
 
@@ -98,7 +108,7 @@ export let getD3MAdapter = problem => ({
         problem.results.selectedSolutions.d3m = problem.results.selectedSolutions.d3m || [];
         problem.results.solutions.d3m = problem.results.solutions.d3m || {};
         m.redraw();
-        resetPeek();
+        app.resetPeek();
     },
     search: () => {
         throw 'Search not implemented for D3M.';
@@ -149,7 +159,7 @@ let handleCompletedSearch = searchId => response => {
         m.redraw();
         return;
     }
-    let solvedProblem = findProblem({search_id: String(searchId), system: 'd3m'});
+    let solvedProblem = results.findProblem({search_id: String(searchId), system: 'd3m'});
     if (!solvedProblem) return
     solvedProblem.results.solverState.d3m.thinking = false;
     solvedProblem.results.solverState.d3m.message = 'search complete';
@@ -371,7 +381,14 @@ let stepDenormalize = (metadata, index) => [{
 let stepRemoveColumns = (metadata, index) => {
     let problem = metadata.problem;
     // looks like some TA2s need "d3mIndex"
-    let keep = [...app.getPredictorVariables(problem), ...problem.targets, "d3mIndex"];
+    let keep = [
+        ...getPredictorVariables(problem),
+        ...getTargetVariables(problem),
+        ...problem.tags.indexes,
+        ...problem.tags.crossSection,
+        getOrderingVariable(problem)
+    ];
+
 
     let indices = [];
 
@@ -513,7 +530,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     let GRPC_ProblemPerformanceMetric = metric => {
         let performanceMetric = {metric: app.d3mMetrics[metric]};
         if (['f1', 'precision', 'recall'].includes(metric))
-            performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[problem.targets[0]].plotValues || {}))[0];
+            performanceMetric.posLabel = problem.positiveLabel || Object.keys((app.variableSummaries[getTargetVariables(problem)[0]].plotValues || {}))[0];
         if (problem.metric === 'precisionAtTopK')
             performanceMetric.k = problem.precisionAtTopK || 5;
         return performanceMetric;
@@ -543,19 +560,19 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     }));
 
     let GRPC_ForecastingHorizon = {};
-    if (problem.task === 'forecasting' && (problem.forecastingHorizon.column || app.getTemporalVariables(problem).length > 0)) {
-        let horizonColumn = problem.forecastingHorizon.column || app.getTemporalVariables(problem)[0];
+    if (problem.task === 'forecasting') {
+        let horizonColumn = getOrderingVariable(problem);
         GRPC_ForecastingHorizon = {
             resourceId: learningResource.resID,
             columnIndex: getColIndex(horizonColumn),
             columnName: horizonColumn,
-            horizonValue: problem.forecastingHorizon.value || 10
+            horizonValue: problem.forecastingHorizon || 10
         };
     }
 
     let GRPC_ProblemInput = {
         datasetId: datasetDoc.about.datasetID,
-        targets: problem.targets.map((target, i) => ({
+        targets: getTargetVariables(problem).map((target, i) => ({
             // targetIndex: i,
             resourceId: learningResource.resID,
             columnIndex: getColIndex(target),
@@ -569,7 +586,7 @@ export function GRPC_ProblemDescription(problem, datasetDoc) {
     return {
         problem: GRPC_Problem,
         inputs: [GRPC_ProblemInput],
-        description: app.getDescription(problem),
+        description: getDescription(problem),
         version: '1.0.0',
         name: problem.problemId,
         id: problem.problemId
@@ -580,7 +597,7 @@ export function GRPC_SearchSolutionsRequest(problem, datasetDoc, datasetDocUrl) 
     return {
         userAgent: TA3_GRPC_USER_AGENT, // set on django
         version: TA3TA2_API_VERSION, // set on django
-        timeBoundSearch: problem.searchOptions.timeBoundSearch || 0,
+        timeBoundSearch: problem.searchOptions.timeBoundSearch || 15,
         timeBoundRun: problem.searchOptions.timeBoundRun || 0,
         rankSolutionsLimit: problem.searchOptions.solutionsLimit || 0,
         priority: problem.searchOptions.priority || 0,
@@ -692,7 +709,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
@@ -727,7 +744,7 @@ export async function handleGetSearchSolutionResultsResponse(response) {
     // set the selected solution if none have been selected yet
     // let selectedSolutions = results.getSelectedSolutions(solvedProblem);
     if (!solvedProblem.results.userSelectedSolution) {
-        let bestSolution = getBestSolution(solvedProblem);
+        let bestSolution = results.getBestSolution(solvedProblem);
         if (bestSolution) {
             results.setSelectedSolution(solvedProblem, bestSolution.getSystemId(), bestSolution.getSolutionId())
         }
@@ -759,7 +776,7 @@ export async function handleDescribeSolutionResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.searchId})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.searchId})
 
     // end the search if it doesn't match any problem
     if (!solvedProblem) {
@@ -804,7 +821,7 @@ export async function handleGetFitSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -839,7 +856,7 @@ export async function handleGetScoreSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: response.stored_request.search_id})
 
     if (!solvedProblem) {
         results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
@@ -879,12 +896,14 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let solvedProblem = findProblem({system: 'd3m', search_id: response.stored_request.search_id})
+    let searchId = response.stored_request.search_id;
+
+    let solvedProblem = results.findProblem({system: 'd3m', search_id: searchId})
 
     if (!solvedProblem) {
-        results.otherSearches[response.stored_request.search_id] = results.otherSearches[response.stored_request.search_id] || {};
-        if (results.otherSearches[response.stored_request.search_id].running === undefined)
-            results.otherSearches[response.stored_request.search_id].running = true;
+        results.otherSearches[searchId] = results.otherSearches[searchId] || {};
+        if (results.otherSearches[searchId].running === undefined)
+            results.otherSearches[searchId].running = true;
         m.redraw();
         return;
     }
@@ -907,7 +926,7 @@ export async function handleGetProduceSolutionResultsResponse(response) {
         return;
     }
 
-    let firstOutput = Object.values(response.response.exposedOutputs)?.[0]?.csvUri;
+    let firstOutput = Object.values(response?.response?.exposedOutputs || {})?.[0]?.csvUri;
 
     if (!firstOutput) return;
     let pointer = firstOutput.replace('file://', '');
@@ -915,13 +934,13 @@ export async function handleGetProduceSolutionResultsResponse(response) {
     let solution = solvedProblem.results.solutions.d3m?.[response.pipelineId];
     if (!solution) return
 
-    // save produce to solution
-    solution.produce = solution.produce || [];
-    solution.produce.push({
-        input: {name: response.produce_dataset_name},
-        configuration: {predict_type: 'RAW'},
-        data_pointer: pointer
-    });
+    results.checkResultsCache(solvedProblem);
+
+    // save produce path to resultsCache
+    utils.setDeep(results.resultsCache,
+        [solvedProblem.problemId, 'producePaths', solution.solutionId, response.produce_dataset_name], pointer)
+    utils.setDeep(results.resultsCache,
+        [solvedProblem.problemId, 'producePathsLoading', solution.solutionId, response.produce_dataset_name], false)
 
     m.redraw();
 }
@@ -936,7 +955,7 @@ export function handleENDGetSearchSolutionsResults(response) {
  */
 export async function endSession() {
     app.taskPreferences.isSubmittingPipelines = true;
-    let selectedProblem = app.getSelectedProblem();
+    let selectedProblem = getSelectedProblem();
 
     let solutions = selectedProblem.results.solutions;
     if (Object.keys(solutions.d3m).length === 0) {
@@ -1027,7 +1046,7 @@ export async function exportSolution(solutionId) {
     let response = await m.request(D3M_SVC_URL + '/SolutionExport3', {method: 'POST', body: {
         solutionId,
         rank: 1.01 - 0.01 * exportCount,
-        searchId: app.getSelectedProblem().solverState.d3m.searchId
+        searchId: getSelectedProblem().solverState.d3m.searchId
     }});
 
     console.log('--------------------------')

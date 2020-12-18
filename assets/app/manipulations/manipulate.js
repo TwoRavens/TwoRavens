@@ -1,4 +1,11 @@
+import hopscotch from 'hopscotch';
 import m from 'mithril';
+
+import * as app from "../app";
+import * as queryAbstract from './queryAbstract';
+import * as queryMongo from "./queryMongo";
+import * as datamart from '../datamart/Datamart';
+
 import {TreeAggregate, TreeAugment, TreeImputation, TreeSubset, TreeTransform} from '../views/QueryTrees';
 import CanvasContinuous from '../canvases/CanvasContinuous';
 import CanvasDate from '../canvases/CanvasDate';
@@ -8,6 +15,7 @@ import CanvasImputation from "../canvases/CanvasImputation";
 
 import Flowchart from '../views/Flowchart';
 
+import * as common from '../../common/common';
 import Button from '../../common/views/Button';
 import TextField from "../../common/views/TextField";
 import PanelList from "../../common/views/PanelList";
@@ -15,19 +23,18 @@ import ButtonRadio from "../../common/views/ButtonRadio";
 import Panel from "../../common/views/Panel";
 import Canvas from "../../common/views/Canvas";
 import Table from "../../common/views/Table";
-
-import * as common from '../../common/common';
-
-import * as app from "../app";
-import {alertError, alertLog, setPreprocess} from "../app";
-
-import * as queryAbstract from './queryAbstract';
-import * as queryMongo from "./queryMongo";
-import hopscotch from 'hopscotch';
+import Icon from "../../common/views/Icon";
 
 import {formatVariableSummary} from '../views/VariableSummary';
-import Icon from "../../common/views/Icon";
-import * as datamart from '../datamart/Datamart';
+
+import {
+    getGeographicVariables,
+    getNominalVariables,
+    getOrdinalVariables,
+    getSelectedProblem,
+    getTransformVariables,
+    loadProblemPreprocess
+} from "../problem";
 
 
 export function menu(compoundPipeline) {
@@ -89,7 +96,8 @@ export function menu(compoundPipeline) {
             attrsAll: {
                 style: {
                     height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
-                    'z-index': 99
+                    'z-index': 99,
+                    background: common.baseColor
                 }
             }
         }, canvas(compoundPipeline))
@@ -114,7 +122,7 @@ function canvas(compoundPipeline) {
     if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
         preferences: app.datamartPreferences,
         dataPath: constraintMenu.step.dataPath,
-        manipulations: app.workspace.raven_config && app.workspace.raven_config.hardManipulations,
+        manipulations: app.workspace.raven_config?.hardManipulations,
         endpoint: app.datamartURL,
         labelWidth: '10em',
     });
@@ -180,8 +188,9 @@ export function leftpanel() {
 
 export function varList() {
 
+    let selectedProblem = getSelectedProblem();
     let variables = app.workspace.raven_config.variablesInitial;
-    let selectedVariables = (constraintMetadata || {}).columns || [];
+    let selectedVariables = constraintMetadata?.columns ?? [];
 
     if (constraintMenu) {
         let partialPipeline = constraintMenu.pipeline.slice(0, constraintMenu.pipeline.indexOf(constraintMenu.step));
@@ -201,7 +210,7 @@ export function varList() {
             if (constraintPreferences.type === 'Expansion') {
                 variables = [...new Set([
                     ...Object.keys(app.variableSummaries),
-                    ...app.getTransformVariables(partialPipeline)
+                    ...getTransformVariables(partialPipeline)
                 ])];
                 selectedVariables = Object.keys(constraintPreferences.menus.Expansion.variables || {});
             }
@@ -225,22 +234,48 @@ export function varList() {
         m(PanelList, {
             id: 'varList',
             items: variables,
-            colors: {[app.hexToRgba(common.selVarColor)]: selectedVariables},
+            colors: Object.assign(
+                selectedProblem.groups.reduce((out, group) =>
+                    Object.assign(out, {[app.hexToRgba(group.color, .2)]: group.nodes}), {}),
+                {
+                    [app.hexToRgba(common.selVarColor, .5)]: selectedVariables,
+                    [app.hexToRgba(app.colors.order, .2)]: selectedProblem.tags.ordering,
+                    [app.hexToRgba(app.colors.location, .2)]: selectedProblem.tags.location
+                }),
             classes: {
-                'item-bordered': variableSearch === '' ? []
+                // keep this order aligned with params in mutateNodes
+                'item-nominal': getNominalVariables(selectedProblem),
+                'item-location': getGeographicVariables(),
+                'item-ordinal': getOrdinalVariables(selectedProblem),
+                'item-boundary': selectedProblem.tags.boundary,
+                'item-time': Object.keys(app.variableSummaries)
+                    .filter(variable => app.variableSummaries[variable].timeUnit),
+                'item-weight': selectedProblem.tags.weights,
+                'item-privileged': selectedProblem.tags.privileged,
+                'item-exogenous': selectedProblem.tags.exogenous,
+                'item-featurize': selectedProblem.tags.featurize,
+                'item-randomize': selectedProblem.tags.randomize,
+                'item-cross-section': selectedProblem.tags.crossSection,
+                'item-index': selectedProblem.tags.indexes,
+                'item-matched': variableSearch === '' ? []
                     : variables.filter(variable => variable.toLowerCase().includes(variableSearch))
             },
             callback: ['transform', 'imputation'].includes(constraintMenu.type)
                 ? variable => constraintPreferences.select(variable) // the select function is defined inside CanvasTransform
                 : variable => setConstraintColumn(variable, constraintMenu.pipeline),
             popup: x => m('div',
-                          m('h4', 'Summary Statistics for ' + x),
-                          m(Table, {
-                              class: 'table-sm',
-                              data: formatVariableSummary(app.variableSummaries[x])
-                          })),
+                m('h4', 'Summary Statistics for ' + x),
+                m(Table, {
+                    style: {height: "250px", 'overflow-y': 'scroll', display: 'inline-block', margin: 0},
+                    class: 'table-sm',
+                    data: formatVariableSummary(app.variableSummaries[x])
+                })),
             popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
-            attrsItems: {'data-placement': 'right', 'data-original-title': 'Summary Statistics'},
+            attrsItems: {
+                'data-placement': 'right',
+                'data-original-title': 'Summary Statistics',
+                style: {'border-width': '2px'}
+            },
             style: {
                 height: 'calc(100% - 110px)',
                 overflow: 'auto'
@@ -267,10 +302,37 @@ export function varList() {
     ]
 }
 
+export let makeSubsetTreeMenu = (step, editable, compoundPipeline) => [
+    m(TreeSubset, {step, editable, redraw, setRedraw}),
+
+    editable && [
+        m(Button, {
+            id: 'btnAddConstraint',
+            class: ['btn-sm'],
+            style: {margin: '0.5em'},
+            onclick: () => {
+                setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline});
+                app.setLeftTab('Variables');
+                common.setPanelOpen('left');
+            }
+        }, m(Icon, {name: 'plus'}), ' Constraint'),
+        m(Button, {
+            id: 'btnAddGroup',
+            class: ['btn-sm'],
+            style: {margin: '0.5em'},
+            disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
+            onclick: () => {
+                setQueryUpdated(true);
+                queryAbstract.addGroup(step);
+            }
+        }, m(Icon, {name: 'plus'}), ' Group')
+    ]
+]
+
 export class PipelineFlowchart {
     view(vnode) {
         // compoundPipeline is used for queries, pipeline is the array to be edited
-        let {compoundPipeline, pipeline, editable, hard} = vnode.attrs;
+        let {compoundPipeline, pipeline, editable, hard, subsetOnly} = vnode.attrs;
 
         let plus = m(Icon, {name: 'plus'});
         let warn = (text) => m('[style=color:#dc3545;display:inline-block;]', text);
@@ -344,33 +406,9 @@ export class PipelineFlowchart {
 
                     if (step.type === 'subset') {
                         content = m('div', {style: {'text-align': 'left'}},
-                            deleteButton,
+                            !subsetOnly && deleteButton,
                             m('h4[style=font-size:16px;margin-left:0.5em]', 'Subset'),
-                            m(TreeSubset, {step, editable, redraw, setRedraw}),
-
-                            editable && [
-                                m(Button, {
-                                    id: 'btnAddConstraint',
-                                    class: ['btn-sm'],
-                                    style: {margin: '0.5em'},
-                                    onclick: () => {
-                                        setConstraintMenu({type: 'subset', step, pipeline: compoundPipeline});
-                                        app.setLeftTab('Variables');
-                                        common.setPanelOpen('left');
-                                    }
-                                }, plus, ' Constraint'),
-                                m(Button, {
-                                    id: 'btnAddGroup',
-                                    class: ['btn-sm'],
-                                    style: {margin: '0.5em'},
-                                    disabled: !step.abstractQuery.filter(constraint => constraint.type === 'rule').length,
-                                    onclick: () => {
-                                        setQueryUpdated(true);
-                                        queryAbstract.addGroup(step);
-                                    }
-                                }, plus, ' Group')
-                            ]
-                        )
+                            makeSubsetTreeMenu(step, editable, compoundPipeline))
                     }
 
                     if (step.type === 'aggregate') {
@@ -451,7 +489,7 @@ export class PipelineFlowchart {
                     };
                 })
             }),
-            editable && [
+            !subsetOnly && editable && [
                 DISPLAY_DATAMART_UI && m(Button, {
                     id: 'btnAddAugment',
                     title: hard ? 'join columns with another dataset' : 'augment is only available in dataset mode',
@@ -582,15 +620,15 @@ export let setQueryUpdated = async state => {
     // if we have an edit to the problem manipulations
     if (!app.isDatasetMode) {
 
-        let selectedProblem = app.getSelectedProblem();
+        let selectedProblem = getSelectedProblem();
 
         let ravenConfig = app.workspace.raven_config;
 
-        selectedProblem.tags.transformed = [...app.getTransformVariables(selectedProblem.manipulations)];
+        selectedProblem.tags.transformed = [...getTransformVariables(selectedProblem.manipulations)];
 
-        app.loadProblemPreprocess(selectedProblem)
-            .then(setPreprocess)
-            .then(m.redraw);
+        loadProblemPreprocess(selectedProblem)
+            .then(app.setPreprocess)
+            .then(m.redraw)
 
         let countMenu = {type: 'menu', metadata: {type: 'count'}};
         loadMenu([...ravenConfig.hardManipulations, ...selectedProblem.manipulations], countMenu).then(count => {
@@ -650,7 +688,7 @@ export let setConstraintMenu = async menu => {
         let candidatevariableData = await loadMenu(menu.pipeline.slice(0, menu.pipeline.indexOf(menu.step)), summaryStep, {recount: true});
         if (candidatevariableData) variableMetadata = candidatevariableData;
         else {
-            alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
+            app.alertError('The pipeline at this stage matches no records. Delete constraints to match more records.');
             constraintMenu = undefined;
             app.resetPeek();
             m.redraw();
@@ -728,12 +766,12 @@ export let setConstraintType = (type, pipeline) => {
         constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.validCount / 10)), 100);
 
         if (varMeta.types.includes('string')) {
-            alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
+            app.alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
 
         if (varMeta.max === varMeta.min) {
-            alertLog(`The max and min are the same in ${column}. Switching to discrete.`);
+            app.alertLog(`The max and min are the same in ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
     }
@@ -789,8 +827,8 @@ export let loadMenu = async (
 
     let success = true;
     let onError = err => {
-        if (err === 'no records matched') alertError("No records match your subset. Plots will not be updated.");
-        else alertError(err.message);
+        if (err === 'no records matched') app.alertError("No records match your subset. Plots will not be updated.");
+        else app.alertError(err.message);
         success = false;
     };
 

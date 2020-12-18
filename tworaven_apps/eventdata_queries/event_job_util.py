@@ -476,7 +476,7 @@ class EventJobUtil(object):
     @staticmethod
     def get_metadata(folder, names=None):
         """
-        Open one of the folders such as 'collections', 'formats',  or 'alignments'
+        Open one of the folders such as 'collections', 'formats', 'geojson' or 'alignments'
 
         Read through the files and return a dict with:
             {key: file contents}
@@ -863,7 +863,7 @@ class EventJobUtil(object):
         with open(temp_data_filepath, "w", newline="") as output_file:
             dict_writer = csv.DictWriter(
                 output_file,
-                quoting=csv.QUOTE_MINIMAL,
+                quoting=csv.QUOTE_NONNUMERIC,
                 fieldnames=columns,
                 extrasaction="ignore",
             )

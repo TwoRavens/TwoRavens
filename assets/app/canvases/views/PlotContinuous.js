@@ -121,9 +121,9 @@ export default class PlotContinuous {
             .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
 
         // Invoked on initialization and interaction
-        function brushed() {
-            if (disableBrushes || d3.event.sourceEvent && d3.event.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
-            let s = d3.event.selection || x2.range();
+        function brushed(e) {
+            if (disableBrushes || e.sourceEvent && e.sourceEvent.type === "zoom") return; // ignore brush-by-zoom
+            let s = e.selection || x2.range();
 
             x.domain(s.map(x2.invert, x2));
             Object.keys(data).forEach((color, i) => focus.select(".area" + i).attr("d", area));
@@ -138,16 +138,16 @@ export default class PlotContinuous {
             (callbackHandles || Function)(s.map(x2.invert));
         }
 
-        function zoomed() {
-            if (disableBrushes || d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
-            let t = d3.event.transform;
+        function zoomed(e) {
+            if (disableBrushes || e?.sourceEvent?.type === "brush") return; // ignore zoom-by-brush
+            let t = e.transform;
             x.domain(t.rescaleX(x2).domain());
             focus.select(".area").attr("d", area);
             focus.select(".axis--x").call(xAxis)
                 .selectAll("text")
                 .attr("transform", "rotate(45)")
                 .style("text-anchor", "start");
-            !disableBrushes && context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
+            // !disableBrushes && context.select(".brush").call(brush.move, x.range().map(t.invertX, t));
         }
 
         // Draw data on focus portion of svg (focus) with the area variable attribute

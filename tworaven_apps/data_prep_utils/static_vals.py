@@ -33,7 +33,8 @@ DATASET_SCHEMA_VERSION = '4.0.0'    # create a datasetDoc
 PROBLEM_SCHEMA_VERSION = '4.0.0'
 
 # Map Pandas types to the types used in the datasetDoc
-#
+# mapping from: https://pbpython.com/pandas_dtypes.html
+#   -> https://gitlab.datadrivendiscovery.org/MIT-LL/d3m_data_supply/blob/shared/schemas/datasetSchema.json
 DTYPES = {
     'int64': 'integer',
     'float64': 'real',

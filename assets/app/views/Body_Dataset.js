@@ -4,7 +4,7 @@ import Header from "../../common/views/Header";
 import Canvas from "../../common/views/Canvas";
 import {heightHeader} from "../../common/common";
 import * as app from '../app';
-import {preformatted} from "../index";
+import * as utils from '../utils';
 
 
 export default class Body_Dataset {
@@ -61,7 +61,7 @@ export default class Body_Dataset {
                 },
                 app.workspace.datasetDoc && m(Table, {
                     data: Object.entries(app.workspace.datasetDoc.about)
-                        .map(row => [row[0], preformatted(row[1])])
+                        .map(row => [row[0], utils.preformatted(row[1])])
                 })),
 
 

@@ -1,8 +1,10 @@
+// render a vega-lite specification
+
 import m from 'mithril';
 import vegaEmbed from "vega-embed";
 
 import * as vega from 'vega';
-import {setDefaultRecursive} from "../app";
+import {setDefaultDeep} from "../utils";
 
 // m(PlotVegaLite, {
 //     specification: {...}, // an instance of this spec: https://vega.github.io/vega-lite/docs/spec.html,
@@ -23,7 +25,7 @@ export default class PlotVegaLite {
     }
 
     plot(vnode) {
-        let {data, specification} = vnode.attrs;
+        let {data, specification, listeners} = vnode.attrs;
 
         // change-sets are not currently supported. Data is manually inserted here.
         // long term, if change-sets are not returned, it would be better to remove the data argument from this component
@@ -65,11 +67,8 @@ export default class PlotVegaLite {
             }
 
             // by default, make sure labels on all plots are limited to 50 pixels
-            ['axisX', 'axisY'].forEach(axis => setDefaultRecursive(specification, [
-                ['config', {}],
-                [axis, {}],
-                ['labelLimit', 100]
-            ]));
+            ['axisX', 'axisY'].forEach(axis => setDefaultDeep(specification, ['config', axis, 'labelLimit'], 100));
+            // setDefaultRecursive(specification, [['config', {}], ['background', 'transparent']]);
 
             vegaEmbed(vnode.dom, specification, options).then(result => {
                 let addThemeSetter = theme => {
@@ -83,6 +82,10 @@ export default class PlotVegaLite {
                     vnode.dom.querySelector('.vega-actions').appendChild(themeAction);
                 }
                 ['default', 'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'latimes', 'dark'].map(addThemeSetter)
+
+                // attach event listeners
+                Object.entries(listeners || {}).forEach(([name, callback]) =>
+                    result.view.addSignalListener(name, (n, v) => callback(v)))
 
                 // vegalite only gets close to the width/height set in the config
                 let {width, height} = vnode.dom.getBoundingClientRect();
@@ -105,17 +108,17 @@ export default class PlotVegaLite {
         // else if (data && this.dataKeys) this.diff(vnode);
     }
 
-    diff(vnode) {
-        let {data, identifier} = vnode.attrs;
-        let newData = data.filter(datum => !this.dataKeys.has(datum[identifier]));
-
-        this.dataKeys = new Set(data.map(datum => datum[identifier]));
-        this.instance
-            .change('embedded', vega.changeset()
-                .insert(newData)
-                .remove(datum => !this.dataKeys.has(datum[identifier])))
-            .run();
-    }
+    // diff(vnode) {
+    //     let {data, identifier} = vnode.attrs;
+    //     let newData = data.filter(datum => !this.dataKeys.has(datum[identifier]));
+    //
+    //     this.dataKeys = new Set(data.map(datum => datum[identifier]));
+    //     this.instance
+    //         .change('embedded', vega.changeset()
+    //             .insert(newData)
+    //             .remove(datum => !this.dataKeys.has(datum[identifier])))
+    //         .run();
+    // }
 
     oncreate(vnode) {this.plot(vnode)}
     onupdate(vnode) {this.plot(vnode)}

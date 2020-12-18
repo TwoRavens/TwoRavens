@@ -1,8 +1,14 @@
 import jsep from 'jsep';
 
-import {alignmentData, generateID, getGeographicVariables, getPredictorVariables, getTemporalVariables} from "../app";
+import {alignmentData} from "../app";
 import * as common from "../../common/common";
-import * as app from "../app";
+import {
+    getGeographicVariables,
+    getNominalVariables,
+    getOrderingVariable,
+    getPredictorVariables,
+    getTargetVariables
+} from "../problem";
 
 // functions for generating database queries
 // subset queries are built from manipulations pipelines. An additional menu step may be added too
@@ -26,14 +32,20 @@ import * as app from "../app";
 
 // menu step: mutate to a format that can be rendered in a menu
 // {name: 'Actor', type: 'dyad', preferences: {...}, metadata: {...}}
+window.buildPipeline = buildPipeline;
 
 export function buildPipeline(pipeline, variables = new Set()) {
+    // mongodb query
     let compiled = [];
-    variables = new Set(variables);
+
+    // datasets used in the pipeline {[collection name]: {path: "", indexes: []}}
+    let datasets = {};
 
     // need to know which variables are unit measures and which are accumulators. Also describe the unit variables with labels
     // only returned if the last step in the pipeline is an aggregation
     let units, accumulators, labels;
+
+    variables = new Set(variables);
 
     pipeline.forEach(step => {
 
@@ -45,7 +57,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }, {})
         });
 
-        if (step.type === 'transform' && step.expansions.length) compiled.push({
+        if (step.type === 'transform' && step.expansions?.length) compiled.push({
             '$addFields': Object.assign(...step.expansions.map(expansion => {
                 let terms = expansionTerms(expansion);
                 variables = new Set([...terms, ...variables]);
@@ -56,16 +68,16 @@ export function buildPipeline(pipeline, variables = new Set()) {
             }))
         });
 
-        if (step.type === 'transform' && step.binnings.length) {
+        if (step.type === 'transform' && step.binnings?.length) {
             step.binnings.map(bin => variables.add(bin.name));
             compiled.push(buildBinning(step.binnings));
         }
-        if (step.type === 'transform' && step.manual.length) {
+        if (step.type === 'transform' && step.manual?.length) {
             step.manual.map(labeling => variables.add(labeling.name));
             compiled.push(buildManual(step.manual));
         }
 
-        if (step.type === 'imputation' && step.imputations.length)
+        if (step.type === 'imputation' && step.imputations?.length)
             compiled = compiled.concat(buildImputation(step.imputations));
 
         if (step.type === 'subset') compiled.push({'$match': buildSubset(step.abstractQuery, true)});
@@ -79,12 +91,25 @@ export function buildPipeline(pipeline, variables = new Set()) {
             labels = aggPrepped['labels'];
         } else [units, accumulators, labels] = [undefined, undefined, undefined];
 
-        if (step.type === 'menu')
-            compiled.push(...buildMenu(step))
+        if (step.type === 'join') {
+            let joinPrepped = buildJoin(step)
+            compiled.push(...joinPrepped['pipeline'])
+            variables = new Set([...joinPrepped['variables'], ...variables]);
+            datasets[step.from] = {
+                path: step.fromPath,
+                indexes: [step.index]
+            }
+        }
+
+        if (step.type === 'menu') {
+            let menuPrepped = buildMenu(step);
+            compiled.push(...menuPrepped['pipeline'])
+            if (menuPrepped['variables']) variables = menuPrepped['variables']
+        }
 
     });
 
-    return {pipeline: compiled, variables, units, accumulators, labels};
+    return {pipeline: compiled, variables, datasets, units, accumulators, labels};
 }
 
 
@@ -400,12 +425,14 @@ function processGroup(group) {
     return group_query;
 }
 
+export let operators = {'>=': '$gte', '>': '$gt', '<=': '$lte', '<': '$lt', '==': '$eq', '!=': '$ne'};
+export let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
+
 // Return a mongoDB query for a rule data structure
 function processRule(rule) {
     let rule_query = {};
 
     if (rule.subset === 'date') {
-        let rule_query_inner = {};
         if (rule.structure === 'point') {
             let rule_query_inner = [];
             let column;
@@ -439,15 +466,12 @@ function processRule(rule) {
     }
 
     if (rule.subset === 'automated') {
-        let operators = {'>=': '$gte', '>': '$gt', '<=': '$lte', '<': '$lt', '==': '$eq', '!=': '$ne'};
-        let operatorRegex = new RegExp(`(${Object.keys(operators).join('|')})`);
 
         let [variable, constraint, condition] = rule.name.split(operatorRegex).map(_ => _.trim());
         rule_query[variable] = {[operators[constraint]]: buildEquation(condition)['query']}
     }
 
     if (rule.subset === 'continuous') {
-        let rule_query_inner = {};
 
         rule_query[rule.column] = rule.children.reduce((out, child) => {
             if ('fromLabel' in child) out['$gte'] = child.fromLabel;
@@ -529,6 +553,32 @@ function processRule(rule) {
     }
 
     return rule_query;
+}
+
+/// Return the list of variables used by the subset query
+export let getSubsetDependencies = node => {
+    if (['group', 'query'].includes(node.type) && node.children)
+        return node.children.flatMap(getSubsetDependencies)
+    if (node.subset === 'date')
+        return node.children.map(child => child.column)
+    if (node.subset === 'automated') {
+        let [variable, _, condition] = node.name.split(operatorRegex).map(_ => _.trim());
+        return [variable, ...buildEquation(condition).usedTerms.variables]
+    }
+    if (['continuous', 'discrete', 'discrete_grouped'].includes(node.subset))
+        return [node.column]
+    if (['dyad', 'link'].includes(node.subset))
+        return node.children.flatMap(getSubsetDependencies)
+    if (node.subset === 'node')
+        return [node.column]
+    if (node.subset === 'coordinates')
+        return node.children.map(child => child.column)
+    if (node.subset === 'custom')
+        // TODO: parse from query?
+        return [undefined]
+    // should not be possible to reach this
+    console.warn("unknown subset type", node)
+    return []
 }
 
 // ~~~~ AGGREGATIONS ~~~~
@@ -764,6 +814,33 @@ export function buildAggregation(unitMeasures, accumulations) {
     };
 }
 
+// ~~~~ JOIN ~~~~
+export function buildJoin(step) {
+    return {
+        'pipeline': [
+            {
+                $lookup: {
+                    from: "tr_" + step.from,
+                    localField: step.index,
+                    foreignField: step.index,
+                    as: `__temp`
+                }
+            },
+            {$unwind: "$__temp"},
+            {
+                $addFields: Object.entries(step.variables)
+                    .reduce((out, [outName, inName]) => Object.assign(out, {
+                        [outName]: `$__temp\\.${inName}`
+                    }), {})
+            },
+            {
+                $project: {__temp: 0}
+            }
+        ],
+        'variables': Object.keys(step.variables)
+    }
+}
+
 // ~~~~ MENUS ~~~~
 // given a menu, return pipeline steps for collecting data
 export function buildMenu(step) {
@@ -837,7 +914,7 @@ export function buildMenu(step) {
 
     if (metadata.type === 'dyadSearch') {
         let branch = {tab: metadata.currentTab, type: 'full', column: metadata.tabs[metadata.currentTab].full};
-        return makeBranches([branch])
+        return {pipeline: makeBranches([branch])}
     }
 
     if (metadata.type === 'dyad') {
@@ -852,10 +929,10 @@ export function buildMenu(step) {
             }));
         });
 
-        return makeBranches([...branches]);
+        return {pipeline: makeBranches([...branches])};
     }
 
-    if (metadata.type === 'date') return [
+    if (metadata.type === 'date') return {pipeline: [
         {
             $group: {
                 _id: {year: {$year: '$' + metadata.columns[0]}, month: {$month: '$' + metadata.columns[0]}},
@@ -865,19 +942,18 @@ export function buildMenu(step) {
         {$project: {year: '$_id\\.year', month: '$_id\\.month', _id: 0, total: 1}},
         {$match: {year: {$exists: true}, month: {$exists: true}}},
         {$sort: {year: 1, month: 1}}
-    ];
+    ], variables: ['year', 'month', 'total']};
 
-    if (['discrete', 'discrete_grouped'].includes(metadata.type)) return [
+    if (['discrete', 'discrete_grouped'].includes(metadata.type)) return {pipeline: [
         {$group: {_id: {[metadata.columns[0]]: '$' + metadata.columns[0]}, total: {$sum: 1}}},
         {$project: {[metadata.columns[0]]: '$_id\\.' + metadata.columns[0], _id: 0, total: 1}},
         {$limit: 1000}
-    ];
+    ], variables: [metadata.columns[0], 'total']};
 
     if (metadata.type === 'continuous') {
-        console.log('buckets', metadata);
         let boundaries = Array(metadata.buckets + 1).fill(0).map((arr, i) => metadata.min + i * (metadata.max - metadata.min) / metadata.buckets);
         boundaries[boundaries.length - 1] += 1; // the upper bound is exclusive
-        return [
+        return {pipeline: [
             {
                 $bucket: {
                     boundaries,
@@ -897,7 +973,7 @@ export function buildMenu(step) {
                 }
             },
             {$sort: {Label: 1}}
-        ];
+        ], variables: ['Label', 'Freq']};
     }
 
     if (metadata.type === 'data') {
@@ -911,7 +987,7 @@ export function buildMenu(step) {
         if (metadata.limit) subset.push({$limit: metadata.limit});
         if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
 
-        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return [
+        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return {pipeline: [
             ...subset,
             {
                 $addFields: metadata.nominal.reduce((out, entry) => {
@@ -920,9 +996,9 @@ export function buildMenu(step) {
                 }, {})
             },
             {$project: {_id: 0}}
-        ];
+        ]};
 
-        return [
+        return {pipeline: [
             ...subset,
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
@@ -930,27 +1006,26 @@ export function buildMenu(step) {
                     return out;
                 }, {_id: 0})
             }
-        ];
+        ], variables: metadata?.variables?.length > 0 && [...new Set(metadata.variables)]};
 
     }
 
-    if (metadata.type === 'count') return [{
+    if (metadata.type === 'count') return {pipeline: [{
         $count: 'total'
-    }];
+    }], variables: ['total']};
 
-    if (metadata.type === 'summary') return [
+    if (metadata.type === 'summary') return {pipeline: [
         {
-            $group: metadata.variables.reduce((out, variable) => {
-                out[variable + '-mean'] = {$avg: '$' + variable};
-                out[variable + '-max'] = {$max: '$' + variable};
-                out[variable + '-min'] = {$min: '$' + variable};
-                out[variable + '-stdDev'] = {$stdDevPop: '$' + variable};
-                out[variable + '-validCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}};
-                out[variable + '-invalidCount'] = {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}};
-                out[variable + '-types'] = {$addToSet: {$type: '$' + variable}};
-                out[variable + '-uniques'] = {$addToSet: '$' + variable};
-                return out;
-            }, {_id: 0})
+            $group: metadata.variables.reduce((out, variable) => Object.assign(out, {
+                [variable + '-mean']: {$avg: '$' + variable},
+                [variable + '-max']: {$max: '$' + variable},
+                [variable + '-min']: {$min: '$' + variable},
+                [variable + '-stdDev']: {$stdDevPop: '$' + variable},
+                [variable + '-validCount']: {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 1, 0]}},
+                [variable + '-invalidCount']: {$sum: {$cond: [{$ne: ['$' + variable, undefined]}, 0, 1]}},
+                [variable + '-types']: {$addToSet: {$type: '$' + variable}},
+                [variable + '-uniques']: {$addToSet: '$' + variable},
+            }), {_id: 0})
         },
         {
             $project: metadata.variables.reduce((out, variable) => {
@@ -967,7 +1042,7 @@ export function buildMenu(step) {
                 return out;
             }, {_id: 0})
         }
-    ];
+    ]};
 
 
     // build steps for subsetting data down for out-of-database splitting
@@ -977,14 +1052,14 @@ export function buildMenu(step) {
 
         // ensures temporal column is sorted
         if (problem.task === 'forecasting')
-            pipeline.push({$sort: {[`$${problem.forecastingHorizon.column}`]: 1}});
+            pipeline.push({$sort: {[`$${getOrderingVariable(problem)}`]: 1}});
 
         let projectionColumns = [...problem.tags.indexes];
         if (problem.task === 'forecasting')
-            projectionColumns.push(problem.forecastingHorizon.column, ...problem.tags.crossSection);
+            projectionColumns.push(getOrderingVariable(problem), ...problem.tags.crossSection);
 
         if (problem.splitOptions.stratified)
-            projectionColumns.push(problem.targets[0]);
+            projectionColumns.push(getTargetVariables(problem)[0]);
 
         pipeline.push({
             $project: [...new Set(projectionColumns)].reduce((projection, column) => Object.assign({
@@ -992,7 +1067,7 @@ export function buildMenu(step) {
             }), {})
         });
 
-        return pipeline;
+        return {pipeline, variables: projectionColumns};
     }
 
     if (metadata.type === 'split') {
@@ -1002,15 +1077,15 @@ export function buildMenu(step) {
 
         let splitOptions = problem.splitOptions;
         let predictors = getPredictorVariables(problem);
-        let targets = problem.targets;
-        let temporalName = problem.forecastingHorizon.column;
+        let targets = getTargetVariables(problem);
+        let temporalName = getOrderingVariable(problem);
         let crossSections = problem.tags.crossSection;
         let nominals = getNominalVariables(problem);
 
         let pipeline = [];
 
         // don't filter rows to a split
-        if (splitOptions.outOfSampleSplit || split === 'all') return [];
+        if (splitOptions.outOfSampleSplit || split === 'all') return {pipeline};
 
         // some splitting conditions may be handled without a join
         // when forecasting without cross sections
@@ -1019,14 +1094,14 @@ export function buildMenu(step) {
                 pipeline.push({$sort: {[`$${temporalName}`]: -1}});
 
             if (split === 'train') pipeline.push(
-                {$skip: Math.min(problem.forecastingHorizon.value, splitOptions.maxRecordCount)},
+                {$skip: Math.min(problem.forecastingHorizon, splitOptions.maxRecordCount)},
                 {$limit: splitOptions.maxRecordCount});
 
             if (split === 'test') pipeline.push(
-                {$limit: Math.min(problem.forecastingHorizon.value, splitOptions.maxRecordCount)});
+                {$limit: Math.min(problem.forecastingHorizon, splitOptions.maxRecordCount)});
 
             pipeline.push(
-                {[{'train': '$skip','test': '$limit'}[split]]: problem.forecastingHorizon.value});
+                {[{'train': '$skip','test': '$limit'}[split]]: problem.forecastingHorizon});
 
             if (temporalName)
                 pipeline.push({$sort: {[`$${temporalName}`]: 1}});
@@ -1189,7 +1264,7 @@ export function buildMenu(step) {
             $limit: splitOptions.maxRecordCount
         });
 
-        return pipeline;
+        return {pipeline};
 
         // alternate implementation that just takes first categorical observation
         // {
@@ -1261,8 +1336,11 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
         'integer': new Set(['toInt', 'ceil', 'floor', 'trunc']),
         'boolean': new Set(['toBool', 'and', 'not', 'or', 'eq', 'gt', 'gte', 'lt', 'lte', 'ne']),
         'string': new Set(['toString', 'trim', 'toLower', 'toUpper', 'concat']),
-        'real': new Set(['toDouble', 'abs', 'exp', 'ln', 'log10', 'sqrt', 'divide', 'log', 'mod', 'pow',
-            'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp'])
+        'real': new Set([
+            'toDouble', 'abs', 'exp', 'ln', 'log10', 'sqrt', 'divide', 'log', 'mod', 'pow',
+            'subtract', 'add', 'multiply', 'max', 'min', 'avg', 'stdDevPop', 'stdDevSamp',
+            'sum'
+        ])
     };
 
     Object.assign(doc, {dataResources: [...doc.dataResources]});
@@ -1271,10 +1349,13 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
     let tableResourceIndex = doc.dataResources.findIndex(resource => resource.resType === 'table');
     let allCols = [...doc.dataResources[tableResourceIndex].columns];
 
+    // rewrite the columns by stepping through each step in the manipulations pipeline
     doc.dataResources[tableResourceIndex].columns = pipeline.reduce((columns, step) => {
 
+        // shallow copy each object to avoid global mutations
         let outColumns = columns.map(column => Object.assign({}, column));
 
+        // helper to modify column
         let mutateField = data => field => {
             let target = outColumns.find(column => column.colName === field);
             if (!target) {
@@ -1282,36 +1363,88 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
                 outColumns.push(target)
             }
             target.colName = field;
+            // if the output value is based on an operation (example {$toString: $colName})
             if (typeof data[field] === 'object')
-                target.colType = Object.keys(typeInferences).find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+                target.colType = Object.keys(typeInferences)
+                    // find the type of the data after transformation based on the $op name
+                    .find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+            // if the output value is based on another column, retrieve the type information (as well as any other information) from the other column
             else if (typeof data[field] === 'string' && data[field][0] === '$')
-                Object.assign(target, allCols.find(column => column.colName === data[field].substr(1)), {colName: field});
+                // assign into target
+                Object.assign(target,
+                    // all information from the source column
+                    allCols.find(column => column.colName === data[field].substr(1)),
+                    // but overwrite the column name
+                    {colName: field});
+            // if the output value is a literal
             else target.colType = {'number': 'real', 'string': 'string', 'boolean': 'boolean'}[typeof data[field]]; // javascript type: D3M type
+            // TODO: roles may not always make sense after modifications
+            //          in many cases, roles are just dropped and rewritten via tags
+            // if role is not defined, make it a suggestedTarget
             target.role = target.role || ['suggestedTarget'];
 
             // prepended mutations are found first when looking up types
             allCols.unshift(target);
         };
 
-        if ('$addFields' in step) Object.keys(step.$addFields).forEach(mutateField(step.$addFields));
+        if ('$addFields' in step) Object.keys(step.$addFields)
+            .forEach(mutateField(step.$addFields));
 
         if ('$project' in step) {
-            // set of columns to mask
+            // set of columns to mask (if every column in projection is falsey)
             if (Object.values(step.$project).every(value => ['number', 'bool'].includes(typeof value) && !value))
-                return outColumns.filter(column => !(column.colName in step.$project));
+                return outColumns.filter(column => !(column.colName.split("\\.")[0] in step.$project));
 
+            // not every projection is falsey, so only columns in projection will be present
             outColumns = outColumns.filter(column => column.colName in step.$project);
+            // for each field in the projection, mutate the column metadata
             Object.keys(step.$project).forEach(field => {
+                // drop falsey columns
                 if (!step.$project[field])
-                    delete outColumns[outColumns.indexOf(column => column.colName === field)];
+                    // match columns to drop based on all text up to "\\."
+                    delete outColumns[outColumns.indexOf(column => column.colName.split("\\.")[0] === field)];
+                // read the projection and apply the mutation if non-trivial
                 else if (![true, 1].includes(step.$project[field])) // no modifications necessary if just trivial projection inclusion
                     mutateField(step.$project)(field)
             });
             return outColumns.filter(_ => _);
         }
 
+        if ('$group' in step) {
+            outColumns = [];
+
+            let getType = (data, field) => {
+                // if the output value is based on an operation (example {$toString: $colName})
+                if (typeof data[field] === 'object')
+                    return Object.keys(typeInferences)
+                        // find the type of the data after transformation based on the $op name
+                        .find(type => typeInferences[type].has(Object.keys(data[field])[0].substr(1)));
+                // if the output value is based on another column, retrieve the type information (as well as any other information) from the other column
+                else if (typeof data[field] === 'string' && data[field][0] === '$')
+                    // assign into target
+                    return allCols.find(column => column.colName === data[field].substr(1)).colType;
+                // if the output value is a literal
+                else return {'number': 'real', 'string': 'string', 'boolean': 'boolean'}[typeof data[field]]; // javascript type: D3M type
+            }
+            outColumns = [
+                ...step.$group._id ? Object.keys(step.$group._id).map(field => ({
+                    colName: `_id\\.${field}`,
+                    colType: getType(step.$group._id, field),
+                    role: ['suggestedTarget']
+                })) : [],
+                ...Object.keys(step.$group).filter(field => field !== "_id")
+                    .map(field => ({
+                        colName: field,
+                        colType: getType(step.$group, field),
+                        role: ['attribute']
+                    }))
+            ].filter(_=>_)
+
+            // $group creates all new columns
+            allCols = [...outColumns]
+        }
+
         if ('$facet' in step) throw '$facet D3M datasetDoc.json translation not implemented';
-        if ('$group' in step) throw '$group D3M datasetDoc.json translation not implemented';
         if ('$redact' in step) throw '$redact D3M datasetDoc.json translation not implemented';
         if ('$replaceRoot' in step) throw '$replaceRoot D3M datasetDoc.json translation not implemented';
         if ('$unwind' in step) throw '$unwind D3M datasetDoc.json translation not implemented';
@@ -1320,7 +1453,7 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
     }, doc.dataResources[tableResourceIndex].columns)
         .map(struct => Object.assign(struct, { // relabel roles to reflect the proper target
             role: [
-                problem.targets.includes(struct.colName) ? 'suggestedTarget'
+                getTargetVariables(problem).includes(struct.colName) ? 'suggestedTarget'
                     : struct.colName === 'd3mIndex' ? 'index' : 'attribute'
             ]
         }));
@@ -1329,12 +1462,12 @@ export let translateDatasetDoc = (pipeline, doc, problem) => {
 
     [
         [getPredictorVariables(problem), 'attribute'],
-        [problem.targets, 'suggestedTarget'],
+        [getTargetVariables(problem), 'suggestedTarget'],
         [problem.tags.privileged, 'suggestedPrivilegedData'],
         [problem.tags.crossSection, 'suggestedGroupingKey'],
         [problem.tags.boundary, 'boundaryIndicator'],
-        [app.getGeographicVariables(problem), 'locationIndicator'],
-        [app.getTemporalVariables(problem), 'timeIndicator'],
+        [getGeographicVariables(problem), 'locationIndicator'],
+        [[getOrderingVariable(problem)], 'timeIndicator'],
         [problem.tags.weights, 'instanceWeight'],
         [problem.tags.indexes, 'index']
     ].forEach(pair => pair[0]

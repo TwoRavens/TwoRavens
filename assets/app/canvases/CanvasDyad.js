@@ -8,7 +8,6 @@ import Popper from '../../common/views/Popper';
 import PlotDyad from './views/PlotDyad';
 import * as eventdata from "../eventdata/eventdata";
 import {alertError, formattingData} from "../app";
-import Checkbox from "../../common/views/Checkbox";
 
 // Width of the dyad selection panel
 let selectionWidth = '400px';

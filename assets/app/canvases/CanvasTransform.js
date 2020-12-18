@@ -12,10 +12,10 @@ import Table from "../../common/views/Table";
 
 import PlotContinuous from './views/PlotContinuous';
 
-import {getData, omniSort} from "../app";
+import {getData} from "../app";
 import Paginated from "../../common/views/Paginated";
+import {setDefault, omniSort} from "../utils";
 
-let setDefault = (obj, id, value) => obj[id] = id in obj ? obj[id] : value;
 let warn = (text) => m('[style=color:#dc3545;display:inline-block;margin-left:1em;]', text);
 
 let usedTermDefaults = () => ({
@@ -347,7 +347,7 @@ class MenuBinning {
                     min: metadata.variables[variable].min,
                     columns: [variable]
                 }
-            })]);
+            })['pipeline']]);
 
             preferences.buckets = await getData({method: 'aggregate', query});
             preferences.variableIndicator = variable;
@@ -412,7 +412,7 @@ class MenuBinning {
             }
         }
 
-        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor, height: 'calc(100% - 62px)'}},
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor, height: '100%'}},
             m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
             m(TextField, {
                 id: 'textFieldVariableName',
@@ -486,7 +486,7 @@ class MenuBinning {
                     value: preferences.custom
                 })
             ],
-            preferences.buckets && m('[style=height:calc(100% - 165px)]', m(PlotContinuous, {
+            preferences.buckets && m('[style=height:calc(100% - 265px)]', m(PlotContinuous, {
                 id: 'plotOriginal',
                 data: {[common.d3Color]: preferences.buckets},
                 disableBrushes: true,
@@ -592,7 +592,8 @@ class MenuManual {
                 makePage: keys => m(Table, {
                     id: 'tableManualVariable',
                     headers: [preferences.variableIndicator, preferences.variableName],
-                    data: keys.map((key, i) => [key, userInput(i)])
+                    data: keys.map((key, i) => [key, userInput(i)]),
+                    keyed: true
                 }),
                 limit: 100,
                 page: preferences.page || 0,
