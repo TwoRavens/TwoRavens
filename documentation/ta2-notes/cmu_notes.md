@@ -19,13 +19,9 @@ Within a Terminal:
     ```
     workon 2ravens
     ```
-1. make config files
-    ```
-    fab make_d3m_configs_from_files
-    ```
 1. Show a list of datasets to run FL
     ```
-    fab run_ta2_cmu_with_config
+    fab run_ta2_cmu_choose_config
     ```
 1. Choose a dataset:
     ```
