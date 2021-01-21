@@ -1,3 +1,4 @@
+import m from 'mithril';
 import * as eventdata from './eventdata';
 import Button from "../../common/views/Button";
 import ButtonPlain from '../../common/views/ButtonPlain';

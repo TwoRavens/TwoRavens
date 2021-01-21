@@ -703,6 +703,23 @@ def collect_static():
     """Run the Django collectstatic command"""
     local('python manage.py collectstatic --noinput')
 
+
+@task
+def check_db_ready(wait_time_secs=10, max_retries=30):
+    """Is the database accepting connections? Used when the database is run via container
+    and waiting for startup.
+    Warning: This command defaults to retrying every 10 seconds, for 5 minutes.
+    wait_time_secs = Time to wait before testing db connection a second or later time
+    max_retries = Number of times to test for a connection
+    """
+    if wait_time_secs < 1:
+        wait_time_secs = 10
+    if max_retries < 1:
+        max_retries = 30
+
+    from django.core import management
+    management.call_command('waitdb', seconds=wait_time_secs, max_retries=max_retries)
+
 @task
 def init_db():
     """Run django check and migrate"""

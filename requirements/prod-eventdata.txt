@@ -1,4 +1,8 @@
--r prod.txt
+-r base.txt
+gunicorn==19.9.0
 
-# MySQL
-mysqlclient==2.0.1
+
+# Django storages
+# - for behavioral logs
+#
+django-storages==1.7.1

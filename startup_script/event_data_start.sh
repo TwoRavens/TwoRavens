@@ -6,6 +6,11 @@
 # --------------------------------------------------------------
 cd /var/webapps/TwoRavens
 
+# Check for database connection
+#   Will try for several minutes
+#
+fab check_db_ready
+
 # Create new db
 #
 fab init_db
