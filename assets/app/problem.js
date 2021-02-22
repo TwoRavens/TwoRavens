@@ -1000,9 +1000,9 @@ export let isProblemValid = problem => {
             app.alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
         }
     }
-    if (problem.tags.loose.length > 0) {
-        app.alertLog("This problem has loose variables in the modeling space that will not be used in the model: " + String(problem.tags.loose))
-    }
+    // if (problem.tags.loose.length > 0) {
+    //     app.alertLog("This problem has loose variables in the modeling space that will not be used in the model: " + String(problem.tags.loose))
+    // }
     // this triggers the popup
     if (!valid)
         m.redraw();

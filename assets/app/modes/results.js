@@ -223,7 +223,8 @@ export let leftpanel = () => {
                             value: Math.log(selectedProblem.searchOptions.timeBoundSearch || 15) * 10000,
                             oninput: value => {
                                 let minutes = Math.round(Math.exp(value / 10000));
-                                if (minutes < 60) minutes = Math.round(minutes / 5) * 5;
+                                if (minutes < 5) minutes = Math.round(minutes);
+                                if (5 < minutes && minutes < 60) minutes = Math.round(minutes / 5) * 5;
                                 if (60 < minutes && minutes < 60 * 6) minutes = Math.round(minutes / 15) * 15;
                                 if (60 * 6 < minutes && minutes < 60 * 12) minutes = Math.round(minutes / 30) * 30;
                                 if (60 * 12 < minutes && minutes < 60 * 24) minutes = Math.round(minutes / 60) * 60;
