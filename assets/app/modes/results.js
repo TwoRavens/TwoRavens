@@ -1377,7 +1377,6 @@ export class CanvasSolutions {
             }
 
         } else if (resultsPreferences.customExploreMode === 'Predictions') {
-            console.log('setting to predictions')
             if (mapping) {
                 if (!colorChannel) {
                     colorChannel = {name: 'color'};

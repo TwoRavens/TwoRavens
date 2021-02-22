@@ -82,6 +82,7 @@ export default class PlotMapbox {
             this.style = specification.mapboxStyle
         }
 
+        // drop prior update event handlers
         if (this.update) {
             this.map.off("viewreset", this.update);
             this.map.off("move", this.update);
@@ -101,6 +102,7 @@ export default class PlotMapbox {
                     specification),
                 {actions: false, config: {"style": {"cell": {"stroke": "transparent"}}}});
         }
+        this.map.resize()
 
         // Every time the map changes, update the dots
         this.map.on("viewreset", this.update);
