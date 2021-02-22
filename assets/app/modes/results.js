@@ -47,6 +47,7 @@ import {
 import {preparePanels} from "../views/PlotVegaLiteWrapper";
 import {ExploreBoxes, explorePreferences, ExploreVariables} from "./explore";
 import Checkbox from "../../common/views/Checkbox";
+import {italicize} from "../utils";
 
 
 /**
@@ -160,7 +161,8 @@ export let resultsPreferences = {
         recordLimit: 5000,
         variables: [],
         schemaName: undefined
-    }
+    },
+    customExploreMode: 'Unconstrained'
 };
 window.resultsPreferences = resultsPreferences;
 
@@ -1340,11 +1342,12 @@ export class CanvasSolutions {
 
         Object.assign(resultsSummaries, resultsPreferences.variableSummariesDiffs || {});
 
-        // lock secondary axis to estimated target variables
         customConfiguration.channels = customConfiguration.channels || [];
-        if (resultsPreferences.lockExplorePlot) {
+
+        let colorChannel = mappingConfiguration.channels.find(channel => channel.name === 'color');
+        let colorVariable;
+        if (resultsPreferences.customExploreMode === 'Error') {
             if (mapping) {
-                let colorChannel = mappingConfiguration.channels.find(channel => channel.name === 'color');
                 if (!colorChannel) {
                     colorChannel = {name: 'color'};
                     mappingConfiguration.channels.push(colorChannel);
@@ -1355,18 +1358,47 @@ export class CanvasSolutions {
                 colorChannel.schemeCategory = "sequential-single"
                 colorChannel.scheme = colorChannel.scheme || {};
                 colorChannel.scheme['sequential-single'] = 'reds';
+            }
+            else {
+                // lock secondary axis to estimated error variables
+                let secondaryChannel = customConfiguration.channels.find(channel => channel.name === "secondary axis");
+                if (!secondaryChannel) {
+                    secondaryChannel = {name: 'secondary axis'}
+                    customConfiguration.channels.push(secondaryChannel);
+                }
+                secondaryChannel.variables = [...errorVariables];
+                if (secondaryChannel.variables.length > 1)
+                    colorVariable = secondaryChannel.key
+                // add a color channel
+                if (!colorChannel && colorVariable) customConfiguration.channels.push({
+                    name: 'color',
+                    variable: colorVariable || 'field'
+                })
+            }
+
+        } else if (resultsPreferences.customExploreMode === 'Predictions') {
+            console.log('setting to predictions')
+            if (mapping) {
+                if (!colorChannel) {
+                    colorChannel = {name: 'color'};
+                    mappingConfiguration.channels.push(colorChannel);
+                }
+                if (!foldedVariables.includes(colorChannel.variable))
+                    colorChannel.variable = foldedVariables[0]
             } else {
+                // lock secondary axis to estimated target variables
                 let secondaryChannel = customConfiguration.channels.find(channel => channel.name === "secondary axis");
                 if (!secondaryChannel) {
                     secondaryChannel = {name: 'secondary axis'}
                     customConfiguration.channels.push(secondaryChannel);
                 }
                 secondaryChannel.variables = [...foldedVariables];
+                if (secondaryChannel.variables.length > 1)
+                    colorVariable = secondaryChannel.key
                 // add a color channel
-                let colorChannel = customConfiguration.channels.find(channel => channel.name === 'color');
-                if (!colorChannel && secondaryChannel.variables.length > 1) customConfiguration.channels.push({
+                if (!colorChannel && colorVariable) customConfiguration.channels.push({
                     name: 'color',
-                    variable: secondaryChannel.key || 'field'
+                    variable: colorVariable || 'field'
                 })
             }
         }
@@ -1412,13 +1444,21 @@ export class CanvasSolutions {
         });
 
         return [
-            m('div', m(Checkbox, {
-                id: 'showErrorCheck',
-                onclick: () => resultsPreferences.lockExplorePlot = !resultsPreferences.lockExplorePlot,
-                checked: resultsPreferences.lockExplorePlot
-            }), m('[style=margin:1em;display:inline-block]', mapping
-                ? 'Lock to error visualization for the current model.'
-                : 'Lock secondary axis to fitted values.')),
+            italicize({
+                Unconstrained: 'Channels are freely editable.',
+                Predictions: 'Channels are constrained to show predictions from the currently-selected model(s).',
+                Error: 'Channels are constrained to show errors from the currently-selected model(s).'
+            }[resultsPreferences.customExploreMode]),
+            m('div[style=padding:.5em 0 1em 0]', m(ButtonRadio, {
+                id: 'CustomPlotModeButtonRadio',
+                onclick: state => resultsPreferences.customExploreMode = state,
+                activeSection: resultsPreferences.customExploreMode,
+                sections: [
+                    {value: 'Unconstrained'},
+                    {value: 'Predictions'},
+                    {value: 'Error'}
+                ]
+            })),
             editor,
             m('', {style: {height: '800px'}}, plot)
         ]

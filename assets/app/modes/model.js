@@ -64,12 +64,10 @@ export class CanvasModel {
                 m('div[style=top:calc(50% - 60px);left:calc(50% - 60px);position:fixed]',
                     common.loader('forceDiagramLoader')))
 
-        let selectedLinks;
-        if (app.isModelMode && selectedProblem)
-            selectedLinks = [
-                ...(selectedProblem.pebbleLinks || []).filter(link => link.selected),
-                ...selectedProblem.groupLinks.filter(link => link.selected)
-            ];
+        let selectedLinks = app.isModelMode && selectedProblem ? [
+            ...(selectedProblem.pebbleLinks || []).filter(link => link.selected),
+            ...selectedProblem.groupLinks.filter(link => link.selected)
+        ] : [];
 
         let linkIcons = {
             minus: m(Icon, {name: 'dash'}),
@@ -197,7 +195,7 @@ export class CanvasModel {
                                 if (action === "none") {delete selectedLink.sign} else selectedLink.sign = action;
                             })
                         },
-                        activeSection: selectedLinks.every(link => link.sign === selectedLinks[0].sign) && selectedLinks[0].sign || 'none',
+                        activeSection: selectedLinks.every(link => link.sign === selectedLinks?.[0]?.sign) && selectedLinks?.[0]?.sign || 'none',
                         sections: Object.entries(linkIcons).map(([key, icon]) => ({id: key, value: icon}))
                     })),
                 m(Button, {
