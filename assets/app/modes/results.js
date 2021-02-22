@@ -46,7 +46,6 @@ import {
 } from "../problem";
 import {preparePanels} from "../views/PlotVegaLiteWrapper";
 import {ExploreBoxes, explorePreferences, ExploreVariables} from "./explore";
-import Checkbox from "../../common/views/Checkbox";
 import {italicize} from "../utils";
 
 
@@ -162,7 +161,7 @@ export let resultsPreferences = {
         variables: [],
         schemaName: undefined
     },
-    customExploreMode: 'Unconstrained'
+    customExploreMode: 'Predictions'
 };
 window.resultsPreferences = resultsPreferences;
 

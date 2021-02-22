@@ -337,21 +337,18 @@ export default class PlotVegaLiteEditor {
             m(Table, {
                 keyed: true,
                 headers: ['channel', 'variables', '', ''],
-                data: [
-                    ...configuration.channels
-                        .filter(channel => !channel.deleted)
-                        .map(channel => !channel.delete && this.channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals)),
-                    unusedChannels.length > 0 && [
-                        m(Dropdown, {
-                            items: unusedChannels,
-                            activeItem: 'Add Channel',
-                            onclickChild: value => {
-                                let priorChannel = configuration.channels.find(channel => channel.name === value);
-                                if (priorChannel) delete priorChannel.delete;
-                                else configuration.channels.push({name: value})
-                            }
-                        }), undefined, undefined, undefined]
-                ]
+                data: configuration.channels
+                    .filter(channel => !channel.deleted)
+                    .map(channel => !channel.delete && this.channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals)),
+            }), unusedChannels.length > 0 && m(Dropdown, {
+                style: {margin: '-1em 0 1em 1em'},
+                items: unusedChannels,
+                activeItem: 'Add Channel',
+                onclickChild: value => {
+                    let priorChannel = configuration.channels.find(channel => channel.name === value);
+                    if (priorChannel) delete priorChannel.delete;
+                    else configuration.channels.push({name: value})
+                }
             })),
         ];
     }
