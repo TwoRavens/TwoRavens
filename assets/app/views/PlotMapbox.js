@@ -31,7 +31,7 @@ export let mapStyles = {
     'outdoors': 'outdoors-v11',
     'satellite': 'satellite-v9'
 }
-let getMapStyle = name => `mapbox://styles/mapbox/${mapStyles[name] || mapStyles.streets}`
+let getMapStyle = name => `mapbox://styles/mapbox/${mapStyles[name] || mapStyles.light}`
 
 export default class PlotMapbox {
 
@@ -42,7 +42,7 @@ export default class PlotMapbox {
 
     onupdate({attrs, dom}) {
         let {specification, initViewport, setInitViewport} = attrs;
-        specification.mapboxStyle = specification.mapboxStyle || {light: 'streets', dark: 'dark'}[common.theme];
+        specification.mapboxStyle = specification.mapboxStyle || {light: 'light', dark: 'dark'}[common.theme];
         let {width, height} = dom.getBoundingClientRect();
         window.specification = specification;
         delete specification.selection;

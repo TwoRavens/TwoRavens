@@ -10,6 +10,18 @@ import {geojsonData, setMetadata} from "../eventdata/eventdata";
 import PlotMapbox from "./PlotMapbox";
 import PlotVegaLite from "./PlotVegaLite";
 import {setDeep, setDefaultDeep} from "../utils";
+import * as common from "../../common/common";
+
+let makeLoader = () => m('div',
+    {style: {height: '100%'}},
+    m('div', {
+        style: {
+            display: 'flex',
+            'justify-content': 'center',
+            height: '100%'
+        }
+    }, common.loader('CustomPlot'))
+)
 
 export default class PlotVegaLiteQuery {
     oninit() {
@@ -17,7 +29,9 @@ export default class PlotVegaLiteQuery {
         this.datasets = {};
         this.isLoading = {};
     }
-
+    oncreate() {
+        m.redraw()
+    }
     view(vnode) {
         let {mapping, getData, specification} = vnode.attrs;
         let {abstractQuery, summaries, sampleSize, variablesInitial} = vnode.attrs;
@@ -59,7 +73,11 @@ export default class PlotVegaLiteQuery {
                     getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
+                        // HACK: m.redraw is, surprisingly, not always enough to trigger the redraw
+                        m.redraw()
                         setTimeout(m.redraw, 10)
+                        setTimeout(m.redraw, 100)
+                        setTimeout(m.redraw, 1000)
                     })
 
                     if (layer.encoding.region) {
@@ -93,12 +111,12 @@ export default class PlotVegaLiteQuery {
         pruneSpec('hconcat');
         pruneSpec('vconcat');
 
-        if (mapping && !translateGeojson(specificationStripped, summaries)) return;
+        if (mapping && !translateGeojson(specificationStripped, summaries)) return makeLoader();
 
         let countData = spec => [spec, ...(spec.layer || [])].filter(layer => layer.data?.values).length;
         if ([specificationStripped, ...(specificationStripped.vconcat || []), ...(specificationStripped.hconcat || [])]
             .every(layer => countData(layer) === 0))
-            return;
+            return makeLoader()
 
         // draw plot
         return m(mapping ? PlotMapbox : PlotVegaLite, {specification: specificationStripped, initViewport, setInitViewport})

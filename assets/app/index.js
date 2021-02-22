@@ -124,14 +124,14 @@ class Body {
             {title: "Sign up", url: signup_url, newWin: false}
         ] : [
             //{title: [m('span', {}, "Workspaces "), m(Icon, {name: 'link-external'})], url: workspaces_url, newWin: true},
-            {title: [m('span', {}, "Settings "), m(Icon, {name: 'link-external'})], url: settings_url, newWin: true},
-            {title: [m('span', {}, "Links "), m(Icon, {name: 'link-external'})], url: devlinks_url, newWin: true},
-            {title: [m('span', {}, "Behavioral Logs "), m(Icon, {name: 'link-external'})], url: behavioral_log_url, newWin: true},
-            {title: [m('span', {}, "Reset "), m(Icon, {name: 'alert'})], url: clear_user_workspaces_url, newWin: false},
-            {title: [m('span', {}, "Switch Datasets"), m(Icon, {name: 'alert'})], url: switch_dataset_url, newWin: false},
+            {title: [m(Icon, {name: 'link-external'}), m('span', {}, " Settings")], url: settings_url, newWin: true},
+            {title: [m(Icon, {name: 'link-external'}), m('span', {}, " Links")], url: devlinks_url, newWin: true},
+            {title: [m(Icon, {name: 'link-external'}), m('span', {}, " Behavioral Logs")], url: behavioral_log_url, newWin: true},
+            {title: [m(Icon, {name: 'alert'}), m('span', {}, " Reset")], url: clear_user_workspaces_url, newWin: false},
+            {title: [m(Icon, {name: 'alert'}), m('span', {}, " Switch Datasets")], url: switch_dataset_url, newWin: false},
             {title: "Logout", url: logout_url, newWin: false}];
 
-        let openUserLink = (linkInfo) =>{
+        let openUserLink = (linkInfo) => {
             linkInfo.newWin === true ? window.open(linkInfo.url) : window.location.href = linkInfo.url;
         }
 
@@ -139,9 +139,9 @@ class Body {
 
         let createBreadcrumb = () => {
             let path = [
-                    m('h4#dataName', {
-                            style: {display: 'inline-block', margin: '.25em 1em'},
-                            onclick: () => {
+                m('h4#dataName', {
+                        style: {display: 'inline-block', margin: '.25em 1em'},
+                        onclick: () => {
                                 app.setSelectedMode('dataset')
                                 dataset.datasetPreferences.datasourceMode = "Current"
                             }

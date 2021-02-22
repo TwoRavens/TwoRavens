@@ -1685,7 +1685,7 @@ let variableTagMetadata = (selectedProblem, variableName) => [
     },
     {
         name: 'Ordinal', active: getOrdinalVariables(selectedProblem).includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, 'ordinal', variableName),
+        onclick: () => toggleTag(selectedProblem, 'ordinal', variableName),
         title: defaultGroupDescriptions.ordinal
     },
     {
@@ -2022,6 +2022,7 @@ export let toggleGroup = (problem, tag, name) => {
             remove(problem.tags.loose, name);
             remove(problem.tags.crossSection, name);
             add(problem.tags.ordering, name);
+            problem.splitOptions.shuffle = false;
             if (problem.task !== 'forecasting')
                 setTask('forecasting', problem)
         } else {
@@ -2160,6 +2161,7 @@ export let toggleTag = (problem, tag, name) => {
                 problem.manipulations.push(step);
                 pipeline.push(step);
 
+                app.setRightTab('Manipulate')
                 manipulate.setConstraintMenu({type: 'transform', pipeline, step})
                     .then(() => manipulate.setConstraintPreferences({
                         menus: {

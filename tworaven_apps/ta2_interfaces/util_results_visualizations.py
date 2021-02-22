@@ -27,7 +27,8 @@ def util_results_real_clustered(data_pointer, metadata):
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
-        metadata['datafile'])
+        data_path=metadata['datafile'],
+        indexes=metadata.get('indexes'))
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
@@ -175,7 +176,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
-        metadata['datafile'])
+        metadata['datafile'],
+        indexes=metadata.get('indexes'))
 
     # ensure auxiliary datasets are present
     #
@@ -326,7 +328,8 @@ def util_results_importance_efd(data_pointer, metadata):
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
-        data_path=metadata['datafile'])
+        data_path=metadata['datafile'],
+        indexes=metadata.get('indexes'))
 
     results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
@@ -476,7 +479,8 @@ def util_results_importance_efd(data_pointer, metadata):
         status = EventJobUtil.import_dataset(
             settings.TWORAVENS_MONGO_DB_NAME,
             results_collection_name,
-            data_pointer)
+            data_pointer,
+            indexes=metadata.get('indexes'))
 
         if not status.success:
             return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}

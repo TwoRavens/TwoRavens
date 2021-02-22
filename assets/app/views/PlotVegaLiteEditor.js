@@ -22,6 +22,9 @@ export default class PlotVegaLiteEditor {
     oninit() {
         this.pendingSecondaryVariable = '';
     }
+    oncreate() {
+        m.redraw()
+    }
     view(vnode) {
         let {configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery} = vnode.attrs;
 
@@ -94,7 +97,7 @@ export default class PlotVegaLiteEditor {
                     // }))
                     mapping && ["style", m(TextFieldSuggestion, {
                         id: `mapboxStyleTextField`,
-                        value: (configuration.pendingMapboxStyle ?? configuration.mapboxStyle) || {light: 'streets', dark: 'dark'}[common.theme],
+                        value: (configuration.pendingMapboxStyle ?? configuration.mapboxStyle) || {light: 'light', dark: 'dark'}[common.theme],
                         suggestions: Object.keys(mapStyles),
                         enforce: true,
                         oninput: value => configuration.pendingMapboxStyle = value,

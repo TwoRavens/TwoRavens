@@ -23,7 +23,7 @@ import {setDatamartDefaults} from "./datamart/Datamart";
 import Subpanel from "../common/views/Subpanel";
 import {
     buildDefaultProblem,
-    buildEmptyProblem,
+    buildEmptyProblem, defaultGroupDescriptions,
     generateProblemID,
     getAbstractPipeline,
     getNominalVariables,
@@ -501,7 +501,8 @@ export let getData = async body => m.request({
     method: 'POST',
     body: Object.assign({
         datafile: workspace.datasetPath, // location of the dataset csv
-        collection_name: workspace.d3m_config.name // collection/dataset name
+        collection_name: workspace.d3m_config.name, // collection/dataset name
+        indexes: ['d3mIndex']
     }, body)
 }).then(response => {
     // console.log('-- getData --');
@@ -2321,7 +2322,14 @@ export async function handleAugmentDataMessage(msg_data) {
 
                 let joinedGroup = problemCopy.groups.find(group => group.name === 'Joined')
                 if (!joinedGroup) {
-                    joinedGroup = {name: 'Joined', color: colors.predictor, opacity: 0.3, nodes: []};
+                    joinedGroup = {
+                        id: problemCopy.groupCount++,
+                        name: 'Joined',
+                        color: colors.predictor,
+                        opacity: 0.3,
+                        nodes: [],
+                        description: defaultGroupDescriptions.joined
+                    };
                     problemCopy.groups.unshift(joinedGroup);
                     let targetGroups = getTargetGroups(problemCopy)
                     if (targetGroups.length > 0)

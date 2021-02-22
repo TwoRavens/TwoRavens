@@ -217,7 +217,7 @@ export let leftpanel = () => {
                                 style: {'margin-bottom': '1em'}
                             })]
                         }, m(Slider, {
-                            min: Math.log(5) * 10000,
+                            min: Math.log(1) * 10000,
                             max: Math.log(60 * 24 * 7) * 10000 + 1,
                             style: {width: '100%'},
                             value: Math.log(selectedProblem.searchOptions.timeBoundSearch || 15) * 10000,
@@ -2528,6 +2528,7 @@ export let loadFittedVsActuals = async (problem, adapter) => {
                     datafile,
                     query: compiled,
                     produceId,
+                    indexes: problem.tags.indexes,
                     // auxiliary datasets to join against
                     datasets
                 }
@@ -2625,6 +2626,7 @@ export let loadConfusionData = async (problem, adapter) => {
                     targets: getTargetVariables(problem),
                     collection_name: collectionName,
                     datafile: datafile,
+                    indexes: problem.tags.indexes,
                     query: compiled,
                     produceId,
                     datasets
@@ -3009,6 +3011,7 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
                     categoricals: [...getNominalVariables(problem)
                         .filter(variable => problem.results.variablesInitial.includes(variable))],
                     datafile: splitPath, // location of the dataset csv
+                    indexes: problem.tags.indexes,
                     collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
                     query: compiled
                 }
@@ -3198,6 +3201,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                         predictors: getPredictorVariables(problem),
                         categoricals: getNominalVariables(problem),
                         datafile: splitPath, // location of the dataset csv
+                        indexes: problem.tags.indexes,
                         collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
                         query: compiled
                     }

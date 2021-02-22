@@ -29,7 +29,7 @@ import {formatVariableSummary} from '../views/VariableSummary';
 
 import {
     getGeographicVariables,
-    getNominalVariables,
+    getNominalVariables, getOrderingVariable,
     getOrdinalVariables,
     getSelectedProblem,
     getTransformVariables,
@@ -713,7 +713,7 @@ export let setConstraintMenu = async menu => {
 
     // select a random variable if none selected yet, or previously selected variable no longer available
     let variable = !constraintMetadata.columns || !variables.includes(constraintMetadata.columns[0])
-        ? variables[Math.floor(Math.random() * variables.length)]
+        ? (getOrderingVariable(getSelectedProblem()) ?? variables[Math.floor(Math.random() * variables.length)])
         : constraintMetadata.columns[0];
 
     // select the variable- also infers the best menu type (continuous, discrete, date)

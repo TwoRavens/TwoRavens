@@ -63,6 +63,7 @@ import csv
 from dateutil import parser
 from collections import deque
 
+CHUNK_SIZE = 10 ** 5
 
 @celery_app.task(ignore_result=True)
 def stream_and_store_results(raven_json_str, stored_request_id,
@@ -298,17 +299,17 @@ def split_dataset(configuration, workspace):
     inferred_freq = None
     dtypes = {}
 
+    time_column = problem.get('forecastingHorizon', {}).get('column')
+    time_format = problem.get('time_format', {}).get(time_column)
+    if time_format:
+        dtypes[time_column] = str
+
     # WARNING: dates are assumed to be monotonically increasing
     #    this is to make it possible to support arbitrarily large datasets
-    if problem.get('taskType') == 'FORECASTING' and problem['forecastingHorizon']['column']:
-        time_column = problem['forecastingHorizon']['column']
-        time_format = problem.get('time_format', {}).get(time_column)
+    if problem.get('taskType') == 'FORECASTING' and time_column:
 
-        if time_format:
-            dtypes[time_column] = str
         for cross_section in problem.get('crossSection', []):
             dtypes[cross_section] = str
-
 
         cross_section_date_limits = {}
         time_buffer = []
@@ -317,7 +318,7 @@ def split_dataset(configuration, workspace):
         # create generator that provides a data chunk on every iteration
         data_file_generator = pd.read_csv(
             configuration['dataset_path'],
-            chunksize=10 ** 5,
+            chunksize=CHUNK_SIZE,
             usecols=keep_variables,
             dtype=dtypes)
 
@@ -456,7 +457,7 @@ def split_dataset(configuration, workspace):
 
     data_file_generator = pd.read_csv(
         configuration['dataset_path'],
-        chunksize=10 ** 5,
+        chunksize=CHUNK_SIZE,
         usecols=keep_variables,
         dtype=dtypes)
     row_count_chunked = 0
@@ -466,7 +467,8 @@ def split_dataset(configuration, workspace):
             data_file_generator,
             splits_file_generator):
 
-        # rows with NaN values become object rows, which may contain multiple types. The NaN values become empty strings
+        # rows with NaN values cause the entire column to become object, which may contain multiple types.
+        #   Of which, the NaN values become empty strings
         # this converts '' to np.nan in non-nominal columns, so that nan may be dropped
         # nominals = problem.get('categorical', [])
         # for column in [col for col in problem['targets'] if col not in nominals]:
@@ -558,6 +560,15 @@ def split_dataset(configuration, workspace):
             else:
                 shuffle = split_options.get('shuffle', True)
                 stratified = split_options.get('stratified')
+
+                if time_format and time_column:
+                    # TODO: replace time_column assignment with key= in pandas 1.1.0+
+                    parsed_column = f'__tr_parsed_{time_column}'
+                    dataframe[parsed_column] = dataframe[time_column].apply(
+                        lambda x: get_date(x, time_format=time_format))
+                    dataframe.sort_values(by=[parsed_column], inplace=True)
+                    dataframe.reset_index(drop=True, inplace=True)
+                    del dataframe[parsed_column]
 
                 def run_split():
                     try:

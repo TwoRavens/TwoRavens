@@ -742,7 +742,7 @@ let fillVegaSchema = (schema, data, flip) => {
     return JSON.parse(stringified);
 };
 
-let defaultRecordLimit = 5000;
+let defaultRecordLimit = 20000;
 let customConfiguration = {};
 window.customConfiguration = customConfiguration;
 let mappingConfiguration = {

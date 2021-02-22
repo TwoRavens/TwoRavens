@@ -24,7 +24,7 @@ class Model(object):
     def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
         if model_id is None:
             db_model = StatisticalModel.objects.create()
-            model_id = 'oss-' + str(db_model.model_id)
+            model_id = 'oss_' + str(db_model.model_id)
 
         self.model = model
         self.system = system

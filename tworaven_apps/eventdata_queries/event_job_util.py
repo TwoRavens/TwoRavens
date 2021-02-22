@@ -751,7 +751,7 @@ class EventJobUtil(object):
 
         if indexes:
             for index in indexes:
-                # print('creating index ', index, ' on ', collection_name)
+                print('creating index ', index, ' on ', collection_name)
                 db[collection_name].create_index(index)
 
         dataset_record.loading = False

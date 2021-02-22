@@ -125,6 +125,7 @@ export let defaultGroupDescriptions = {
     privileged: 'A privileged variable may or may not exist in the test set.',
     exogenous: 'An exogenous variable is determined outside of the model.',
     index: 'An index variable typically has one unique value per observation.',
+    joined: 'Variables joined from another dataset via DataMart',
     // TODO: TAG
     featurize: '',
     randomize: ''
@@ -1000,7 +1001,7 @@ export let isProblemValid = problem => {
         }
     }
     if (problem.tags.loose.length > 0) {
-        app.alertWarn("This problem has loose variables in the modeling space that will not be used in the model: " + String(problem.tags.loose))
+        app.alertLog("This problem has loose variables in the modeling space that will not be used in the model: " + String(problem.tags.loose))
     }
     // this triggers the popup
     if (!valid)
