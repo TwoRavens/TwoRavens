@@ -283,7 +283,12 @@ export default class PlotVegaLiteEditor {
             m(Table, {
                 keyed: true,
                 data: [
-                    ["type", m(Dropdown, {
+                    ["type", allMarks.length === 2 ? m(ButtonRadio, {
+                        id: 'customExploreType',
+                        onclick: state => configuration.mark = state,
+                        activeSection: configuration.mark,
+                        sections: allMarks.map(mark => ({value: mark}))
+                    }) : m(Dropdown, {
                         items: allMarks,
                         activeItem: configuration.mark,
                         onclickChild: value => configuration.mark = value
