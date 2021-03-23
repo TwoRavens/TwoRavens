@@ -373,7 +373,7 @@ export function setSelectedMode(mode) {
 
     if (selectedMode !== mode) {
         // ensures that non-editable problems are not selected
-        if (!isExploreMode && previousMode === 'explore' && selectedProblem?.system === 'auto') {
+        if (!isExploreMode && previousMode === 'explore' && selectedProblem?.system === 'discovered') {
             let copiedProblem = getProblemCopy(selectedProblem);
             workspace.raven_config.problems[copiedProblem.problemId] = copiedProblem;
             setSelectedProblem(copiedProblem.problemId);
@@ -799,6 +799,9 @@ export let setShowModalTA2Debug = state => showModalTA2Debug = state;
 export let showModalDownload = false;
 export let setShowModalDownload = state => showModalDownload = state;
 
+export let showModalProblems = false;
+export let setShowModalProblems = state => showModalProblems = state;
+
 // menu state within datamart component
 export let datamartPreferences = {
     // default state for query
@@ -1033,7 +1036,8 @@ export let locationUnits = {
     'latitude': ['decimal'], // ['sexagesimal', 'minutes']
     'longitude': ['decimal'],
     'country': ["ISO-3", "ICEWS", "UN M.49", "cowcode", "gwcode", "gtdcode", "ISO-2"],
-    'US_state': ['US_state_name', 'USPS']
+    'US_state': ['US_state_name', 'USPS'],
+    'DE_state': ['DE_state_name', 'id']
 }
 
 let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'

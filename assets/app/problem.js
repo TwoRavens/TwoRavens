@@ -6,8 +6,8 @@ import * as common from "../common/common";
 import * as manipulate from "./manipulations/manipulate";
 import * as results from "./modes/results";
 import * as app from "./app";
+import {workspace} from "./app";
 import * as utils from './utils';
-import {setVariableSummaryAttr, workspace} from "./app";
 
 /**
  * Problem
@@ -125,6 +125,7 @@ export let defaultGroupDescriptions = {
     privileged: 'A privileged variable may or may not exist in the test set.',
     exogenous: 'An exogenous variable is determined outside of the model.',
     index: 'An index variable typically has one unique value per observation.',
+    matched: 'Matched variables satisfy the variable search in the leftpanel.',
     // TODO: TAG
     featurize: '',
     randomize: ''
@@ -136,7 +137,8 @@ export let defaultGroupDescriptions = {
  */
 export let buildEmptyProblem = problemId => ({
     problemId,
-    system: 'auto',
+    name: 'empty problem',
+    system: 'user',
     groupCount: 2,
     groups: [
         {
@@ -278,8 +280,8 @@ export let buildDefaultProblem = problemDoc => {
 
     // defaultProblem
     let problem = {
-        problemId: problemDoc.about.problemID,
-        system: 'auto',
+        problemId: 'baseline problem',
+        system: 'user',
         version: problemDoc.about.version,
 
         description: problemDoc.about.problemDescription,
@@ -492,7 +494,7 @@ export function standardizeDiscovery(problems) {
 
         out[problemId] = {
             problemId,
-            system: "auto",
+            system: "discovered",
             description: undefined,
             groupCount: 2,
             groups: [
@@ -904,7 +906,7 @@ export let loadProblemPreprocess = async problem =>
  * @param {string} problemId
  */
 export function setSelectedProblem(problemId) {
-    console.trace("selected", problemId)
+    console.log("selected", problemId)
     let ravenConfig = app.workspace.raven_config;
 
     if (!problemId || ravenConfig.selectedProblem === problemId) return;
@@ -995,7 +997,7 @@ export let isProblemValid = problem => {
             valid = false;
         }
 
-        if (problem.task === "classification" && app.variableSummaries[targets[0]].uniqueCount > 100) {
+        if (problem.task === "classification" && (app.variableSummaries[targets?.[0]]?.uniqueCount ?? 0) > 100) {
             app.alertWarn("The target variable has more than 100 classes. This may prevent meaningful results.")
         }
     }
@@ -1025,3 +1027,43 @@ export let needsManipulationRewritePriorToSolve = problem => {
     let hasManipulation = (app.workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
     return hasManipulation || hasNominalCast || hasOrdering;
 };
+
+export let getProblemTrees = () => {
+
+    // filter information down
+    let problems = Object.values(workspace.raven_config.problems)
+        // .filter(problem => ['user', 'solved'].includes(problem.system))
+        .reduce((obj, problem) => Object.assign(obj, {
+            [problem.problemId]: {
+                pending: problem.pending,
+                system: problem.system,
+                problemId: problem.problemId,
+                provenanceId: problem.provenanceId,
+                children: []
+            }
+        }), {});
+
+    // assign children
+    Object.values(problems)
+        // if there is a parent
+        .filter(problem => problems?.[problem.provenanceId])
+        // update parent with reference to child
+        .forEach(problem => utils.add(problems[problem.provenanceId].children, problem.problemId))
+
+    let substituteChilden = problem => {
+        problem.children = problem.children.map(childId => substituteChilden(problems[childId]))
+        if (problem.children.length === 0) {
+            delete problem.children
+        }
+        return problem
+    }
+
+    // build trees
+    return Object.values(problems)
+        // if there is no parent
+        .filter(problem => !problem.provenanceId)
+        // substitute children recursively
+        .map(substituteChilden)
+        // drop discovered problems with no children
+        .filter(problem => problem.system !== 'discovered' || problem.children);
+}

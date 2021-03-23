@@ -42,7 +42,19 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 import Body_Deploy from "./views/Body_Deploy";
-import {getAbstractPipeline, getSelectedProblem} from "./problem";
+import {
+    getAbstractPipeline,
+    getDescription, getPredictorVariables,
+    getProblemCopy,
+    getSelectedProblem, getSubtask,
+    getTargetVariables,
+    setSelectedProblem
+} from "./problem";
+import {boldPlain} from "./utils";
+import ButtonLadda from "./views/ButtonLadda";
+import {submitDiscProb} from "./modes/model";
+import Checkbox from "../common/views/Checkbox";
+import {ProblemList} from "./views/ProblemList";
 
 
 class Body {
@@ -386,7 +398,7 @@ class Body {
      * Start: Construct potential modal boxes for the page.
      */
     constructModals() {
-        return [
+        let modals = [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
             app.showModalWorkspace && m(ModalWorkspace, {
@@ -650,6 +662,14 @@ class Body {
                     m(TextField, {value: JSON.stringify(getSelectedProblem().solutions.d3m)}))
             )
         ]
+
+        if (app.showModalProblems) modals.push(m(ModalVanilla, {
+            id: 'problemsModal',
+            setDisplay: app.setShowModalProblems
+        }, m(ProblemList, {
+            problems: workspace.raven_config.problems
+        })))
+        return modals;
     }
 
     /*

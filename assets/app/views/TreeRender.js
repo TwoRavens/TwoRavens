@@ -23,21 +23,20 @@ export default class TreeRender {
                         let nodeState = state[datum.id || datum.name];
                         nodeState.closed = !nodeState.closed;
                     }
-                }, datum.children && m(Icon, {name: (state[datum.id || datum.name] || {}).closed ? 'triangle-right' : 'triangle-down'})),
+                }, datum.children && m(Icon, {name: state?.[datum.id || datum.name]?.closed ? 'triangle-right' : 'triangle-down'})),
                 m('div#nodeContents', {
                     style: {width: 'calc(100% - 22px)', display: 'inline-block'}
                 }, renderNode(datum, data)),
             ),
 
             // children nodes
-            datum.children && !(state[datum.id || datum.name] || {}).closed && m('div', {
+            datum.children && !state?.[datum.id || datum.name]?.closed && m('div', {
                 style: {
                     'border-left': '1px solid black',
                     'margin-left': '9px',
                     'padding-left': '5px'
                 }
-            }, m(TreeRender, {data: datum.children, state, renderNode}))
-            )
+            }, m(TreeRender, {data: datum.children, state, renderNode})))
         );
     }
 }

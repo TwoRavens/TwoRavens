@@ -47,6 +47,7 @@ export default class PlotMapbox {
         window.specification = specification;
         delete specification.selection;
         if (this.map === undefined) {
+            console.log(specification.data?.values?.features)
             let bounds = [
                 specification.data?.values?.features || [],
                 ...(specification.layer || []).map(layer => layer.data.values.features)
