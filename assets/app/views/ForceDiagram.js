@@ -14,7 +14,7 @@ export default class ForceDiagram {
         this.isDragging = false;
         this.selectedPebble = undefined;
         this.hoverPebble = undefined;
-        this.frozenGroups = {};
+        this.frozenGroups = new Set();
         this.nodes = {};
         this.selectors = {};
         this.filtered = {};  // a cleaned copy of the data passed for pebbles, groups, etc.
@@ -141,45 +141,44 @@ export default class ForceDiagram {
         // called on each force animation frame
         let tick = () => {
 
-            let groupCoords = groups
-                .reduce((out, group) => Object.assign(out, {
-                    [group.id]: [...group.nodes].map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y])
-                }), {});
+            let groupCoords = new Map(groups.map(group => [
+                group.id,
+                [...group.nodes].map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y])
+            ]));
 
-            let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
-                : Object.assign(out, {
-                    [group.id]: d3.polygonHull(lengthen(groupCoords[group.id], attrs.hullRadius))
-                }), {});
+            let hullCoords = new Map(groups.filter(group => group.nodes.size > 0)
+                .map(group => [
+                    group.id,
+                    d3.polygonHull(lengthen(groupCoords.get(group.id), attrs.hullRadius))
+                ]));
 
             this.selectors.hulls.selectAll('path.hull')
-                .attr('d', d => `M${hullCoords[d.id].join('L')}Z`);
+                .attr('d', d => `M${hullCoords.get(d.id).join('L')}Z`);
             this.selectors.hulls.selectAll('path.hullLabelPath')
-                .attr('d', d => `M${makeHullLabelSegment(hullCoords[d.id]).join('L')}Z`);
+                .attr('d', d => `M${makeHullLabelSegment(hullCoords.get(d.id)).join('L')}Z`);
 
             // update positions of groupLines
-            let centroids = Object.keys(hullCoords)
-                .reduce((out, group) => Object.assign(out, {[group]: getMean(groupCoords[group])}), {});
+            let centroids = new Map(hullCoords.keys().map(groupId => [groupId, getMean(groupCoords.get(groupId))]));
 
-            let intersections = groupLinks.reduce((out, line) => {
-                let source = intersectLineHull(centroids[line.target], centroids[line.source], hullCoords[line.source], attrs.hullRadius);
-                let target = intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius);
+            let intersections = new Map(groupLinks.map(line => {
+                let source = intersectLineHull(centroids.get(line.target), centroids.get(line.source), hullCoords.get(line.source), attrs.hullRadius);
+                let target = intersectLineHull(centroids.get(line.source), centroids.get(line.target), hullCoords.get(line.target), attrs.hullRadius);
 
                 if (source?.every?.(_ => _) && target?.every?.(_ => _)) {
                     // flip arrow direction when regions are overlapping
-                    if (mag(sub(centroids[line.target], target)) > mag(sub(centroids[line.target], source)))
+                    if (mag(sub(centroids.get(line.target), target)) > mag(sub(centroids.get(line.target), source)))
                         [source, target] = [target, source];
 
-                    out[`${line.source}-${line.target}`] = {source, target};
+                    return [`${line.source}-${line.target}`, {source, target}]
                 }
-                return out;
-            }, {});
+            }).filter(_=>_));
 
-            this.selectors.groupLinks.filter(line => `${line.source}-${line.target}` in intersections)
-                .attr('x1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[0] || 0)
-                .attr('y1', line => (intersections[`${line.source}-${line.target}`].source || centroids[line.source])[1] || 0)
-                .attr('x2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[0] || 0)
-                .attr('y2', line => (intersections[`${line.source}-${line.target}`].target || centroids[line.target])[1] || 0);
-            this.selectors.groupLinks.style("opacity", line => `${line.source}-${line.target}` in intersections ? 1 : 0);
+            this.selectors.groupLinks.filter(line => intersections.has(`${line.source}-${line.target}`))
+                .attr('x1', line => (intersections.get(`${line.source}-${line.target}`).source || centroids.get(line.source))[0] || 0)
+                .attr('y1', line => (intersections.get(`${line.source}-${line.target}`).source || centroids.get(line.source))[1] || 0)
+                .attr('x2', line => (intersections.get(`${line.source}-${line.target}`).target || centroids.get(line.target))[0] || 0)
+                .attr('y2', line => (intersections.get(`${line.source}-${line.target}`).target || centroids.get(line.target))[1] || 0);
+            this.selectors.groupLinks.style("opacity", line => intersections.has(`${line.source}-${line.target}`) ? 1 : 0);
             // .style('opacity', line => Object.values(intersections[`${line.source}-${line.target}`]).flatMap(_ => _).some(v => v === undefined) ? 0 : 1)
 
             // NOTE: update positions of nodes BEFORE adjusting positions for group forces
@@ -190,12 +189,12 @@ export default class ForceDiagram {
 
             // update positions of nodes (not implemented as a force because centroid computation is shared)
             // group members attract each other, repulse non-group members
-            groups.filter(group => group.id in centroids).forEach(group => {
+            groups.filter(group => centroids.has(group.id)).forEach(group => {
                 nodeArray.forEach(node => {
                     if (node.fx || node.fy) return;
                     let sign = group.nodes.has(node.name) ? 1 : -1;
 
-                    let delta = [centroids[group.id][0] - node.x, centroids[group.id][1] - node.y];
+                    let delta = [centroids.get(group.id)[0] - node.x, centroids.get(group.id)[1] - node.y];
                     let dist = Math.sqrt(delta.reduce((sum, axis) => sum + axis * axis, 0));
                     let norm = dist === 0 ? [0, 0] : delta.map(axis => axis / dist);
 
@@ -230,8 +229,8 @@ export default class ForceDiagram {
             });
 
             // this.selectors.hulls.selectAll('text')
-            //     .attr("transform", d => `translate(${centroids[d.id][0] - d.id.length * 5},${centroids[d.id][1]})`)
-            // .attr('dy', d => centroids[d.id] - Math.min(...hullCoords[d.id].map(_ => _[1])))
+            //     .attr("transform", d => `translate(${centroids.get(d.id)[0] - d.id.length * 5},${centroids.get(d.id)[1]})`)
+            // .attr('dy', d => centroids.get(d.id) - Math.min(...hullCoords[d.id].map(_ => _[1])))
         };
         this.force.on('tick', () => {
             // somehow tick is keeping a reference to an older 'this' after being rebound
@@ -259,7 +258,7 @@ export default class ForceDiagram {
                 .style('stroke-width', '4px');
             // context line from a group
             else if (attrs.contextGroup && this.position.x && this.position.y) {
-                let sourceCoords = d3.polygonHull(lengthen([...groups[attrs.contextGroup.id].nodes]
+                let sourceCoords = d3.polygonHull(lengthen([...groups.find(group => group.id === attrs.contextGroup.id).nodes]
                     .map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y], 0)))
 
                 let sourceCenter = getMean(sourceCoords);
@@ -280,7 +279,15 @@ export default class ForceDiagram {
         // track mouse position for dragging, remove arrow on click
         d3.select(dom)
             .on('mousemove', (attrs.contextPebble || attrs.contextGroup) && updatePosition)
-            .on('click', () => {
+            .on('click', e => {
+                if (attrs.contextGroup) {
+                    groups.filter(group => group.nodes.size > 0)
+                        .filter(group => isInside([this.position.x, this.position.y], d3.polygonHull(lengthen(
+                            [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y]),
+                            attrs.hullRadius, true))))
+                        .forEach(group => attrs.groupEvents.contextmenu(e, group));
+                }
+
                 attrs.contextPebble = undefined;
                 attrs.contextGroup = undefined;
                 this.selectors.nodeDragLine.attr('display', 'none')
@@ -316,31 +323,29 @@ export default class ForceDiagram {
                         .attr('transform', d => `translate(${this.nodes[d].fx},${this.nodes[d].fy})`);
 
                     if (onDragOver) {
-                        let groupCoords = groups
-                            .reduce((out, group) => Object.assign(out, {
-                                [group.id]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
-                            }), {});
-
-                        let hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
-                            : Object.assign(out, {
-                                [group.id]: d3.polygonHull(lengthen(groupCoords[group.id], attrs.hullRadius, this.isDragging))
-                            }), {});
+                        let hullCoords = new Map(groups.filter(group => group.nodes.size > 0)
+                            .map(group => [
+                                group.id,
+                                d3.polygonHull(lengthen(
+                                    [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y]),
+                                    attrs.hullRadius, true))
+                            ]));
 
                         // don't freeze own group
                         groups
                             .filter(group => group.nodes.has(e.subject.name))
-                            .forEach(group => delete hullCoords[group.id]);
+                            .forEach(group => hullCoords.delete(group.id));
 
-                        Object.keys(hullCoords).forEach(groupId => {
-                            if (isInside([e.subject.fx, e.subject.fy], hullCoords[groupId])) {
-                                this.frozenGroups[groupId] = true;
-                                !this.isPinned && groups.find(group => String(group.id) === groupId).nodes.forEach(node => {
+                        hullCoords.keys().forEach(groupId => {
+                            if (isInside([e.subject.fx, e.subject.fy], hullCoords.get(groupId))) {
+                                this.frozenGroups.add(groupId);
+                                !this.isPinned && groups.find(group => group.id === groupId).nodes.forEach(node => {
                                     node = this.nodes[node];
                                     if (!node.fx) node.fx = node.x;
                                     if (!node.fy) node.fy = node.y;
                                 })
-                            } else if (this.frozenGroups[groupId]) {
-                                !this.isPinned && groups.find(group => String(group.id) === groupId).nodes.forEach(node => {
+                            } else if (this.frozenGroups.has(groupId)) {
+                                !this.isPinned && groups.find(group => group.id === groupId).nodes.forEach(node => {
                                     if (node === this.selectedPebble?.name) return;
                                     delete this.nodes[node].fx;
                                     delete this.nodes[node].fy;
@@ -354,8 +359,8 @@ export default class ForceDiagram {
                     this.isDragging = false;
                     if (!e.active) this.force.alphaTarget(0);
 
-                    !this.isPinned && Object.keys(this.frozenGroups).forEach(groupId => {
-                        let nodeNames = [...groups.find(group => String(group.id) === groupId).nodes];
+                    !this.isPinned && [...this.frozenGroups].forEach(groupId => {
+                        let nodeNames = [...groups.find(group => group.id === groupId).nodes];
                         nodeNames.forEach(node => {
                             if (node === this.selectedPebble?.name) return;
                             delete this.nodes[node].fx;
@@ -376,8 +381,7 @@ export default class ForceDiagram {
 
                     let hullCoords;
                     if (onDragOver || onDragAway) {
-                        hullCoords = new Map(groups
-                            .filter(group => group.nodes.size > 0)
+                        hullCoords = new Map(groups.filter(group => group.nodes.size > 0)
                             .map(group => [
                                 group.id,
                                 d3.polygonHull(lengthen(
@@ -409,7 +413,7 @@ export default class ForceDiagram {
                     if (onDragOver) {
                         groups
                             .filter(group => group.nodes.has(e.subject.name))
-                            .forEach(group => delete hullCoords.get(group.id));
+                            .forEach(group => hullCoords.delete(group.id));
                         hullCoords.keys()
                             .filter(groupId => isInside(dragCoord, hullCoords.get(groupId)))
                             .forEach(groupId => onDragOver(e.subject, groupId))

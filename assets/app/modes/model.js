@@ -1388,8 +1388,7 @@ export let buildForceData = problem => {
 
     let {groups, groupLinks} = buildGroupingState(problem);
 
-    let combinedGroups = common.deepCopy(groups)
-        .reduce((out, group) => Object.assign(out, {[group.id]: group}), {});
+    let combinedGroups = new Map(common.deepCopy(groups).map(group => [group.id, group]));
 
     // TODO: can be linearized with a hashmap
     // for any combination of groups, collapse their intersection if their intersection is large enough
@@ -1421,10 +1420,10 @@ export let buildForceData = problem => {
 
                 // app.remove pebbles that were collapsed from their parent groups
                 includedGroups
-                    .forEach(group => combinedGroups[group.id].nodes = new Set([...group.nodes].filter(node => !partition.has(node))));
+                    .forEach(group => combinedGroups.get(group.id).nodes = new Set([...group.nodes].filter(node => !partition.has(node))));
                 // add the pebble that represents the merge to each parent group
                 includedGroups
-                    .forEach(group => combinedGroups[group.id].nodes.add(mergedName));
+                    .forEach(group => combinedGroups.get(group.id).nodes.add(mergedName));
 
                 summaries[mergedName] = {
                     pdfPlotType: 'collapsed',
@@ -1449,7 +1448,7 @@ export let buildForceData = problem => {
         ...groups.flatMap(group => [...group.nodes]).filter(pebble => !removedPebbles.has(pebble)),
         ...addedPebbles
     ])];
-    groups = Object.values(combinedGroups);
+    groups = [...combinedGroups.values()];
 
     return {pebbles, groups, groupLinks, summaries};
 };
@@ -1700,27 +1699,25 @@ export let mutateNodes = problem => (state, context) => {
     //     : pebbles.filter(variable => variable.toLowerCase().includes(variableSearchText));
 
     // the order of the keys indicates precedence, lower keys are more important
-    let params = Object.assign(
-        problem.groups.reduce((out, group) =>
-            Object.assign(out, {[group.id]: new Set(group.nodes)}), {}),
-        {
-            loose: new Set(problem.tags.loose),
-            transformed: new Set(problem.tags.transformed),
-            nominal: new Set(getNominalVariables(problem)),
-            geographic: new Set(getGeographicVariables()),
-            ordinal: new Set(getOrdinalVariables(selectedProblem)),
-            boundary: new Set(problem.tags.boundary),
-            temporal: new Set(Object.keys(app.variableSummaries)
-                .filter(variable => app.variableSummaries[variable].timeUnit)),
-            weights: new Set(problem.tags.weights),
-            privileged: new Set(problem.tags.privileged),
-            exogenous: new Set(problem.tags.exogenous),
-            featurize: new Set(problem.tags.featurize),
-            randomize: new Set(problem.tags.randomize),
-            crossSection: new Set(problem.tags.crossSection),
-            indexes: new Set(problem.tags.indexes),
-            // matched: new Set(matchedVariables),
-        });
+    let params = new Map([
+        ...problem.groups.map(group => [group.id, new Set(group.nodes)]),
+        ['loose', new Set(problem.tags.loose)],
+        ['transformed', new Set(problem.tags.transformed)],
+        ['nominal', new Set(getNominalVariables(problem))],
+        ['geographic', new Set(getGeographicVariables())],
+        ['ordinal', new Set(getOrdinalVariables(selectedProblem))],
+        ['boundary', new Set(problem.tags.boundary)],
+        ['temporal', new Set(Object.keys(app.variableSummaries)
+            .filter(variable => app.variableSummaries[variable].timeUnit))],
+        ['weights', new Set(problem.tags.weights)],
+        ['privileged', new Set(problem.tags.privileged)],
+        ['exogenous', new Set(problem.tags.exogenous)],
+        ['featurize', new Set(problem.tags.featurize)],
+        ['randomize', new Set(problem.tags.randomize)],
+        ['crossSection', new Set(problem.tags.crossSection)],
+        ['indexes', new Set(problem.tags.indexes)],
+            // ['matched', new Set(matchedVariables)],
+    ]);
 
     let strokeWidths = Object.assign(
         problem.groups.reduce((out, group) =>
@@ -1788,9 +1785,9 @@ export let mutateNodes = problem => (state, context) => {
     });
 
     // set additional styling for each node
-    pebbles.forEach(pebble => Object.keys(params)
+    pebbles.forEach(pebble => params.keys()
         // only apply styles on classes the variable is a member of
-        .filter(label => params[label].has(pebble))
+        .filter(label => params.get(label).has(pebble))
         .forEach(label => {
             if (label in strokeWidths) context.nodes[pebble].strokeWidth = strokeWidths[label];
             if (label in nodeColors) context.nodes[pebble].nodeCol = nodeColors[label];
