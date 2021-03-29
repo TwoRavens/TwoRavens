@@ -94,6 +94,7 @@ export class CanvasModel {
                     m.redraw();
                 },
                 onDragOver: (pebble, groupId) => {
+                    console.log("pebble dragged over group:", pebble, groupId);
                     if (groupId === 'Loose') return;
                     let pebbles = forceData.summaries[pebble.name].pdfPlotType === 'collapsed'
                         ? forceData.summaries[pebble.name].childNodes : [pebble.name];
@@ -1994,7 +1995,7 @@ export let toggleGroup = (problem, tag, name) => {
         }
         toggle(problem.tags.crossSection, name);
     } else {
-        logParams.feature_id = `TOGGLE_INCLUSION_IN_${problem.groups.find(group => group.id === tag).name.toUpperCase()}`;
+        logParams.feature_id = `TOGGLE_INCLUSION_IN_${(problem.groups.find(group => group.id === tag)?.name ?? '?').toUpperCase()}`;
         // toggle inclusion in user-defined group, remove from all other groups
         problem.groups.forEach(group => (group.id === tag ? toggle : remove)(group.nodes, name))
 

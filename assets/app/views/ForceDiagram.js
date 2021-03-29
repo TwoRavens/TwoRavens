@@ -161,7 +161,6 @@ export default class ForceDiagram {
                 .reduce((out, group) => Object.assign(out, {[group]: getMean(groupCoords[group])}), {});
 
             let intersections = groupLinks.reduce((out, line) => {
-                // source: centroids[line.source],
                 let source = intersectLineHull(centroids[line.target], centroids[line.source], hullCoords[line.source], attrs.hullRadius);
                 let target = intersectLineHull(centroids[line.source], centroids[line.target], hullCoords[line.target], attrs.hullRadius);
 
@@ -243,7 +242,7 @@ export default class ForceDiagram {
             // }
             tick()
         });
-        this.force.alphaTarget( 1).restart();
+        this.force.alphaTarget(1).restart();
         setTimeout(() => {
             if (this.isDragging) return;
             this.force.alphaTarget(0).restart();
@@ -375,17 +374,16 @@ export default class ForceDiagram {
                     // prevent drag actions if the drag distance is too small
                     if (Math.abs(mag(sub(dragCoord, this.startDragLocation))) < 50) return;
 
-                    let groupCoords, hullCoords;
+                    let hullCoords;
                     if (onDragOver || onDragAway) {
-                        groupCoords = groups
-                            .reduce((out, group) => Object.assign(out, {
-                                [group.id]: [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y])
-                            }), {});
-
-                        hullCoords = groups.reduce((out, group) => group.nodes.length === 0 ? out
-                            : Object.assign(out, {
-                                [group.id]: d3.polygonHull(lengthen(groupCoords[group.id], attrs.hullRadius, true))
-                            }), {});
+                        hullCoords = new Map(groups
+                            .filter(group => group.nodes.size > 0)
+                            .map(group => [
+                                group.id,
+                                d3.polygonHull(lengthen(
+                                    [...group.nodes].map(node => [this.nodes[node].x, this.nodes[node].y]),
+                                    attrs.hullRadius, true))
+                            ]));
                     }
 
                     if (onDragAway) {
@@ -395,9 +393,9 @@ export default class ForceDiagram {
                                 if (group.nodes.size === 1)
                                     return false;
                                 if (group.nodes.size === 2)
-                                    return mag(sub(...hullCoords[group.id])) > 100;
+                                    return mag(sub(...hullCoords.get(group.id))) > 50;
 
-                                let reducedHull = hullCoords[group.id]
+                                let reducedHull = hullCoords.get(group.id)
                                     .filter(coord => coord[0] !== dragCoord[0] && coord[1] !== dragCoord[1]);
                                 let centroidReduced = jamescentroid(reducedHull);
                                 let distanceDragged = mag(sub(dragCoord, centroidReduced));
@@ -411,8 +409,9 @@ export default class ForceDiagram {
                     if (onDragOver) {
                         groups
                             .filter(group => group.nodes.has(e.subject.name))
-                            .forEach(group => delete hullCoords[group.id]);
-                        Object.keys(hullCoords).filter(groupId => isInside(dragCoord, hullCoords[groupId]))
+                            .forEach(group => delete hullCoords.get(group.id));
+                        hullCoords.keys()
+                            .filter(groupId => isInside(dragCoord, hullCoords.get(groupId)))
                             .forEach(groupId => onDragOver(e.subject, groupId))
                     }
 
