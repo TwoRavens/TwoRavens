@@ -593,14 +593,15 @@ export let getSelectedProblem = () => {
 };
 
 /**
- * Return the problem description--or autogenerate one
+ * Return the problem description--or generate one
  * @param {Problem} problem
  */
 export function getDescription(problem) {
     if (problem.description) return problem.description;
     let predictors = getPredictorVariables(problem);
     let targets = getTargetVariables(problem);
-    if (targets.length === 0 || predictors.length === 0) return "Empty problem. Please add some variables to the model via the variables tab.";
+    if (targets.length === 0) return "No target variables detected."
+    if (predictors.length === 0) return "Empty problem. Please add some variables to the model via the variables tab.";
     return `${targets} is predicted by ${predictors.slice(0, -1).join(", ")} ${predictors.length > 1 ? 'and ' : ''}${predictors[predictors.length - 1]}`;
 }
 

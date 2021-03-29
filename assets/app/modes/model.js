@@ -52,7 +52,7 @@ import {
 } from "../problem";
 import ForceDiagramGroup from "../views/ForceDiagramGroup";
 import TreeRender from "../views/TreeRender";
-import {workspace} from "../app";
+import {variableSummaries, workspace} from "../app";
 
 
 export class CanvasModel {
@@ -221,6 +221,15 @@ export class CanvasModel {
                         width: '150px'
                     }
                 }, [
+                    variableSearchText?.length && {
+                        id: "matchedButton",
+                        vars: variableSearchText.length === 0 ? []
+                            : Object.keys(app.variableSummaries).filter(variable => variable.toLowerCase().includes(variableSearchText)),
+                        name: 'Matched',
+                        borderColor: app.colors.matched,
+                        innerColor: app.colors.matched,
+                        width: 0
+                    },
                     {
                         id: "indexButton",
                         vars: selectedProblem.tags.indexes,
@@ -342,7 +351,7 @@ export class CanvasModel {
                         innerColor: group.color,
                         width: 0
                     }))
-                ].filter(row => row.vars.length > 0).map(row =>
+                ].filter(row => row && row.vars.length > 0).map(row =>
                     m(`#${row.id}[style=width:100% !important]`,
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
                             m(`circle[cx=10][cy=10][fill=${row.innerColor}][fill-opacity=0.6][r=9][stroke=${row.borderColor}][stroke-opacity=${row.width}][stroke-width=2]`))),
@@ -460,7 +469,7 @@ export let leftpanel = forceData => {
         // if no search string, match nothing
         let matchedVariables = variableSearchText.length === 0 ? []
             : leftpanelVariables.filter(variable => variable.toLowerCase().includes(variableSearchText)
-                || (app.variableSummaries.label || "").toLowerCase().includes(variableSearchText));
+                || (app.variableSummaries?.[variable]?.label ?? "").toLowerCase().includes(variableSearchText));
 
         // reorder leftpanel variables
         leftpanelVariables = [
@@ -477,10 +486,12 @@ export let leftpanel = forceData => {
                     m(TextField, {
                         id: 'searchVar',
                         placeholder: 'Search variables and labels',
+                        autocomplete: "off",
                         oninput: setVariableSearchText,
                         onblur: setVariableSearchText,
                         value: variableSearchText
                     }),
+                    m('div', {style: {height: 'calc(100% - 62px)', overflow: 'auto'}},
                     m(PanelList, {
                         id: 'varList',
                         items: leftpanelVariables,
@@ -488,6 +499,7 @@ export let leftpanel = forceData => {
                             selectedProblem.groups.reduce((out, group) =>
                                 Object.assign(out, {[app.hexToRgba(group.color, .25)]: group.nodes}), {}),
                             {
+                                [app.hexToRgba(app.colors.matched, .25)]: matchedVariables,
                                 [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.explorePreferences.variables,
                                 [app.hexToRgba(app.colors.order, .25)]: selectedProblem.tags.ordering,
                                 [app.hexToRgba(app.colors.location, .25)]: selectedProblem.tags.location
@@ -507,7 +519,7 @@ export let leftpanel = forceData => {
                             'item-randomize': selectedProblem.tags.randomize,
                             'item-cross-section': selectedProblem.tags.crossSection,
                             'item-index': selectedProblem.tags.indexes,
-                            'item-matched': matchedVariables,
+                            // 'item-matched': matchedVariables,
                             'item-hovered': [leftpanelHoveredVariableName, forceDiagramState.selectedPebble].filter(_ => _)
                         },
                         eventsItems: {
@@ -564,10 +576,6 @@ export let leftpanel = forceData => {
                             ]
                         ),
                         popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
-                        style: {
-                            height: 'calc(100% - 120px)',
-                            overflow: 'auto'
-                        }
                     }),
                     m(Button, {
                         id: 'btnCreateVariable',
@@ -594,7 +602,7 @@ export let leftpanel = forceData => {
                             common.setPanelOpen('left');
                             app.setLeftTab(app.LEFT_TAB_NAME_VARIABLES);
                         }
-                    }, 'Create New Variable'),
+                    }, 'Create New Variable')),
                 ]
         })
     }
