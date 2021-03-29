@@ -769,7 +769,9 @@ export let getTargetVariables = problem => {
 }
 
 export let getTargetGroups = problem => {
-    let targets = new Set(problem.groupLinks.map(link => link.target))
+    let sources = new Set(problem.groupLinks.map(link => link.source))
+    let targets = new Set(problem.groupLinks.map(link => link.target).filter(target => !sources.has(target)))
+
     return problem.groups.filter(group => targets.has(group.id))
 }
 

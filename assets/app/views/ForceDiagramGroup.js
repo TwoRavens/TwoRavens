@@ -8,6 +8,7 @@ import Button from "../../common/views/Button";
 import Icon from "../../common/views/Icon";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import {toggleGroup} from "../modes/model";
+import * as model from "../modes/model";
 
 let getOrigGroup = (problem, group) => problem.groups.find(origGroup => origGroup.id === group.id);
 
@@ -37,29 +38,43 @@ export default class ForceDiagramGroup {
             m('div',
                 m(ListTags, {
                     tags: [...group.nodes],
-                    ondelete: value => toggleGroup(problem, group.id, value)
+                    ondelete: group.id !== "Search" && (value => toggleGroup(problem, group.id, value))
                 })),
             this.pending === undefined && m(Button,
                 {
                     onclick: () => {
-                        this.pending = '';
+                        if (group.id === "Search") {
+                            problem.groups.unshift({
+                                id: problem.groupCount++,
+                                name: group.name,
+                                description: group.description,
+                                nodes: group.nodes,
+                                color: common.colorPalette[(problem.groupCount + 1) % common.colorPalette.length],
+                                opacity: 0.3,
+                                editable: true
+                            })
+                            model.setVariableSearchText()
+                        } else this.pending = '';
                         // setTimeout(() => document.getElementById(`pendingGroupId${group.id}TextField`).focus(), 10)
                     }
                 }, // , style: {width: 'fit-content'}
-                m(Icon, {name: 'plus'})),
+                group.id === "Search" ? "Promote to Group" : m(Icon, {name: 'plus'})),
             this.pending !== undefined && m(TextFieldSuggestion, {
                 oncreate: ({dom}) => dom.focus(),
                 id: `pendingGroupId${group.id}TextField`,
                 isDropped: true,
                 attrsAll: {style: {background: common.lightGrayColor, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
                 value: this.pending,
+                limit: 5,
                 suggestions: variables.filter(variable => !group.nodes.has(variable)),
-                enforce: true,
+                enforce: false,
                 oninput: value => this.pending = value,
                 onblur: value => {
                     if (!value) return;
-                    toggleGroup(problem, group.id, value)
-                    this.pending = undefined;
+                    if (variables.includes(value)) {
+                        toggleGroup(problem, group.id, value)
+                        this.pending = undefined;
+                    }
                 }
             }),
         ])

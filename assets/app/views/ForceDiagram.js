@@ -230,26 +230,6 @@ export default class ForceDiagram {
                 return `M${sourceX},${sourceY}L${targetX},${targetY}`;
             });
 
-            if (attrs.contextPebble && this.position.x && this.position.y) this.selectors.nodeDragLine
-                .attr('display', 'block')
-                .attr('d', `M${this.nodes[attrs.contextPebble].x},${this.nodes[attrs.contextPebble].y}L${this.position.x},${this.position.y}`)
-                .style('stroke', 'black')
-                .style('stroke-width', '4px');
-            else if (attrs.contextGroup && this.position.x && this.position.y) {
-                let sourceCenter = getMean(groupCoords[attrs.contextGroup.id]);
-                let sourceIntersection = intersectLineHull([this.position.x, this.position.y], sourceCenter, groupCoords[attrs.contextGroup.id], attrs.hullRadius);
-                let source = sourceIntersection?.every?.(v => !isNaN(v)) ? sourceIntersection : sourceCenter;
-                this.selectors.nodeDragLine
-                    .attr('display', 'block')
-                    .attr('d', `M${source}L${this.position.x},${this.position.y}`)
-                    .style('stroke', attrs.contextGroup.color)
-                    .style('stroke-width', '5px')
-            }
-            else {
-                this.selectors.nodeDragLine.attr('display', 'none');
-                this.position = {};
-            }
-
             // this.selectors.hulls.selectAll('text')
             //     .attr("transform", d => `translate(${centroids[d.id][0] - d.id.length * 5},${centroids[d.id][1]})`)
             // .attr('dy', d => centroids[d.id] - Math.min(...hullCoords[d.id].map(_ => _[1])))
@@ -269,15 +249,43 @@ export default class ForceDiagram {
             this.force.alphaTarget(0).restart();
         }, 1000);
 
-        let updatePosition = e => this.position = {x: e.pageX - x, y: e.pageY - y};
+        let updatePosition = e => {
+            this.position = {x: e.pageX - x, y: e.pageY - y};
+
+            // context line from a pebble
+            if (attrs.contextPebble && this.position.x && this.position.y) this.selectors.nodeDragLine
+                .attr('display', 'block')
+                .attr('d', `M${this.nodes[attrs.contextPebble].x},${this.nodes[attrs.contextPebble].y}L${this.position.x},${this.position.y}`)
+                .style('stroke', 'black')
+                .style('stroke-width', '4px');
+            // context line from a group
+            else if (attrs.contextGroup && this.position.x && this.position.y) {
+                let sourceCoords = d3.polygonHull(lengthen([...groups[attrs.contextGroup.id].nodes]
+                    .map(node => [this.nodes[node].fx || this.nodes[node].x, this.nodes[node].fy || this.nodes[node].y], 0)))
+
+                let sourceCenter = getMean(sourceCoords);
+
+                let sourceIntersection = intersectLineHull([this.position.x, this.position.y], sourceCenter, sourceCoords, attrs.hullRadius);
+                // let source = sourceIntersection?.every?.(v => !isNaN(v)) ? sourceIntersection : sourceCenter;
+                this.selectors.nodeDragLine
+                    .attr('display', sourceIntersection ? 'block' : 'none')
+                    .attr('d', `M${sourceIntersection}L${this.position.x},${this.position.y}`)
+                    .style('stroke', attrs.contextGroup.color)
+                    .style('stroke-width', '5px')
+            }
+            else {
+                this.selectors.nodeDragLine.attr('display', 'none');
+                this.position = {};
+            }
+        }
         // track mouse position for dragging, remove arrow on click
         d3.select(dom)
             .on('mousemove', (attrs.contextPebble || attrs.contextGroup) && updatePosition)
             .on('click', () => {
                 attrs.contextPebble = undefined;
                 attrs.contextGroup = undefined;
+                this.selectors.nodeDragLine.attr('display', 'none')
             });
-
 
         d3.select(dom)
             .call(d3.drag()

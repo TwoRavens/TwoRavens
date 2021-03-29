@@ -44,16 +44,8 @@ import Body_Dataset from "./views/Body_Dataset";
 import Body_Deploy from "./views/Body_Deploy";
 import {
     getAbstractPipeline,
-    getDescription, getPredictorVariables,
-    getProblemCopy,
-    getSelectedProblem, getSubtask,
-    getTargetVariables,
-    setSelectedProblem
+    getSelectedProblem,
 } from "./problem";
-import {boldPlain} from "./utils";
-import ButtonLadda from "./views/ButtonLadda";
-import {submitDiscProb} from "./modes/model";
-import Checkbox from "../common/views/Checkbox";
 import {ProblemList} from "./views/ProblemList";
 
 

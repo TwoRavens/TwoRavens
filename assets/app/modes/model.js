@@ -1313,6 +1313,14 @@ const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has
 let buildGroupingState = problem => {
     return {
         groups: [
+            variableSearchText.length > 0 && {
+                id: 'Search',
+                name: `Search: ${variableSearchText}`,
+                color: app.colors.matched,
+                description: `Snapshot of variables containing "${variableSearchText}".`,
+                nodes: Object.keys(app.variableSummaries).filter(variable => variable.toLowerCase().includes(variableSearchText)),
+                opacity: 0.3
+            },
             ...problem.groups.map(group => Object.assign({}, group, {nodes: new Set(group.nodes), editable: true})),
             {
                 id: 'Loose',
@@ -1336,14 +1344,6 @@ let buildGroupingState = problem => {
                 color: app.colors.order,
                 description: defaultGroupDescriptions.ordering,
                 nodes: new Set(problem.tags.ordering),
-                opacity: 0.3
-            },
-            variableSearchText.length > 0 && {
-                id: 'Search',
-                name: "Search",
-                color: app.colors.matched,
-                description: defaultGroupDescriptions.matched,
-                nodes: Object.keys(app.variableSummaries).filter(variable => variable.toLowerCase().includes(variableSearchText)),
                 opacity: 0.3
             },
             {
@@ -1463,6 +1463,7 @@ export let forceDiagramState = {
     builders: [pebbleBuilderLabeled, groupBuilder, linkBuilder, groupLinkBuilder],
     hoverPebble: undefined,
     contextPebble: undefined,
+    contextGroup: undefined,
     selectedPebble: undefined,
     hoverTimeout: undefined,
     isPinned: false,
@@ -1569,7 +1570,8 @@ Object.assign(forceDiagramState, {
                 hopscotch.startTour(summaryTour());
             clearTimeout(forceDiagramState.hoverTimeout);
             forceDiagramState.hoverTimeout = setTimeout(() => {
-                forceDiagramState.hoverPebble = pebble;
+                if (!forceDiagramState.contextPebble && !forceDiagramState.contextGroup)
+                    forceDiagramState.hoverPebble = pebble;
                 if (app.leftTab !== 'Summary') app.setLeftTabHidden(app.leftTab);
                 app.setLeftTab('Summary');
                 m.redraw()
@@ -2194,7 +2196,7 @@ export let toggleTag = (problem, tag, name) => {
 
 // Used for left panel variable search
 export let variableSearchText = "";
-export let setVariableSearchText = text => variableSearchText = text.toLowerCase();
+export let setVariableSearchText = text => variableSearchText = (text ?? '').toLowerCase();
 
 
 // creates a new problem from the force diagram problem space and adds to disco
