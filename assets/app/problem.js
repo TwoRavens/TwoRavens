@@ -42,6 +42,7 @@ import * as utils from './utils';
  * VariableGroup
  * @typedef {Object} VariableGroup
  * @property {string} description
+ * @property {string|number} id
  * @property {string} name
  * @property {string[]} nodes - list of predictor names
  * @property {string} color
@@ -126,7 +127,8 @@ export let defaultGroupDescriptions = {
     exogenous: 'An exogenous variable is determined outside of the model.',
     index: 'An index variable typically has one unique value per observation.',
     matched: 'Matched variables satisfy the variable search in the leftpanel.',
-    // TODO: TAG
+    geographic: 'Variables that have been detected to contain geographic metadata, but are not used to identify the location of an observation.',
+    temporal: 'Variables that have been detected to contain temporal metadata, but are not used to order the data.',
     featurize: '',
     randomize: ''
 };

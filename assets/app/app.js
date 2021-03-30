@@ -94,6 +94,7 @@ export let colors = {
     // TODO: these two are not original colors
     featurize: '#d23e3e',
     randomize: '#996bcc',
+    geographic: '#419641',
 
     index: '#797478',
     matched: '#330b0b',

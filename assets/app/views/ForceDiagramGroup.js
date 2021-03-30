@@ -7,8 +7,8 @@ import ListTags from "../../common/views/ListTags";
 import Button from "../../common/views/Button";
 import Icon from "../../common/views/Icon";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
-import {toggleGroup} from "../modes/model";
 import * as model from "../modes/model";
+import {toggleGroup, toggleTag} from "../modes/model";
 
 let getOrigGroup = (problem, group) => problem.groups.find(origGroup => origGroup.id === group.id);
 
@@ -73,6 +73,59 @@ export default class ForceDiagramGroup {
                     if (!value) return;
                     if (variables.includes(value)) {
                         toggleGroup(problem, group.id, value)
+                        this.pending = undefined;
+                    }
+                }
+            }),
+        ])
+    }
+}
+
+
+export class ForceDiagramLabel {
+    view(vnode) {
+        let {label, problem, variables} = vnode.attrs;
+
+        return m('div.card', {
+            style: {
+                margin: '.5em',
+                padding: '1em',
+                width: 'calc(100% - 1em)',
+                border: `4px solid ${hexToRgba(label.color, label.opacity)}`
+            },
+        }, [
+            m(TextField, {
+                autocomplete: "off",
+                readonly: true,
+                style: {background: common.lightGrayColor, 'font-weight': 'bold'},
+                id: String(label.id).replace(/\W/g, '_') + 'TextField',
+                oninput: _=>_,
+                onblur: _=>_,
+                value: label.name
+            }),
+            m('pre', m.trust(label.description || '')),
+            m('div',
+                m(ListTags, {
+                    tags: label.nodes,
+                    ondelete: value => toggleTag(problem, group.id, value)
+                })),
+            this.pending === undefined && m(Button,
+                {onclick: () => this.pending = ''},
+                m(Icon, {name: 'plus'})),
+            this.pending !== undefined && m(TextFieldSuggestion, {
+                oncreate: ({dom}) => dom.focus(),
+                id: `pendingLabelId${label.id}TextField`,
+                isDropped: true,
+                attrsAll: {style: {background: common.lightGrayColor, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
+                value: this.pending,
+                limit: 5,
+                suggestions: variables.filter(variable => !label.nodes.includes(variable)),
+                enforce: false,
+                oninput: value => this.pending = value,
+                onblur: value => {
+                    if (!value) return;
+                    if (variables.includes(value)) {
+                        toggleTag(problem, label.id, value)
                         this.pending = undefined;
                     }
                 }

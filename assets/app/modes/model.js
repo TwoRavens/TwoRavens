@@ -50,9 +50,9 @@ import {
     setSubTask,
     setTask
 } from "../problem";
-import ForceDiagramGroup from "../views/ForceDiagramGroup";
+import ForceDiagramGroup, {ForceDiagramLabel} from "../views/ForceDiagramGroup";
 import TreeRender from "../views/TreeRender";
-import {variableSummaries, workspace} from "../app";
+import {workspace} from "../app";
 
 
 export class CanvasModel {
@@ -228,7 +228,44 @@ export class CanvasModel {
                         name: 'Matched',
                         borderColor: app.colors.matched,
                         innerColor: app.colors.matched,
-                        width: 0
+                        width: 0,
+                        onclickLink: "SearchTextField"
+                    },
+                    ...selectedProblem.groups.map(group => ({
+                        id: String(group.id).replace(/\W/g, '_'),
+                        vars: group.nodes,
+                        name: group.name,
+                        borderColor: group.color,
+                        innerColor: group.color,
+                        width: 0,
+                        onclickLink: `${group.id}TextField`
+                    })),
+                    {
+                        id: "csButton",
+                        vars: selectedProblem.tags.crossSection,
+                        name: 'Cross Sec',
+                        borderColor: app.colors.crossSection,
+                        innerColor: 'white',
+                        width: 1,
+                        onclickLink: 'Cross_SectionalTextField'
+                    },
+                    {
+                        id: "orderingButton",
+                        vars: selectedProblem.tags.ordering,
+                        name: 'Ordering',
+                        borderColor: app.colors.order,
+                        innerColor: app.colors.order,
+                        width: 0,
+                        onclickLink: "OrderingTextField"
+                    },
+                    {
+                        id: "locationButton",
+                        vars: selectedProblem.tags.location,
+                        name: 'Location',
+                        borderColor: app.colors.location,
+                        innerColor: app.colors.location,
+                        width: 0,
+                        onclickLink: "LocationTextField"
                     },
                     {
                         id: "indexButton",
@@ -236,7 +273,8 @@ export class CanvasModel {
                         name: 'Index',
                         borderColor: app.colors.index,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "indexTextField"
                     },
                     {
                         id: "weightButton",
@@ -244,7 +282,8 @@ export class CanvasModel {
                         name: 'Weight',
                         borderColor: app.colors.weight,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "weightTextField"
                     },
                     {
                         id: "ordinalButton",
@@ -252,7 +291,8 @@ export class CanvasModel {
                         name: 'Ordinal',
                         borderColor: app.colors.ordinal,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "OrdinalTextField"
                     },
                     {
                         id: "privilegedButton",
@@ -260,7 +300,8 @@ export class CanvasModel {
                         name: 'Privileged',
                         borderColor: app.colors.privileged,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "privilegedTextField"
                     },
                     {
                         id: "exogenousButton",
@@ -268,7 +309,8 @@ export class CanvasModel {
                         name: 'Exogenous',
                         borderColor: app.colors.exogenous,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "exogeneousTextField"
                     },
                     {
                         id: "featurizeButton",
@@ -276,7 +318,8 @@ export class CanvasModel {
                         name: 'Featurize',
                         borderColor: app.colors.featurize,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "featurizeTextField"
                     },
                     {
                         id: "randomizeButton",
@@ -284,23 +327,17 @@ export class CanvasModel {
                         name: 'Randomize',
                         borderColor: app.colors.randomize,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "randomizeTextField"
                     },
                     {
                         id: "nomButton",
-                        vars: selectedProblem.tags.nominal,
+                        vars: getNominalVariables(selectedProblem),
                         name: 'Nominal',
                         borderColor: app.colors.nominal,
                         innerColor: 'white',
-                        width: 1
-                    },
-                    {
-                        id: "csButton",
-                        vars: selectedProblem.tags.crossSection,
-                        name: 'Cross Sec',
-                        borderColor: app.colors.crossSection,
-                        innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "nominalTextField"
                     },
                     {
                         id: "boundaryButton",
@@ -308,7 +345,8 @@ export class CanvasModel {
                         name: 'Boundary',
                         borderColor: app.colors.boundary,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "boundaryTextField"
                     },
                     {
                         id: "geographicButton",
@@ -316,7 +354,8 @@ export class CanvasModel {
                         name: 'Geographic',
                         borderColor: app.colors.location,
                         innerColor: 'white',
-                        width: 1
+                        width: 1,
+                        onclickLink: "geographicTextField"
                     },
                     {
                         id: "temporalButton",
@@ -325,34 +364,15 @@ export class CanvasModel {
                         name: 'Temporal',
                         borderColor: app.colors.time,
                         innerColor: 'white',
-                        width: 1
-                    },
-                    {
-                        id: "orderingButton",
-                        vars: selectedProblem.tags.ordering,
-                        name: 'Ordering',
-                        borderColor: app.colors.order,
-                        innerColor: app.colors.order,
-                        width: 0
-                    },
-                    {
-                        id: "locationButton",
-                        vars: selectedProblem.tags.location,
-                        name: 'Location',
-                        borderColor: app.colors.location,
-                        innerColor: app.colors.location,
-                        width: 0
-                    },
-                    ...selectedProblem.groups.map(group => ({
-                        id: String(group.id).replace(/\W/g, '_'),
-                        vars: group.nodes,
-                        name: group.name,
-                        borderColor: group.color,
-                        innerColor: group.color,
-                        width: 0
-                    }))
+                        width: 1,
+                        onclickLink: "temporalTextField"
+                    }
                 ].filter(row => row && row.vars.length > 0).map(row =>
-                    m(`#${row.id}[style=width:100% !important]`,
+                    m(`#${row.id}[style=width:100% !important]`, {onclick: row.onclickLink && (() => {
+                                app.setLeftTab("Groups")
+                                m.redraw.sync();
+                                document.getElementById(row.onclickLink)?.focus?.()
+                            })},
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
                             m(`circle[cx=10][cy=10][fill=${row.innerColor}][fill-opacity=0.6][r=9][stroke=${row.borderColor}][stroke-opacity=${row.width}][stroke-width=2]`))),
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", row.name)))
@@ -374,7 +394,7 @@ export class CanvasModel {
     }
 }
 
-export let renderProblemNode = (problem, parentArray) => {
+export let renderProblemNode = (problem, _parentArray) => {
     let selectedProblem = getSelectedProblem();
     let baseProblem = workspace.raven_config.problems[problem.problemId];
 
@@ -507,7 +527,7 @@ export let leftpanel = forceData => {
                         classes: {
                             // keep this order aligned with params in mutateNodes
                             'item-nominal': getNominalVariables(selectedProblem),
-                            'item-location': getGeographicVariables(),
+                            'item-geographic': getGeographicVariables(),
                             'item-ordinal': getOrdinalVariables(selectedProblem),
                             'item-boundary': selectedProblem.tags.boundary,
                             'item-time': Object.keys(app.variableSummaries)
@@ -519,7 +539,6 @@ export let leftpanel = forceData => {
                             'item-randomize': selectedProblem.tags.randomize,
                             'item-cross-section': selectedProblem.tags.crossSection,
                             'item-index': selectedProblem.tags.indexes,
-                            // 'item-matched': matchedVariables,
                             'item-hovered': [leftpanelHoveredVariableName, forceDiagramState.selectedPebble].filter(_ => _)
                         },
                         eventsItems: {
@@ -628,7 +647,98 @@ export let leftpanel = forceData => {
                 }, m(Icon, {name: 'plus'}), ' Group'),
                 groups.map(group => m(ForceDiagramGroup, {
                     group, variables: leftpanelVariables, problem: selectedProblem
-                }))
+                })),
+                m('h4[style=padding:1em]', 'Labels'),
+                [
+                    {
+                        id: 'index',
+                        name: 'Index',
+                        description: defaultGroupDescriptions.index,
+                        nodes: selectedProblem.tags.indexes,
+                        color: app.colors.index,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'weight',
+                        name: 'Weight',
+                        description: defaultGroupDescriptions.weight,
+                        nodes: selectedProblem.tags.weights,
+                        color: app.colors.weight,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'ordinal',
+                        name: 'Ordinal',
+                        description: defaultGroupDescriptions.ordinal,
+                        nodes: getOrdinalVariables(selectedProblem),
+                        color: app.colors.ordinal,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'privileged',
+                        name: 'Privileged',
+                        description: defaultGroupDescriptions.privileged,
+                        nodes: selectedProblem.tags.privileged,
+                        color: app.colors.privileged,
+                        opacity: 0.7
+                    },
+                    selectedProblem.modelingMode !== "causal" && selectedProblem.task === "forecasting" && {
+                        id: 'exogenous',
+                        name: 'Exogenous',
+                        description: defaultGroupDescriptions.exogenous,
+                        nodes: selectedProblem.tags.exogenous,
+                        color: app.colors.exogenous,
+                        opacity: 0.7
+                    },
+                    selectedProblem.modelingMode === "causal" && {
+                        id: 'featurize',
+                        name: 'Featurize',
+                        description: defaultGroupDescriptions.featurize,
+                        nodes: selectedProblem.tags.featurize,
+                        color: app.colors.featurize,
+                        opacity: 0.7
+                    },
+                    selectedProblem.modelingMode === "causal" && {
+                        id: 'randomize',
+                        name: 'Randomize',
+                        description: defaultGroupDescriptions.randomize,
+                        nodes: selectedProblem.tags.randomize,
+                        color: app.colors.randomize,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'nominal',
+                        name: 'Nominal',
+                        description: defaultGroupDescriptions.nominal,
+                        nodes: getNominalVariables(selectedProblem),
+                        color: app.colors.nominal,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'boundary',
+                        name: 'Boundary',
+                        description: defaultGroupDescriptions.boundary,
+                        nodes: selectedProblem.tags.boundary,
+                        color: app.colors.boundary,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'geographic',
+                        name: 'Geographic',
+                        description: defaultGroupDescriptions.geographic,
+                        nodes: Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].locationUnit),
+                        color: app.colors.geographic,
+                        opacity: 0.7
+                    },
+                    {
+                        id: 'temporal',
+                        name: 'Temporal',
+                        description: defaultGroupDescriptions.temporal,
+                        nodes: Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].timeUnit),
+                        color: app.colors.time,
+                        opacity: 0.7
+                    },
+                ].filter(_=>_).map(label => m(ForceDiagramLabel, {label, variables: leftpanelVariables, problem: selectedProblem}))
             ]
         })
     }

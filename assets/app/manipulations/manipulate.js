@@ -28,7 +28,7 @@ import Icon from "../../common/views/Icon";
 import {formatVariableSummary} from '../views/VariableSummary';
 
 import {
-    getGeographicVariables,
+    getGeographicVariables, getLocationVariables,
     getNominalVariables,
     getOrdinalVariables,
     getSelectedProblem,
@@ -245,7 +245,7 @@ export function varList() {
             classes: {
                 // keep this order aligned with params in mutateNodes
                 'item-nominal': getNominalVariables(selectedProblem),
-                'item-location': getGeographicVariables(),
+                'item-geographic': getGeographicVariables(),
                 'item-ordinal': getOrdinalVariables(selectedProblem),
                 'item-boundary': selectedProblem.tags.boundary,
                 'item-time': Object.keys(app.variableSummaries)

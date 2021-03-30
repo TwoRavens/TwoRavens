@@ -4,6 +4,7 @@
     --tag-crossSection: #fff;
     --tag-order: #fff;
     --tag-location: #fff;
+    --tag-geographic: #fff;
     --tag-time: #fff;
     --tag-nominal: #fff;
     --tag-ordinal: #fff;
@@ -458,9 +459,9 @@ tr.item-lineout{
     border-style: solid;
     border-color: var(--tag-boundary);
 }
-.item-location {
+.item-geographic {
     border-style: solid;
-    border-color: var(--tag-location);
+    border-color: var(--tag-geographic);
 }
 .item-time {
     border-style: solid;
