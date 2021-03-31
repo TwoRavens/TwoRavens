@@ -1870,15 +1870,20 @@ export let inferLocationFormat = variable => {
     let unit = variableSummaries[variable].locationUnit;
     if ([undefined, 'latitude', 'longitude'].includes(unit))
         return;
-    if (!variableSummaries[variable].plotValues) return
+    if (!variableSummaries[variable].plotValues || !unit) return
 
-    if ((unit in locationUnits) && !(unit in alignmentData)) {
-        console.log('requesting metadata')
-        m.request({
-            url: mongoURL + 'get-metadata',
-            method: 'POST',
-            body: {alignments: [unit]}
-        }).then(setMetadata).then(() => {
+    let units = [unit];
+    if (!(unit in locationUnits))
+        units = Object.keys(locationUnits)
+            .filter(unit => !['latitude', 'longitude'].includes(unit))
+
+    m.request({
+        url: mongoURL + 'get-metadata',
+        method: 'POST',
+        body: {alignments: units}
+    }).then(setMetadata).then(() => {
+        units.some(unit => {
+            console.log('checking', unit);
             let inversion = alignmentData[unit].reduce((inversion, alignment) => {
                 Object.entries(alignment).forEach(([format, value]) => {
                     inversion[format] = inversion[format] || new Set();
@@ -1890,10 +1895,14 @@ export let inferLocationFormat = variable => {
             let sampleNames = Object.keys(variableSummaries[variable].plotValues);
 
             // guess the format based on some plotValues
-            let format = Object.keys(inversion).find(format => sampleNames.every(name => inversion[format].has(name)));
-            setVariableSummaryAttr(variable, 'locationFormat', format);
+            let format = Object.keys(inversion).find(format => sampleNames.length * .8 < sampleNames.reduce((score, name) => inversion[format].has(name) ? score + 1 : score, 0));
+            if (format) {
+                setVariableSummaryAttr(variable, 'locationUnit', unit);
+                setVariableSummaryAttr(variable, 'locationFormat', format);
+                return true
+            }
         })
-    }
+    })
 }
 
 export let setVariableSummaryAttr = (variable, attr, value) => {
