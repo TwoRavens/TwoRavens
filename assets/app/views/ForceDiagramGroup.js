@@ -8,7 +8,7 @@ import Button from "../../common/views/Button";
 import Icon from "../../common/views/Icon";
 import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import * as model from "../modes/model";
-import {toggleGroup, toggleTag} from "../modes/model";
+import {setSelectedPebble, toggleGroup, toggleTag} from "../modes/model";
 
 let getOrigGroup = (problem, group) => problem.groups.find(origGroup => origGroup.id === group.id);
 
@@ -38,6 +38,7 @@ export default class ForceDiagramGroup {
             m('div',
                 m(ListTags, {
                     tags: [...group.nodes],
+                    onclick: setSelectedPebble,
                     ondelete: group.id !== "Search" && (value => toggleGroup(problem, group.id, value))
                 })),
             this.pending === undefined && m(Button,
@@ -107,6 +108,7 @@ export class ForceDiagramLabel {
             m('div',
                 m(ListTags, {
                     tags: label.nodes,
+                    onclick: setSelectedPebble,
                     ondelete: value => toggleTag(problem, group.id, value)
                 })),
             this.pending === undefined && m(Button,

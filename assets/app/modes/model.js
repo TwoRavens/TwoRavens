@@ -1652,7 +1652,7 @@ let setContextPebble = (e, pebble) => {
     m.redraw();
 };
 
-let setSelectedPebble = pebble => {
+export let setSelectedPebble = pebble => {
     forceDiagramState.selectedPebble = pebble;
 
     if (pebble) {
