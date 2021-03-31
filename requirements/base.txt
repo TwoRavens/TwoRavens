@@ -3,7 +3,7 @@
 #
 #-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
-Django==2.2.14
+Django==2.2.18
 django-model-utils==4.0.0
 django-webpack-loader==0.7.0
 jsonfield==2.0.2

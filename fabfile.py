@@ -115,6 +115,7 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
         'TR92_pgm_grid_samp',
         'TR93_pgm_quarterly',
         'CM_1990_2020',
+        'TR103_germany_state',
         #'185_baseball_MIN_METADATA',
         #'196_autoMpg_MIN_METADATA',
         #'Western_Sahel_Grid-2010_2020',

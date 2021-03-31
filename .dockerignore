@@ -79,3 +79,7 @@ ravens_volume/test_data/*
 !ravens_volume/test_data/TR92_pgm_grid_samp
 !ravens_volume/test_data/TR93_pgm_quarterly
 !ravens_volume/test_data/CM_1990_2020
+#
+!ravens_volume/test_data/TR103_germany_state
+!ravens_volume/test_data/Global_Terrorism_Database_2014-2017
+!ravens_volume/test_data/TR_TS_air_quality 
