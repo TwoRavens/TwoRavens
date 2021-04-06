@@ -102,7 +102,29 @@ export default class PlotVegaLiteEditor {
                             delete configuration.pendingMapboxStyle;
                             configuration.mapboxStyle = value
                         }
-                    })]
+                    })],
+                    multi && [
+                        "resolve x", m(ButtonRadio, {
+                            id: 'resolveXButtonBar',
+                            onclick: resolve => configuration.resolve_x = resolve,
+                            activeSection: configuration.resolve_x || 'shared',
+                            sections: [
+                                {value: 'shared'},
+                                {value: 'independent'},
+                            ]
+                        })
+                    ],
+                    multi && [
+                        "resolve y", m(ButtonRadio, {
+                            id: 'resolveYButtonBar',
+                            onclick: resolve => configuration.resolve_y = resolve,
+                            activeSection: configuration.resolve_y || 'shared',
+                            sections: [
+                                {value: 'shared'},
+                                {value: 'independent'},
+                            ]
+                        })
+                    ]
                 ]
             })),
             m('div', {
@@ -110,7 +132,7 @@ export default class PlotVegaLiteEditor {
                     margin: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                 }
-            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery)),
+            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery, multi && common.colorPalette[0])),
 
             ([
                 {
@@ -131,7 +153,7 @@ export default class PlotVegaLiteEditor {
             ]).map(multiType => [
                 (multi === multiType.key || !multi) && [
                     (configuration[multiType.key] || [])
-                        .map(layer => m('div', {
+                        .map((layer, i) => m('div', {
                                 style: {
                                     margin: '1em',
                                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
@@ -143,7 +165,7 @@ export default class PlotVegaLiteEditor {
                                     if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
                                 }
                             }, m(Icon, {name: 'x'})),
-                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery)
+                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery, multi && common.colorPalette[i % common.colorPalette.length + 1])
                         )),
 
                     m('div[style=margin:1em]',
@@ -160,7 +182,7 @@ export default class PlotVegaLiteEditor {
         ];
     }
 
-    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery) {
+    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery, defaultColor) {
 
         // maps should be interactive by default
         if (mapping && !('interactive' in configuration)) configuration.interactive = true;
@@ -255,6 +277,10 @@ export default class PlotVegaLiteEditor {
                 .filter(channel => channel.name === name)
                 .forEach(channel => channel.delete = true));
         }
+
+        let colorChannel = configuration.channels.find(channel => channel.name === 'color');
+        if (!colorChannel && defaultColor)
+            configuration.channels.push({name: 'color', colorValue: defaultColor})
 
         if (!('mark' in configuration))
             configuration.mark = 'point';
@@ -439,7 +465,7 @@ export default class PlotVegaLiteEditor {
                             setSchemeCategory(getDefaultSchemeCategory(value));
                     }
                 }),
-                channel.variable && m('',
+                channel.variable ? m('',
                     configuration.mark === "region" && channel.variable && m('',
                         m('label', 'Aggregation:'),
                         m(Dropdown, {
@@ -468,7 +494,13 @@ export default class PlotVegaLiteEditor {
                         onblur: value => channel.scheme[schemeCategory] = value,
                         style: {'margin-left': '1em'}
                     })
-                ),
+                ) : m(TextField, {
+                    style: {border: `5px solid ${channel.colorValue}`},
+                    id: 'colorValueTextField',
+                    oninput: value => channel.colorValue = value,
+                    onblur: value => channel.colorValue = value,
+                    value: channel.colorValue
+                }),
                 m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
                 // undefined
             ]

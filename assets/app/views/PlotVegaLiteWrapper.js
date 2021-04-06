@@ -6,6 +6,7 @@ import m from 'mithril';
 import TwoPanel from "../../common/views/TwoPanel";
 import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
 import PlotVegaLiteEditor, {schemes} from "./PlotVegaLiteEditor";
+import * as common from "../../common/common";
 
 export default class PlotVegaLiteWrapper {
 
@@ -113,7 +114,13 @@ let makeSpecification = (configuration, varTypes, summaries) => {
         let layerKeys = new Set(['data', 'encoding', 'mark', 'transform', 'manipulations']);
         Object.keys(baseLayer).forEach(k => delete (layerKeys.has(k) ? specification : baseLayer)[k])
         specification.layer.unshift(baseLayer)
-        specification.resolve = {scale: {color: "independent"}}
+        specification.resolve = {
+            scale: {
+                color: "independent",
+                x: configuration.resolve_x || 'shared',
+                y: configuration.resolve_y || 'shared'
+            }
+        }
     }
 
     let concat = 'vconcat' in configuration ? 'vconcat' : ('hconcat' in configuration) && 'hconcat';
@@ -140,7 +147,7 @@ let makeSpecification = (configuration, varTypes, summaries) => {
 
 let makeLayer = (layer, varTypes, summaries) => {
     let channels = (layer.channels || [])
-        .filter(channel => !channel.delete && (channel.variable || (channel.variables || []).length));
+        .filter(channel => !channel.delete && (channel.variable || channel.variables?.length || channel.colorValue));
     if (channels.length === 0) return;
     let orientation = channels.find(channel => channel.name === 'primary axis')?.orientation || 'x';
     let spec = {};
@@ -245,6 +252,9 @@ let makeLayer = (layer, varTypes, summaries) => {
         }
 
         if (channel.name === "color") {
+            if (!channel.variable) return Object.assign(encodings, {
+                [channel.name]: {value: channel.colorValue}
+            })
             let varType = varTypes[channel.variable] || 'nominal';
             let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
             let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "nominal" ? 'categorical' : 'sequential-single');
