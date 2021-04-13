@@ -10,11 +10,13 @@ import TextFieldSuggestion from "../../common/views/TextFieldSuggestion";
 import * as model from "../modes/model";
 import {setSelectedPebble, toggleGroup, toggleTag} from "../modes/model";
 
-let getOrigGroup = (problem, group) => problem.groups.find(origGroup => origGroup.id === group.id);
+let getId = group => group.id ?? String(group.name).replace(/\W/g, '_');
+let getOrigGroup = (problem, group) => problem.groups.find(origGroup => origGroup.id === getId(group));
 
 export default class ForceDiagramGroup {
     view(vnode) {
         let {group, problem, variables} = vnode.attrs;
+        let id = getId(group);
 
         return m('div.card', {
             style: {margin: '.5em', padding: '1em', width: 'calc(100% - 1em)', background: hexToRgba(group.color, group.opacity)},
@@ -22,7 +24,7 @@ export default class ForceDiagramGroup {
             m(TextField, {
                 autocomplete: "off",
                 style: {background: common.lightGrayColor, 'font-weight': 'bold'},
-                id: String(group.id).replace(/\W/g, '_') + 'TextField',
+                id: id + 'TextField',
                 oninput: group.editable && (value => getOrigGroup(problem, group).name = value),
                 onblur: group.editable && (value => getOrigGroup(problem, group).name = value),
                 value: group.name
@@ -39,12 +41,12 @@ export default class ForceDiagramGroup {
                 m(ListTags, {
                     tags: [...group.nodes],
                     onclick: setSelectedPebble,
-                    ondelete: group.id !== "Search" && (value => toggleGroup(problem, group.id, value))
+                    ondelete: id !== "Matched" && (value => toggleGroup(problem, id, value))
                 })),
             this.pending === undefined && m(Button,
                 {
                     onclick: () => {
-                        if (group.id === "Search") {
+                        if (group.id === "Matched") {
                             problem.groups.unshift({
                                 id: problem.groupCount++,
                                 name: group.name,
@@ -56,24 +58,24 @@ export default class ForceDiagramGroup {
                             })
                             model.setVariableSearchText()
                         } else this.pending = '';
-                        // setTimeout(() => document.getElementById(`pendingGroupId${group.id}TextField`).focus(), 10)
+                        // setTimeout(() => document.getElementById(`pendingGroupId${id}TextField`).focus(), 10)
                     }
                 }, // , style: {width: 'fit-content'}
-                group.id === "Search" ? "Promote to Group" : m(Icon, {name: 'plus'})),
+                id === "Matched" ? "Promote to Group" : m(Icon, {name: 'plus'})),
             this.pending !== undefined && m(TextFieldSuggestion, {
                 oncreate: ({dom}) => dom.focus(),
-                id: `pendingGroupId${group.id}TextField`,
+                id: `pendingGroupId${id}TextField`,
                 isDropped: true,
                 attrsAll: {style: {background: common.lightGrayColor, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
                 value: this.pending,
-                limit: 5,
+                attrsDropped: {style: {'max-height': '200px', overflow: 'auto'}},
                 suggestions: variables.filter(variable => !group.nodes.has(variable)),
                 enforce: false,
                 oninput: value => this.pending = value,
                 onblur: value => {
                     if (!value) return;
                     if (variables.includes(value)) {
-                        toggleGroup(problem, group.id, value)
+                        toggleGroup(problem, id, value)
                         this.pending = undefined;
                     }
                 }
@@ -86,6 +88,7 @@ export default class ForceDiagramGroup {
 export class ForceDiagramLabel {
     view(vnode) {
         let {label, problem, variables} = vnode.attrs;
+        let id = String(label.name).replace(/\W/g, '_');
 
         return m('div.card', {
             style: {
@@ -99,7 +102,7 @@ export class ForceDiagramLabel {
                 autocomplete: "off",
                 readonly: true,
                 style: {background: common.lightGrayColor, 'font-weight': 'bold'},
-                id: String(label.id).replace(/\W/g, '_') + 'TextField',
+                id: id + 'TextField',
                 oninput: _=>_,
                 onblur: _=>_,
                 value: label.name
@@ -109,18 +112,18 @@ export class ForceDiagramLabel {
                 m(ListTags, {
                     tags: label.nodes,
                     onclick: setSelectedPebble,
-                    ondelete: value => toggleTag(problem, group.id, value)
+                    ondelete: value => toggleTag(problem, id, value)
                 })),
             this.pending === undefined && m(Button,
                 {onclick: () => this.pending = ''},
                 m(Icon, {name: 'plus'})),
             this.pending !== undefined && m(TextFieldSuggestion, {
                 oncreate: ({dom}) => dom.focus(),
-                id: `pendingLabelId${label.id}TextField`,
+                id: `pendingLabelId${id}TextField`,
                 isDropped: true,
                 attrsAll: {style: {background: common.lightGrayColor, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
                 value: this.pending,
-                limit: 5,
+                attrsDropped: {style: {'max-height': '200px', overflow: 'auto'}},
                 suggestions: variables.filter(variable => !label.nodes.includes(variable)),
                 enforce: false,
                 oninput: value => this.pending = value,

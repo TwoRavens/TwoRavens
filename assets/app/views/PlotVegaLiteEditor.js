@@ -494,13 +494,36 @@ export default class PlotVegaLiteEditor {
                         onblur: value => channel.scheme[schemeCategory] = value,
                         style: {'margin-left': '1em'}
                     })
-                ) : m(TextField, {
-                    style: {border: `5px solid ${channel.colorValue}`},
-                    id: 'colorValueTextField',
-                    oninput: value => channel.colorValue = value,
-                    onblur: value => channel.colorValue = value,
-                    value: channel.colorValue
-                }),
+                ) : m('label', {
+                    style: {
+                        'background-color': channel.colorValue ?? 'transparent',
+                        'position': 'relative',
+                        'overflow': 'hidden',
+                        'width': '40px',
+                        'height': '40px',
+                        'border': 'solid 2px #ddd',
+                        'border-radius': '40px',
+                    }
+                }, m('input', {
+                        type: 'color', id: 'colorValueInput', value: channel.colorValue,
+                        style: {
+                            'position': 'absolute',
+                            'right': '-8px',
+                            'top': '-8px',
+                            'width': '56px',
+                            'height': '56px',
+                            'border': 'none',
+                        },
+
+                        onchange: function () {
+                            m.redraw()
+                            channel.colorValue = this.value
+                        },
+                        oninput: function () {
+                            m.redraw()
+                            channel.colorValue = this.value
+                        }
+                    })),
                 m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
                 // undefined
             ]

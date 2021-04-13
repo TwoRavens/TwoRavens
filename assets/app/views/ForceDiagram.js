@@ -1,5 +1,4 @@
 import * as d3 from "d3";
-// import 'd3-selection-multi';
 import * as jStat from 'jstat';
 
 import * as common from "../../common/common";
@@ -56,7 +55,7 @@ export default class ForceDiagram {
 
         let {width, height, x, y} = dom.getBoundingClientRect();
 
-        // synchronize internal nodes with passed pebbles
+        // update internal nodes to be synchronized with passed pebbles
         pebbles
             .filter(pebble => !(pebble in this.nodes))
             .forEach(pebble => this.nodes[pebble] = {id: normalize(pebble), name: pebble, x: width * Math.random(), y: height * Math.random()});
@@ -71,7 +70,7 @@ export default class ForceDiagram {
 
         // rebind data to elements in the force diagram
         // if this is called after hoverPebble assignment, the pebble jilts on hover
-        attrs.builders && attrs.builders.forEach(builder => builder(attrs, this));
+        attrs?.builders?.forEach?.(builder => builder(attrs, this));
 
         /**
          Define each pebble charge.
@@ -1092,7 +1091,10 @@ export let pebbleBuilder = (attrs, context) => {
 export let pebbleBuilderLabeled = (attrs, context) => {
     attrs.mutateNodes(attrs, context);
 
-    context.selectors.pebbles = context.selectors.pebbles.data(context.filtered.pebbles, _ => _);
+    let nonemptyPebbles = context.filtered.pebbles
+        .filter(pebble => attrs.summaries[pebble]?.pdfPlotType !== "nonexistent");
+
+    context.selectors.pebbles = context.selectors.pebbles.data(nonemptyPebbles, _ => _);
     context.selectors.pebbles.exit().remove();
 
     let newPebbles = context.selectors.pebbles

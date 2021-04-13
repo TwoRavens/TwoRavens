@@ -1829,8 +1829,10 @@ export let materializeTrainTest = async problem => {
  converts color codes
  */
 export let hexToRgba = (hex, alpha) => {
+    if (alpha === undefined) alpha = 0.5
+    if (!alpha) return '#0000';
     let int = parseInt(hex.replace('#', ''), 16);
-    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
+    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha].join(',')})`;
 };
 
 export let setPreprocess = state => {

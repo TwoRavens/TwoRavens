@@ -3,6 +3,7 @@ import m from "mithril";
 import hopscotch from 'hopscotch';
 
 import * as app from "../app";
+import {hexToRgba, workspace} from "../app";
 import * as manipulate from "../manipulations/manipulate";
 import * as explore from "./explore";
 import * as solverD3M from "../solvers/d3m";
@@ -31,7 +32,8 @@ import {add, bold, generateID, italicize, linkURLwithText, omniSort, remove, tog
 import {
     buildEmptyProblem,
     defaultGroupDescriptions,
-    erase, generateProblemID,
+    erase,
+    generateProblemID,
     getDescription,
     getGeographicVariables,
     getNominalVariables,
@@ -52,7 +54,6 @@ import {
 } from "../problem";
 import ForceDiagramGroup, {ForceDiagramLabel} from "../views/ForceDiagramGroup";
 import TreeRender from "../views/TreeRender";
-import {workspace} from "../app";
 
 
 export class CanvasModel {
@@ -220,161 +221,22 @@ export class CanvasModel {
                         position: 'absolute',
                         width: '150px'
                     }
-                }, [
-                    variableSearchText?.length && {
-                        id: "matchedButton",
-                        vars: variableSearchText.length === 0 ? []
-                            : Object.keys(app.variableSummaries).filter(variable => variable.toLowerCase().includes(variableSearchText)),
-                        name: 'Matched',
-                        borderColor: app.colors.matched,
-                        innerColor: app.colors.matched,
-                        width: 0,
-                        onclickLink: "SearchTextField"
-                    },
-                    ...selectedProblem.groups.map(group => ({
-                        id: String(group.id).replace(/\W/g, '_'),
-                        vars: group.nodes,
-                        name: group.name,
-                        borderColor: group.color,
-                        innerColor: group.color,
-                        width: 0,
-                        onclickLink: `${group.id}TextField`
-                    })),
-                    {
-                        id: "csButton",
-                        vars: selectedProblem.tags.crossSection,
-                        name: 'Cross Sec',
-                        borderColor: app.colors.crossSection,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: 'Cross_SectionalTextField'
-                    },
-                    {
-                        id: "orderingButton",
-                        vars: selectedProblem.tags.ordering,
-                        name: 'Ordering',
-                        borderColor: app.colors.order,
-                        innerColor: app.colors.order,
-                        width: 0,
-                        onclickLink: "OrderingTextField"
-                    },
-                    {
-                        id: "locationButton",
-                        vars: selectedProblem.tags.location,
-                        name: 'Location',
-                        borderColor: app.colors.location,
-                        innerColor: app.colors.location,
-                        width: 0,
-                        onclickLink: "LocationTextField"
-                    },
-                    {
-                        id: "indexButton",
-                        vars: selectedProblem.tags.indexes,
-                        name: 'Index',
-                        borderColor: app.colors.index,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "indexTextField"
-                    },
-                    {
-                        id: "weightButton",
-                        vars: selectedProblem.tags.weights,
-                        name: 'Weight',
-                        borderColor: app.colors.weight,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "weightTextField"
-                    },
-                    {
-                        id: "ordinalButton",
-                        vars: getOrdinalVariables(selectedProblem),
-                        name: 'Ordinal',
-                        borderColor: app.colors.ordinal,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "OrdinalTextField"
-                    },
-                    {
-                        id: "privilegedButton",
-                        vars: selectedProblem.tags.privileged,
-                        name: 'Privileged',
-                        borderColor: app.colors.privileged,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "privilegedTextField"
-                    },
-                    {
-                        id: "exogenousButton",
-                        vars: selectedProblem.tags.exogenous,
-                        name: 'Exogenous',
-                        borderColor: app.colors.exogenous,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "exogeneousTextField"
-                    },
-                    {
-                        id: "featurizeButton",
-                        vars: selectedProblem.tags.featurize,
-                        name: 'Featurize',
-                        borderColor: app.colors.featurize,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "featurizeTextField"
-                    },
-                    {
-                        id: "randomizeButton",
-                        vars: selectedProblem.tags.randomize,
-                        name: 'Randomize',
-                        borderColor: app.colors.randomize,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "randomizeTextField"
-                    },
-                    {
-                        id: "nomButton",
-                        vars: getNominalVariables(selectedProblem),
-                        name: 'Nominal',
-                        borderColor: app.colors.nominal,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "nominalTextField"
-                    },
-                    {
-                        id: "boundaryButton",
-                        vars: selectedProblem.tags.boundary,
-                        name: 'Boundary',
-                        borderColor: app.colors.boundary,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "boundaryTextField"
-                    },
-                    {
-                        id: "geographicButton",
-                        vars: getGeographicVariables(),
-                        name: 'Geographic',
-                        borderColor: app.colors.location,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "geographicTextField"
-                    },
-                    {
-                        id: "temporalButton",
-                        vars: Object.keys(app.variableSummaries)
-                            .filter(variable => app.variableSummaries[variable].timeUnit),
-                        name: 'Temporal',
-                        borderColor: app.colors.time,
-                        innerColor: 'white',
-                        width: 1,
-                        onclickLink: "temporalTextField"
-                    }
-                ].filter(row => row && row.vars.length > 0).map(row =>
-                    m(`#${row.id}[style=width:100% !important]`, {onclick: row.onclickLink && (() => {
+                }, variableTagMetadata(selectedProblem).filter(row => row && row.nodes.length > 0 && row.legend !== false).map(row =>
+                    m(`#${String(row.name).replace(/\\W/g, '_')}Button[style=width:100% !important]`, {
+                            onclick: (() => {
                                 app.setLeftTab("Groups")
                                 m.redraw.sync();
-                                document.getElementById(row.onclickLink)?.focus?.()
-                            })},
+                                document.getElementById(`${String(row.name).replace(/\W/g, '_')}TextField`)?.focus?.()
+                            })
+                        },
                         m(".rectColor[style=display:inline-block]", m("svg[style=width: 20px; height: 20px]",
-                            m(`circle[cx=10][cy=10][fill=${row.innerColor}][fill-opacity=0.6][r=9][stroke=${row.borderColor}][stroke-opacity=${row.width}][stroke-width=2]`))),
+                            m('circle', common.mergeAttributes({
+                                cx: 10, cy: 10, r: 8.75,
+                            }, row.group && {
+                                fill: row.color, 'fill-opacity': 0.6
+                            }, !row.group && {
+                                stroke: row.color, 'fill-opacity': 0, 'stroke-opacity': 1, 'stroke-width': 2.5
+                            })))),
                         m(".rectLabel[style=display:inline-block;vertical-align:text-bottom;margin-left:.5em]", row.name)))
             ),
 
@@ -515,40 +377,25 @@ export let leftpanel = forceData => {
                     m(PanelList, {
                         id: 'varList',
                         items: leftpanelVariables,
-                        colors: Object.assign(
-                            selectedProblem.groups.reduce((out, group) =>
-                                Object.assign(out, {[app.hexToRgba(group.color, .25)]: group.nodes}), {}),
-                            {
-                                [app.hexToRgba(app.colors.matched, .25)]: matchedVariables,
-                                [app.hexToRgba(common.selVarColor, .5)]: app.isExploreMode ? selectedProblem.tags.loose : explore.explorePreferences.variables,
-                                [app.hexToRgba(app.colors.order, .25)]: selectedProblem.tags.ordering,
-                                [app.hexToRgba(app.colors.location, .25)]: selectedProblem.tags.location
+                        colors: variableTagMetadata(selectedProblem)
+                            .filter(tag => tag?.group)
+                            .reduce((out, group) => Object.assign(out, {[app.hexToRgba(group.color, group.opacity)]: group.nodes}), {}),
+                        classes: variableTagMetadata(selectedProblem)
+                            .filter(tag => tag && !tag.group)
+                            .reduce((out, tag) => Object.assign(out, {[tag.class_]: tag.nodes}), {
+                                'item-hovered': [leftpanelHoveredVariableName, forceDiagramState.selectedPebble].filter(_ => _)
                             }),
-                        classes: {
-                            // keep this order aligned with params in mutateNodes
-                            'item-nominal': getNominalVariables(selectedProblem),
-                            'item-geographic': getGeographicVariables(),
-                            'item-ordinal': getOrdinalVariables(selectedProblem),
-                            'item-boundary': selectedProblem.tags.boundary,
-                            'item-time': Object.keys(app.variableSummaries)
-                                .filter(variable => app.variableSummaries[variable].timeUnit),
-                            'item-weight': selectedProblem.tags.weights,
-                            'item-privileged': selectedProblem.tags.privileged,
-                            'item-exogenous': selectedProblem.tags.exogenous,
-                            'item-featurize': selectedProblem.tags.featurize,
-                            'item-randomize': selectedProblem.tags.randomize,
-                            'item-cross-section': selectedProblem.tags.crossSection,
-                            'item-index': selectedProblem.tags.indexes,
-                            'item-hovered': [leftpanelHoveredVariableName, forceDiagramState.selectedPebble].filter(_ => _)
-                        },
                         eventsItems: {
                             onclick: varName => {
-                                toggleGroup(selectedProblem, [
+                                let diagramPebbles = [
                                     ...selectedProblem.groups.flatMap(group => group.nodes),
                                     ...selectedProblem.tags.loose,
                                     ...selectedProblem.tags.crossSection,
                                     ...selectedProblem.tags.ordering
-                                ].includes(varName) ? 'None' : 'Loose', varName);
+                                ]
+                                console.log(varName, diagramPebbles.includes(varName) ? 'None' : 'Loose');
+
+                                toggleGroup(selectedProblem, diagramPebbles.includes(varName) ? 'None' : 'Loose', varName);
                                 app.resetPeek();
                             },
                             onmouseover: varName => leftpanelHoveredVariableName = varName,
@@ -569,19 +416,23 @@ export let leftpanel = forceData => {
                                     activeSection: leftpanelHoveredVariablePopper,
                                     onclick: state => leftpanelHoveredVariablePopper = state,
                                     sections: [
-                                        {value: 'Tags'},
+                                        {value: 'Groups'},
                                         {value: 'Summary'},
                                     ]
                                 })
                             ),
-                            leftpanelHoveredVariablePopper === 'Tags' && [
-                                ...variableTagMetadata(selectedProblem, variableName).map(tag =>
+                            leftpanelHoveredVariablePopper === 'Groups' && [
+                                ...variableTagMetadata(selectedProblem).map(tag =>
                                     m('div', {
                                         style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'}
                                     }, m(Button, {
-                                        style: {width: 'auto'},
-                                        onclick: tag.onclick,
-                                        class: (tag.active ? 'active' : '') + ' btn-sm'
+                                        style: Object.assign({width: 'auto'}, tag.group ? {
+                                            'background-color': hexToRgba(tag.color, tag.opacity)
+                                        } : {
+                                            'border': `4px solid ${hexToRgba(tag.color, tag.opacity)}`
+                                        }),
+                                        onclick: tag.toggleNode && (() => tag.toggleNode(variableName)),
+                                        class: (tag.nodes.includes(variableName) ? 'active' : '') + ' btn-sm'
                                     }, tag.name)))
                             ],
                             leftpanelHoveredVariablePopper === 'Summary' && [
@@ -649,96 +500,9 @@ export let leftpanel = forceData => {
                     group, variables: leftpanelVariables, problem: selectedProblem
                 })),
                 m('h4[style=padding:1em]', 'Labels'),
-                [
-                    {
-                        id: 'index',
-                        name: 'Index',
-                        description: defaultGroupDescriptions.index,
-                        nodes: selectedProblem.tags.indexes,
-                        color: app.colors.index,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'weight',
-                        name: 'Weight',
-                        description: defaultGroupDescriptions.weight,
-                        nodes: selectedProblem.tags.weights,
-                        color: app.colors.weight,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'ordinal',
-                        name: 'Ordinal',
-                        description: defaultGroupDescriptions.ordinal,
-                        nodes: getOrdinalVariables(selectedProblem),
-                        color: app.colors.ordinal,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'privileged',
-                        name: 'Privileged',
-                        description: defaultGroupDescriptions.privileged,
-                        nodes: selectedProblem.tags.privileged,
-                        color: app.colors.privileged,
-                        opacity: 0.7
-                    },
-                    selectedProblem.modelingMode !== "causal" && selectedProblem.task === "forecasting" && {
-                        id: 'exogenous',
-                        name: 'Exogenous',
-                        description: defaultGroupDescriptions.exogenous,
-                        nodes: selectedProblem.tags.exogenous,
-                        color: app.colors.exogenous,
-                        opacity: 0.7
-                    },
-                    selectedProblem.modelingMode === "causal" && {
-                        id: 'featurize',
-                        name: 'Featurize',
-                        description: defaultGroupDescriptions.featurize,
-                        nodes: selectedProblem.tags.featurize,
-                        color: app.colors.featurize,
-                        opacity: 0.7
-                    },
-                    selectedProblem.modelingMode === "causal" && {
-                        id: 'randomize',
-                        name: 'Randomize',
-                        description: defaultGroupDescriptions.randomize,
-                        nodes: selectedProblem.tags.randomize,
-                        color: app.colors.randomize,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'nominal',
-                        name: 'Nominal',
-                        description: defaultGroupDescriptions.nominal,
-                        nodes: getNominalVariables(selectedProblem),
-                        color: app.colors.nominal,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'boundary',
-                        name: 'Boundary',
-                        description: defaultGroupDescriptions.boundary,
-                        nodes: selectedProblem.tags.boundary,
-                        color: app.colors.boundary,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'geographic',
-                        name: 'Geographic',
-                        description: defaultGroupDescriptions.geographic,
-                        nodes: Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].locationUnit),
-                        color: app.colors.geographic,
-                        opacity: 0.7
-                    },
-                    {
-                        id: 'temporal',
-                        name: 'Temporal',
-                        description: defaultGroupDescriptions.temporal,
-                        nodes: Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].timeUnit),
-                        color: app.colors.time,
-                        opacity: 0.7
-                    },
-                ].filter(_=>_).map(label => m(ForceDiagramLabel, {label, variables: leftpanelVariables, problem: selectedProblem}))
+                variableTagMetadata(selectedProblem)
+                    .filter(tag => tag && !tag.group)
+                    .map(label => m(ForceDiagramLabel, {label, variables: leftpanelVariables, problem: selectedProblem}))
             ]
         })
     }
@@ -810,16 +574,20 @@ export let leftpanel = forceData => {
                     shown: summaryPebbles.length === 1 || undefined
                 },
 
-                variableTagMetadata(selectedProblem, variableName).map(tag =>
+                variableTagMetadata(selectedProblem).map(tag =>
                     m('div', {
                         style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'},
                     }, m(Popper, {
                         content: () => tag.title,
                         popperDuration: 10
                     }, m(Button, {
-                        style: {width: 'auto'},
-                        onclick: tag.onclick,
-                        class: (tag.active ? 'active' : '') + ' btn-sm'
+                        style: Object.assign({width: 'auto'}, tag.group ? {
+                            'background-color': hexToRgba(tag.color, tag.opacity)
+                        } : {
+                            'border': `4px solid ${hexToRgba(tag.color, tag.opacity)}`
+                        }),
+                        onclick: tag.toggleNode && (() => tag.toggleNode(variableName)),
+                        class: (tag.nodes.includes(variableName) ? 'active' : '') + ' btn-sm'
                     }, tag.name)))),
 
                 (selectedProblem.tags.ordering.includes(variableName) || app.variableSummaries[variableName].timeUnit) && m('div', {
@@ -1431,49 +1199,12 @@ const intersect = sets => sets.reduce((a, b) => new Set([...a].filter(x => b.has
 
 let buildGroupingState = problem => {
     return {
-        groups: [
-            variableSearchText.length > 0 && {
-                id: 'Search',
-                name: `Search: ${variableSearchText}`,
-                color: app.colors.matched,
-                description: `Snapshot of variables containing "${variableSearchText}".`,
-                nodes: Object.keys(app.variableSummaries).filter(variable => variable.toLowerCase().includes(variableSearchText)),
-                opacity: 0.3
-            },
-            ...problem.groups.map(group => Object.assign({}, group, {nodes: new Set(group.nodes), editable: true})),
-            {
-                id: 'Loose',
-                name: "Loose",
-                description: defaultGroupDescriptions.loose,
-                color: common.menuColor,
-                nodes: new Set(problem.tags.loose),
-                opacity: 0.0
-            },
-            {
-                id: "Cross-Sectional",
-                name: 'Cross-Sectional',
-                description: defaultGroupDescriptions.crossSection,
-                color: app.colors.crossSection,
-                nodes: new Set(problem.tags.crossSection),
-                opacity: 0.3
-            },
-            {
-                id: 'Ordering',
-                name: "Ordering",
-                color: app.colors.order,
-                description: defaultGroupDescriptions.ordering,
-                nodes: new Set(problem.tags.ordering),
-                opacity: 0.3
-            },
-            {
-                id: 'Location',
-                name: "Location",
-                color: app.colors.location,
-                description: defaultGroupDescriptions.location,
-                nodes: new Set(problem.tags.location),
-                opacity: 0.3
-            }
-        ].filter(_ => _),
+        groups: variableTagMetadata(problem)
+            .filter(tag => tag?.group)
+            .map(group => Object.assign(group, {
+                id: group.id ?? group.name,
+                nodes: new Set(group.nodes)
+            })),
         groupLinks: [
             ...problem.groupLinks,
             ...getTargetGroups(problem).flatMap(group => [
@@ -1505,6 +1236,14 @@ export let buildForceData = problem => {
     let addedPebbles = new Set();
 
     let {groups, groupLinks} = buildGroupingState(problem);
+
+    groups
+        .filter(group => group.keep && group.nodes.size === 0)
+        .forEach(group => {
+            let placeholderName = `empty-placeholder-${group.id}`;
+            group.nodes.add(placeholderName);
+            summaries[placeholderName] = {pdfPlotType: 'nonexistent'};
+        })
 
     let combinedGroups = new Map(common.deepCopy(groups).map(group => [group.id, group]));
 
@@ -1709,77 +1448,156 @@ Object.assign(forceDiagramState, {
     }
 });
 
-let variableTagMetadata = (selectedProblem, variableName) => [
-    ...selectedProblem.groups.map(group => ({
-        name: group.name,
-        active: group.nodes.includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, group.nodes.includes(variableName) ? 'Loose' : group.id, variableName),
-        title: group.description
+let variableTagMetadata = selectedProblem => [
+    variableSearchText?.length > 0 && {
+        id: 'Matched',
+        name: `Search: ${variableSearchText}`,
+        group: true,
+        nodes: variableSearchText.length === 0 ? []
+            : Object.keys(app.variableSummaries).filter(variable => variable.toLowerCase().includes(variableSearchText)),
+        color: app.colors.matched,
+        opacity: 0.3,
+        description: `Snapshot of variables containing "${variableSearchText}".`
+    },
+    ...selectedProblem.groups.map(group => Object.assign({}, group, {
+        group: true,
+        toggleNode: variableName => toggleGroup(selectedProblem, group.nodes.includes(variableName) ? 'Loose' : group.id, variableName),
+        editable: true,
+        keep: true
     })),
     {
-        name: 'Loose', active: selectedProblem.tags.loose.includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? 'None' : 'Loose', variableName),
-        title: defaultGroupDescriptions.loose
+        name: 'Loose',
+        group: true,
+        nodes: app.isExploreMode ? explore.explorePreferences.variables : selectedProblem.tags.loose,
+        toggleNode: variableName => toggleGroup(selectedProblem, selectedProblem.tags.loose.includes(variableName) ? 'None' : 'Loose', variableName),
+        opacity: 0.,
+        description: defaultGroupDescriptions.loose,
+        legend: false
     },
     {
-        name: 'Ordering', active: selectedProblem.tags.ordering.includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, 'Ordering', variableName),
-        title: defaultGroupDescriptions.ordering
+        name: 'Cross Section',
+        group: true,
+        nodes: selectedProblem.tags.crossSection,
+        toggleNode: variableName => toggleGroup(selectedProblem, 'crossSection', variableName),
+        color: app.colors.crossSection,
+        opacity: 0.3,
+        description: defaultGroupDescriptions.crossSection
     },
     {
-        name: 'Location', active: selectedProblem.tags.location.includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, 'Location', variableName),
-        title: defaultGroupDescriptions.location
+        name: 'Ordering',
+        group: true,
+        nodes: selectedProblem.tags.ordering,
+        toggleNode: variableName => toggleGroup(selectedProblem, 'Ordering', variableName),
+        color: app.colors.order,
+        opacity: 0.3,
+        description: defaultGroupDescriptions.ordering
     },
     {
-        name: 'Nominal', active: selectedProblem.tags.nominal.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'nominal', variableName),
-        title: defaultGroupDescriptions.nominal,
+        name: 'Location',
+        group: true,
+        nodes: selectedProblem.tags.location,
+        toggleNode: variableName => toggleGroup(selectedProblem, 'Location', variableName),
+        color: app.colors.location,
+        opacity: 0.3,
+        description: defaultGroupDescriptions.location
     },
     {
-        name: 'Ordinal', active: getOrdinalVariables(selectedProblem).includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, 'ordinal', variableName),
-        title: defaultGroupDescriptions.ordinal
+        name: 'Index',
+        nodes: selectedProblem.tags.indexes,
+        toggleNode: variableName => toggleTag(selectedProblem, 'indexes', variableName),
+        color: app.colors.index,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.index,
+        class_: 'item-index'
     },
     {
-        name: 'Cross Section', active: selectedProblem.tags.crossSection.includes(variableName),
-        onclick: () => toggleGroup(selectedProblem, 'crossSection', variableName),
-        title: defaultGroupDescriptions.crossSection
+        name: 'Weight',
+        nodes: selectedProblem.tags.weights,
+        toggleNode: variableName => toggleTag(selectedProblem, 'weights', variableName),
+        color: app.colors.weight,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.weight,
+        class_: 'item-weight'
     },
     {
-        name: 'Boundary', active: selectedProblem.tags.boundary.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'boundary', variableName),
-        title: defaultGroupDescriptions.boundary
+        name: 'Ordinal',
+        nodes: getOrdinalVariables(selectedProblem),
+        toggleNode: variableName => toggleGroup(selectedProblem, 'ordinal', variableName),
+        color: app.colors.ordinal,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.ordinal,
+        class_: 'item-ordinal'
     },
     {
-        name: 'Weight', active: selectedProblem.tags.weights.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'weights', variableName),
-        title: defaultGroupDescriptions.weight
+        name: 'Privileged',
+        nodes: selectedProblem.tags.privileged,
+        toggleNode: variableName => toggleTag(selectedProblem, 'privileged', variableName),
+        color: app.colors.privileged,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.privileged,
+        class_: 'item-privileged'
+    },
+    selectedProblem.modelingMode !== "causal" && selectedProblem.task === "forecasting" && {
+        name: 'Exogenous',
+        nodes: selectedProblem.tags.exogenous,
+        toggleNode: variableName => toggleTag(selectedProblem, 'exogenous', variableName),
+        color: app.colors.exogenous,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.exogenous,
+        class_: 'item-exogenous'
+    },
+    selectedProblem.modelingMode === "causal" && {
+        name: 'Featurize',
+        nodes: selectedProblem.tags.featurize,
+        toggleNode: variableName => toggleTag(selectedProblem, 'featurize', variableName),
+        color: app.colors.featurize,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.featurize,
+        class_: 'item-featurize'
+    },
+    selectedProblem.modelingMode === "causal" && {
+        name: 'Randomize',
+        nodes: selectedProblem.tags.randomize,
+        toggleNode: variableName => toggleTag(selectedProblem, 'randomize', variableName),
+        color: app.colors.randomize,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.randomize,
+        class_: 'item-randomize'
     },
     {
-        name: 'Privileged', active: selectedProblem.tags.privileged.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'privileged', variableName),
-        title: defaultGroupDescriptions.privileged
+        name: 'Nominal',
+        nodes: selectedProblem.tags.nominal,
+        toggleNode: variableName => toggleTag(selectedProblem, 'nominal', variableName),
+        color: app.colors.nominal,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.nominal,
+        class_: 'item-nominal'
     },
     {
-        name: 'Exogenous', active: selectedProblem.tags.exogenous.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'exogenous', variableName),
-        title: defaultGroupDescriptions.exogenous
+        name: 'Boundary',
+        nodes: selectedProblem.tags.boundary,
+        toggleNode: variableName => toggleTag(selectedProblem, 'boundary', variableName),
+        color: app.colors.boundary,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.boundary,
+        class_: 'item-boundary'
     },
     {
-        name: 'Featurize', active: selectedProblem.tags.featurize.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'featurize', variableName),
-        title: defaultGroupDescriptions.featurize
+        name: 'Geographic',
+        nodes: getGeographicVariables(),
+        color: app.colors.geographic,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.geographic,
+        class_: 'item-geographic'
     },
     {
-        name: 'Randomize', active: selectedProblem.tags.randomize.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'randomize', variableName),
-        title: defaultGroupDescriptions.randomize
-    },
-    {
-        name: 'Index', active: selectedProblem.tags.indexes.includes(variableName),
-        onclick: () => toggleTag(selectedProblem, 'indexes', variableName),
-        title: defaultGroupDescriptions.index
+        name: 'Temporal',
+        nodes: Object.keys(app.variableSummaries)
+            .filter(variable => app.variableSummaries[variable].timeUnit),
+        color: app.colors.time,
+        opacity: 0.7,
+        description: defaultGroupDescriptions.temporal,
+        class_: 'item-time'
     },
 ].filter(_ => _)
 
