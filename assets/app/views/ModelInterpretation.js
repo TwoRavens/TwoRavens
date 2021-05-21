@@ -29,16 +29,16 @@ export default class ModelInterpretation {
                             "encoding": {
                                 "x": {
                                     "field": "predictor",
-                                    "type": "categorical",
+                                    "type": "nominal",
                                     axis: {labels: axisLabels},
                                     title: false
                                 },
-                                "y": {"field": variableLabel, "type": "categorical"},
+                                "y": {"field": variableLabel, "type": "nominal"},
                                 "color": {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                 "tooltip": [
                                     {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                                    {"field": variableLabel, "type": "categorical"},
-                                    {"field": "predictor", "type": "categorical"}
+                                    {"field": variableLabel, "type": "nominal"},
+                                    {"field": "predictor", "type": "nominal"}
                                 ]
                             }
                         },
@@ -81,15 +81,15 @@ export default class ModelInterpretation {
                         "encoding": {
                             "y": {
                                 "field": variableLabel,
-                                "type": "categorical", title: ''
+                                "type": "nominal", title: ''
                             },
                             "x": {"field": yLabel, "type": "quantitative"},
                             "row": {"field": "predictor", "type": "ordinal"},
-                            "color": {"field": variableLabel, "type": "categorical"},
+                            "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
-                                {"field": variableLabel, "type": "categorical"},
-                                {"field": "predictor", "type": "categorical"}
+                                {"field": variableLabel, "type": "nominal"},
+                                {"field": "predictor", "type": "nominal"}
                             ]
                         }
                     }
@@ -125,11 +125,11 @@ export default class ModelInterpretation {
                                 title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                            "color": {"field": 'level', "type": "categorical", 'title': target},
-                            'opacity': {"field": 'target', 'type': 'categorical'},
+                            "color": {"field": 'level', "type": "nominal", 'title': target},
+                            'opacity': {"field": 'target', 'type': 'nominal'},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                                {"field": variableLabel, "type": "categorical"},
+                                {"field": variableLabel, "type": "nominal"},
                                 {"field": "predictor", "type": "quantitative"}
                             ]
                         }
@@ -183,7 +183,7 @@ export default class ModelInterpretation {
                             'opacity': {"field": 'target', 'type': 'categorical'},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: target},
-                                {"field": variableLabel, "type": "categorical"},
+                                {"field": variableLabel, "type": "nominal"},
                                 {"field": "predictor", "type": "quantitative"}
                             ]
                         }
@@ -234,16 +234,16 @@ export default class ModelInterpretation {
                         "mark": 'point',
                         "encoding": {
                             "x": {
-                                 "field": predictor, "type": "categorical",
+                                 "field": predictor, "type": "nominal",
                                 axis: {labels: axisLabels},
                                 title: false
                             },
-                            "y": {"field": yLabel, "type": "categorical"},
-                            "color": {"field": variableLabel, "type": "categorical"},
+                            "y": {"field": yLabel, "type": "nominal"},
+                            "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
-                                {"field": yLabel, "type": "categorical"},
-                                {"field": variableLabel, "type": "categorical"},
-                                {"field": predictor, "type": "categorical"}
+                                {"field": yLabel, "type": "nominal"},
+                                {"field": variableLabel, "type": "nominal"},
+                                {"field": predictor, "type": "nominal"}
                             ]
                         }
                     },
@@ -314,11 +314,11 @@ export default class ModelInterpretation {
                                     axis: {labels: densities === undefined ? true : axisLabels},
                                     title: densities === undefined ? predictor : false
                                 },
-                                "y": {"field": yLabel, "type": "categorical", title: target, scale: {zero: false}},
-                                "detail": {"field": "horizontalGroup", "type": "categorical"},
+                                "y": {"field": yLabel, "type": "nominal", title: target, scale: {zero: false}},
+                                "detail": {"field": "horizontalGroup", "type": "nominal"},
                                 "tooltip": [
-                                    {"field": yLabel, "type": "categorical"},
-                                    {"field": variableLabel, "type": "categorical"},
+                                    {"field": yLabel, "type": "nominal"},
+                                    {"field": variableLabel, "type": "nominal"},
                                     {"field": predictor, "type": "quantitative"}
                                 ]
                             }
@@ -372,10 +372,10 @@ export default class ModelInterpretation {
                                 title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: target, scale: {zero: false}},
-                            "color": {"field": variableLabel, "type": "categorical"},
+                            "color": {"field": variableLabel, "type": "nominal"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
-                                {"field": variableLabel, "type": "categorical"},
+                                {"field": variableLabel, "type": "nominal"},
                                 {"field": predictor, "type": "quantitative"}
                             ]
                         }
@@ -468,16 +468,16 @@ export default class ModelInterpretation {
                                     axis: {labels: densities === undefined ? true : axisLabels},
                                     title: densities === undefined ? predictor : false
                                 },
-                                "y": {"field": target, "type": "categorical", title: target, scale: {zero: false}},
+                                "y": {"field": target, "type": "nominal", title: target, scale: {zero: false}},
                                 "size": {"field": 'count', "type": 'quantitative', "scale": {"type": "log", 'range': [2, 10]}},
                                 "detail": {
                                     "field": "edgeId",
-                                    "type": "categorical",
+                                    "type": "nominal",
                                     'legend': false
                                 },
                                 'tooltip': [
                                     {'field': predictor, 'type': 'quantitative'},
-                                    {'field': target, 'type': 'categorical'},
+                                    {'field': target, 'type': 'nominal'},
                                     {'field': 'count', 'type': 'quantitative'}
                                 ]
                             }

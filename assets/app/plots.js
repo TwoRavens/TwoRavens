@@ -60,13 +60,13 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
                             "condition": {
                                 "selection": "panner",
                                 "field": groupName,
-                                "type": "categorical",
+                                "type": "nominal",
                                 "legend": {"symbolOpacity": 1}
                             },
                             "value": "gray"
                         },
                         "tooltip": [
-                            {"field": groupName, "type": "categorical"},
+                            {"field": groupName, "type": "nominal"},
                             {"field": countName, "type": "quantitative"},
                             {"field": "Fitted Value", "type": "quantitative"},
                             {"field": "Actual Value", "type": "quantitative"}
@@ -133,12 +133,12 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
         },
         "encoding": {
             "tooltip": [
-                {"field": groupName, "type": "categorical"},
+                {"field": groupName, "type": "nominal"},
                 {"field": yName, "type": "quantitative"},
-                {"field": splitName, "type": "categorical"},
-                {"field": crossSectionName, "type": "categorical"},
+                {"field": splitName, "type": "nominal"},
+                {"field": crossSectionName, "type": "nominal"},
             ],
-            "color": {"field": groupName, "type": "categorical"},
+            "color": {"field": groupName, "type": "nominal"},
             "x": {
                 "field": xName,
                 "type": timeFormat ? "temporal" : "quantitative",
@@ -158,7 +158,7 @@ export let vegaLiteForecast = (data, xName, yName, splitName, groupName, crossSe
                 },
                 "value": 0.05
             },
-            "detail": {"field": crossSectionName, "type": "categorical"}
+            "detail": {"field": crossSectionName, "type": "nominal"}
         }
     });
 };
@@ -187,7 +187,7 @@ export let vegaLiteForecastConfidence = (
             },
         },
         "encoding": {
-            "color": {"field": groupName, "type": "categorical"},
+            "color": {"field": groupName, "type": "nominal"},
             "x": {
                 "field": xName,
                 "type": timeFormat ? "temporal" : "quantitative",
@@ -246,8 +246,8 @@ export let vegaLiteConfusionMatrix = (
         {"calculate": 'datum.Predicted === datum.Actual', 'as': 'diagonal'}
     ],
     'encoding': {
-        "x": {"field": xName, "type": "categorical", "scale": {"domain": classes}},
-        "y": {"field": yName, "type": "categorical", "scale": {"domain": classes}},
+        "x": {"field": xName, "type": "nominal", "scale": {"domain": classes}},
+        "y": {"field": yName, "type": "nominal", "scale": {"domain": classes}},
     },
     "selection": {
         "selector": {"type": "single"}
@@ -287,13 +287,13 @@ export let vegaLiteConfusionMatrix = (
                         }
                     ],
                     "field": "diagonal",
-                    "type": "categorical",
+                    "type": "nominal",
                     "scale": {"range": ["transparent", "#7e3d20"]},
                     "legend": null
                 },
                 "tooltip": [
-                    {"field": 'explanation', "type": "categorical"},
-                    {"field": 'significance', "type": "categorical"}
+                    {"field": 'explanation', "type": "nominal"},
+                    {"field": 'significance', "type": "nominal"}
                 ]
             }
         },
@@ -306,8 +306,8 @@ export let vegaLiteConfusionMatrix = (
                     "value": "white"
                 },
                 "tooltip": [
-                    {"field": 'explanation', "type": "categorical"},
-                    {"field": 'significance', "type": "categorical"}
+                    {"field": 'explanation', "type": "nominal"},
+                    {"field": 'significance', "type": "nominal"}
                 ]
             }
         }
@@ -368,13 +368,13 @@ export let vegaLiteImportancePlot = (data, comparison) => ({
     "encoding": {
         "x": {
             "field": "solution ID",
-            "type": "categorical",
+            "type": "nominal",
             "sort": false,
             "title": ''
         },
         [comparison ? "column" : 'x']: {
             "field": "predictor",
-            "type": "categorical",
+            "type": "nominal",
             "header": {"labelAngle": 20},
             "axis": {"labelAngle": -20},
             "title": "",
@@ -386,13 +386,13 @@ export let vegaLiteImportancePlot = (data, comparison) => ({
         },
         "color": {
             "field": "solution ID",
-            "type": "categorical",
+            "type": "nominal",
             "legend": null
         },
         "tooltip": [
             {"field": 'importance', "type": "quantitative"},
-            {"field": 'predictor', "type": "categorical"},
-            {"field": 'solution ID', "type": "categorical"}
+            {"field": 'predictor', "type": "nominal"},
+            {"field": 'solution ID', "type": "nominal"}
         ]
     }
 });

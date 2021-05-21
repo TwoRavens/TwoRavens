@@ -324,8 +324,6 @@ export class CanvasExplore {
     view(vnode) {
         let {exploreMode, variables} = vnode.attrs;
 
-        console.log(variables);
-
         if (exploreMode === 'variables') {
             explorePreferences.go = true;
             explorePreferences.mode = exploreMode;

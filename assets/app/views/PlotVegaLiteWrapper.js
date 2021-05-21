@@ -35,7 +35,7 @@ export let preparePanels = state => {
     } = state;
     let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
         [variable]: categoricals.has(variable)
-            ? 'categorical' : summaries[variable].nature === 'ordinal'
+            ? 'nominal' : summaries[variable].nature === 'ordinal'
                 ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
                 : 'quantitative'
     }), {});
@@ -254,9 +254,9 @@ let makeLayer = (layer, varTypes, summaries) => {
             if (!channel.variable) return Object.assign(encodings, {
                 [channel.name]: {value: channel.colorValue}
             })
-            let varType = varTypes[channel.variable] || 'categorical';
+            let varType = varTypes[channel.variable] || 'nominal';
             let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
-            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "categorical" ? 'categorical' : 'sequential-single');
+            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "character" ? 'categorical' : 'sequential-single');
             if (schemes[schemeCategory].includes(channel.scheme?.[schemeCategory]))
                 scale.scheme = channel.scheme?.[schemeCategory];
             return Object.assign(encodings, {
@@ -272,14 +272,14 @@ let makeLayer = (layer, varTypes, summaries) => {
         return Object.assign(encodings, {
             [channel.name]: {
                 field: channel.variable,
-                type: varTypes[channel.variable] || 'categorical',
+                type: varTypes[channel.variable] || 'nominal',
                 scale: {zero: layer.zero ?? false, nice: layer.nice ?? false}
             }
         })
     }, {});
 
     let makeTooltipSpec = variable => ({
-        field: variable, type: varTypes[variable] || 'categorical'
+        field: variable, type: varTypes[variable] || 'nominal'
     })
     spec.encoding.tooltip = channels
         .filter(channel => !channel.delete)

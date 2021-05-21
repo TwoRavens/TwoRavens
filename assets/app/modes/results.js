@@ -465,8 +465,8 @@ export class CanvasSolutions {
                         "mark": "rect",
                         "encoding": {
                             "y": {"value": -5},
-                            "x": {"field": "solution", "type": "categorical"},
-                            "color": {"field": "color", "type": "categorical", "scale": null}
+                            "x": {"field": "solution", "type": "nominal"},
+                            "color": {"field": "color", "type": "nominal", "scale": null}
                         }
                     }
                 }),
@@ -859,7 +859,7 @@ export class CanvasSolutions {
                     },
                     "mark": "bar",
                     "encoding": {
-                        "x": {"field": 'ID', "type": "categorical"},
+                        "x": {"field": 'ID', "type": "nominal"},
                         "y": {
                             "field": metric, "type": "quantitative",
                             scale: (metric in app.d3mMetricDomains)
@@ -867,7 +867,7 @@ export class CanvasSolutions {
                                 : {}
                         },
                         "tooltip": [
-                            {"field": 'ID', "type": "categorical"},
+                            {"field": 'ID', "type": "nominal"},
                             {"field": metric, "type": "quantitative"}
                         ]
                     }

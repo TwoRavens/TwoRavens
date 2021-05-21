@@ -114,7 +114,7 @@ export default class CanvasResults {
                 "encoding": {
                     "x": {"field": eventdata.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
                     "y": {"field": "value", "type": "quantitative"},
-                    "color": {"field": "variable", "type": "categorical"}
+                    "color": {"field": "variable", "type": "nominal"}
                 }
             };
         }
@@ -136,7 +136,7 @@ export default class CanvasResults {
                     "encoding": {
                         "x": {"field": eventdata.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
                         "y": {"field": "value", "type": "quantitative"},
-                        "color": {"field": "variable", "type": "categorical"}
+                        "color": {"field": "variable", "type": "nominal"}
                     }
                 };
             }
@@ -151,7 +151,7 @@ export default class CanvasResults {
                     "encoding": {
                         "x": {"field": eventdata.aggregationHeadersLabels['date'][0], "type": "temporal", "axis": {"format": "%Y-%m-%d"}},
                         "y": {"field": preferences['melt'], "type": "quantitative"},
-                        "color": {"field": "value", "type": "categorical"}
+                        "color": {"field": "value", "type": "nominal"}
                     }
                 };
             }
