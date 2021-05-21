@@ -10,8 +10,8 @@ export default class Flowchart {
                 onclick: () => this.key = key,
                 ondblclick: () => this.key = undefined,
                 style: {
-                    'background': common.menuColor,
-                    'border': common.borderColor,
+                    'background': common.colors.menu,
+                    'border': common.colors.border,
                     margin: '1em',
                     'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)',
                     width: 'calc(100% - 2em)'
@@ -24,7 +24,7 @@ export default class Flowchart {
                         height: '100%',
                         padding: '1em',
                         width: labelWidth || 0, // by default, 0 makes div width wrap content
-                        'border-right': common.borderColor
+                        'border-right': common.colors.border
                     }
                 }, bold(key)),
                 m('td', {

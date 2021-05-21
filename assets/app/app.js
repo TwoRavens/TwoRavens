@@ -26,7 +26,7 @@ import {
     buildEmptyProblem,
     generateProblemID,
     getAbstractPipeline,
-    getNominalVariables,
+    getCategoricalVariables,
     getPredictorVariables,
     getProblemCopy,
     getSelectedProblem, getTargetGroups, getTargetVariables,
@@ -79,14 +79,14 @@ export let colors = {
     // groups
     predictor: '#14bdcc',
     target: '#79af4f',
-    crossSection: '#fda760', // should be similar to nominal
+    crossSection: '#fda760', // should be similar to categorical
     order: '#2d6ca2',
     location: '#419641',
 
     // labels
     time: '#2d6ca2', // should be similar/same to orderColor
-    nominal: '#ff6600',
-    ordinal: '#ffb700', // should be similar to nominal
+    categorical: '#ff6600',
+    ordinal: '#ffb700', // should be similar to categorical
     weight: '#cb5a94',
     boundary: '#d23e3e', // similar to bounding box color?
     privileged: '#996bcc', // royalty?
@@ -213,7 +213,7 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !isDatasetMode && getNominalVariables(problem)
+            categorical: !isDatasetMode && getCategoricalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -1038,7 +1038,8 @@ export let locationUnits = {
     'longitude': ['decimal'],
     'country': ["ISO-3", "ICEWS", "UN M.49", "cowcode", "gwcode", "gtdcode", "ISO-2"],
     'US_state': ['US_state_name', 'USPS'],
-    'DE_state': ['DE_state_name', 'id']
+    'DE_state': ['DE_state_name', 'id'],
+    'dallas': ['COD_Organization']
 }
 
 let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'
@@ -1542,7 +1543,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
             // only modify the problem if problem is in predict mode
             else if (problem.unedited) {
                 // set default predictors based on first discovered problem
-                let newPredictors = getPredictorVariables(workspace.raven_config.problems['problem 1'])
+                let newPredictors = getPredictorVariables(workspace.raven_config.problems['problem 3'])
                     ?.filter?.(variable => !targets.includes(variable));
                 if (newPredictors?.length > 0) problem.groups.find(group => group.name === "Predictors").nodes = newPredictors;
             }

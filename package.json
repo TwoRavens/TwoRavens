@@ -17,7 +17,7 @@
     "license": "BSD-3-Clause",
     "dependencies": {
         "@mapbox/geo-viewport": "^0.4.1",
-        "@mapbox/mapbox-sdk": "^0.11.0",
+        "@mapbox/mapbox-sdk": "^0.12.1",
         "ace-builds": "^1.4.12",
         "ajv": "^6.12.3",
         "bootstrap": "^4.5.0",

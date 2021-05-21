@@ -84,7 +84,7 @@ import * as utils from './utils';
 
 /**
  * @typedef {Object} ProblemTags
- * @property {string[]} nominal
+ * @property {string[]} categorical
  * @property {string[]} ordinal
  * @property {string[]} crossSection
  * @property {string[]} geographic
@@ -119,7 +119,7 @@ export let defaultGroupDescriptions = {
     loose: 'Loose variables are in the modeling space, but are not used in the model.',
     ordering: 'Ordering variables indicate the order of observations.',
     location: 'Location variables indicate a geospatial location.',
-    nominal: 'Nominal variables are text-based categorical variables.',
+    categorical: 'Categorical variables may take on a finite number of determined variants.',
     ordinal: 'Ordinal variables are categorical, but the categories are ordered.',
     boundary: 'Boundary variables are a string vector of numeric data points.',
     weight: 'A weight variable indicates the importance of individual observations.',
@@ -200,7 +200,7 @@ export let buildEmptyProblem = problemId => ({
     meaningful: false,
     manipulations: [],
     tags: {
-        nominal: [],
+        categorical: [],
         ordinal: [],
         crossSection: [],
         location: [],
@@ -331,7 +331,7 @@ export let buildDefaultProblem = problemDoc => {
         meaningful: false,
         manipulations: [],
         tags: {
-            nominal: app.swandive ? [] : app.workspace.datasetDoc.dataResources
+            categorical: app.swandive ? [] : app.workspace.datasetDoc.dataResources
                 .filter(resource => resource.resType === 'table')
                 .flatMap(resource => resource.columns
                     .filter(column => column.colType === 'categorical')
@@ -571,7 +571,7 @@ export function standardizeDiscovery(problems) {
                 privileged: [],
                 exogenous: [],
                 temporal: [],
-                nominal: [],
+                categorical: [],
                 loose: [] // variables displayed in the force diagram, but not in any groups
             },
             timeGranularity: {}
@@ -779,17 +779,17 @@ export let getTargetGroups = problem => {
 }
 
 /**
- * Retrieve all variables that are nominal/text
- * This includes variables that were text-based and variables that were tagged as nominal
+ * Retrieve all variables that are categorical or text
+ * This includes variables that were text-based and variables that were tagged as categorical
  * @param {Problem} problem
  * @returns {string[]}
  */
-export let getNominalVariables = problem => {
+export let getCategoricalVariables = problem => {
     let selectedProblem = problem || getSelectedProblem();
     return [...new Set([
         ...Object.keys(app.variableSummaries).filter(variable => app.variableSummaries[variable].nature === "nominal"),
-        ...selectedProblem.tags.nominal,
-        // // targets in a classification problem are also nominal
+        ...selectedProblem.tags.categorical,
+        // // targets in a classification problem are also categorical
         ...selectedProblem.task.toLowerCase() === 'classification'
             ? getTargetVariables(selectedProblem) : []
     ])];
@@ -849,8 +849,12 @@ export let getTransformVariables = pipeline => pipeline.reduce((out, step) => {
     return out;
 }, new Set());
 
-// build a description of all computations the user has specified
-// typically omit 'all' when calling, unless you want to keep all variables (like in explore mode)
+/**
+ * build a description of all computations the user has specified
+ * typically omit 'all' when calling, unless you want to keep all variables (like in explore mode)
+ * @param {Problem} problem
+ * @returns {(string | undefined)}
+ */
 export let getAbstractPipeline = (problem, all) => {
     if (!problem) return [...app.workspace.raven_config.hardManipulations]
 
@@ -861,9 +865,9 @@ export let getAbstractPipeline = (problem, all) => {
         getOrderingVariable(problem),
         ...getTargetVariables(problem)
     ].filter(_ => _);
-    let nominalCasts = problem.tags.nominals || [];
-    // nominal casts need only be applied to variables retained after subsetting
-    if (!all) nominalCasts = nominalCasts.filter(variable => modelVariables.includes(variable))
+    let categoricalCasts = problem.tags.categorical || [];
+    // categorical casts need only be applied to variables retained after subsetting
+    if (!all) categoricalCasts = categoricalCasts.filter(variable => modelVariables.includes(variable))
 
     return [
         // manipulations applied in dataset mode
@@ -871,10 +875,10 @@ export let getAbstractPipeline = (problem, all) => {
         // manipulations applied in problem mode
         // - including ordinal labeling, imputes, transforms, subsets, etc
         ...problem.manipulations,
-        // if the problem has nominal casting
-        nominalCasts.length > 0 && {
+        // if the problem has categorical casting
+        categoricalCasts.length > 0 && {
             type: 'transform',
-            transforms: nominalCasts.map(variable => ({
+            transforms: categoricalCasts.map(variable => ({
                 equation: `toString(${variable})`,
                 name: variable
             }))
@@ -1021,16 +1025,16 @@ export let isProblemValid = problem => {
  * @returns {boolean}
  */
 export let needsManipulationRewritePriorToSolve = problem => {
-    let newNominalVars = new Set(getNominalVariables(problem));
+    let newCategoricalVars = new Set(getCategoricalVariables(problem));
     Object.keys(app.variableSummaries)
         .filter(variable => app.variableSummaries[variable].numchar === 'character')
-        .forEach(variable => newNominalVars.delete(variable));
-    let hasNominalCast = [...getTargetVariables(problem), ...getPredictorVariables(problem), ...problem.tags.crossSection]
-        .some(variable => newNominalVars.has(variable));
+        .forEach(variable => newCategoricalVars.delete(variable));
+    let hasCategoricalCast = [...getTargetVariables(problem), ...getPredictorVariables(problem), ...problem.tags.crossSection]
+        .some(variable => newCategoricalVars.has(variable));
     let hasOrdering = problem.tags.ordering.length > 1;
 
     let hasManipulation = (app.workspace.raven_config.hardManipulations.length + problem.manipulations.length) > 0;
-    return hasManipulation || hasNominalCast || hasOrdering;
+    return hasManipulation || hasCategoricalCast || hasOrdering;
 };
 
 export let getProblemTrees = () => {

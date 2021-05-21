@@ -441,7 +441,7 @@ export class CanvasDataset {
                     data: Object.entries(app.variableSummaries)
                         .filter(variable => !datasetPreferences.reportSearch
                             || variable[0].toLowerCase().includes(datasetPreferences.reportSearch ?? "")),
-                    makePage: entries => entries.map(([variable, vals]) => m('div', {style: `margin-bottom: 1em; padding: 1em; border: ${common.borderColor}`},
+                    makePage: entries => entries.map(([variable, vals]) => m('div', {style: `margin-bottom: 1em; padding: 1em; border: ${common.colors.border}`},
                         m('h4', variable),
                         m('.row',
                             m('.col[style=min-width:auto !important]',
@@ -519,7 +519,7 @@ export class CanvasDataset {
                     'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
                     margin: '1em',
                     padding: '1em',
-                    'background-color': common.menuColor,
+                    'background-color': common.colors.menu,
                 }
             }, reportContent),
             card('Datasource', datasource),
@@ -536,7 +536,7 @@ let card = (name, content) => {
                 'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
                 margin: '1em',
                 padding: '1em',
-                'background-color': common.menuColor,
+                'background-color': common.colors.menu,
             }
         },
         m('h4[style=margin:.75em]', name),

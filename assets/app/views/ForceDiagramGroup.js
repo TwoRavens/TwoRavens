@@ -23,7 +23,7 @@ export default class ForceDiagramGroup {
         }, [
             m(TextField, {
                 autocomplete: "off",
-                style: {background: common.lightGrayColor, 'font-weight': 'bold'},
+                style: {background: common.colors.lightGray, 'font-weight': 'bold'},
                 id: id + 'TextField',
                 oninput: group.editable && (value => getOrigGroup(problem, group).name = value),
                 onblur: group.editable && (value => getOrigGroup(problem, group).name = value),
@@ -66,7 +66,7 @@ export default class ForceDiagramGroup {
                 oncreate: ({dom}) => dom.focus(),
                 id: `pendingGroupId${id}TextField`,
                 isDropped: true,
-                attrsAll: {style: {background: common.lightGrayColor, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
+                attrsAll: {style: {background: common.colors.lightGray, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
                 value: this.pending,
                 attrsDropped: {style: {'max-height': '200px', overflow: 'auto'}},
                 suggestions: variables.filter(variable => !group.nodes.has(variable)),
@@ -101,7 +101,7 @@ export class ForceDiagramLabel {
             m(TextField, {
                 autocomplete: "off",
                 readonly: true,
-                style: {background: common.lightGrayColor, 'font-weight': 'bold'},
+                style: {background: common.colors.lightGray, 'font-weight': 'bold'},
                 id: id + 'TextField',
                 oninput: _=>_,
                 onblur: _=>_,
@@ -121,7 +121,7 @@ export class ForceDiagramLabel {
                 oncreate: ({dom}) => dom.focus(),
                 id: `pendingLabelId${id}TextField`,
                 isDropped: true,
-                attrsAll: {style: {background: common.lightGrayColor, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
+                attrsAll: {style: {background: common.colors.lightGray, 'font-weight': 'bold'}, placeholder: 'Add Variable'},
                 value: this.pending,
                 attrsDropped: {style: {'max-height': '200px', overflow: 'auto'}},
                 suggestions: variables.filter(variable => !label.nodes.includes(variable)),

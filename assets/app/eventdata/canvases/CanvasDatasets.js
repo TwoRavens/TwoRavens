@@ -45,11 +45,11 @@ export default class CanvasDatasets {
         }, Object.values(eventdata.genericMetadata).sort((a, b) => a.key.localeCompare(b.key)).map((dataset) => m('div', {
                 style: {
                     width: '100%',
-                    background: this.dataset === dataset['key'] ? common.menuColor : '#f0f0f0',
+                    background: this.dataset === dataset['key'] ? common.colors.menu : '#f0f0f0',
                     'box-shadow': '#0003 0px 2px 3px',
                     'margin-top': common.panelMargin,
                     'padding': '10px',
-                    'border': common.borderColor
+                    'border': common.colors.border
                 },
                 onclick: () => this.dataset = dataset['key'],
                 ondblclick: () => this.dataset = undefined

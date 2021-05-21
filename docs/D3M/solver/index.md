@@ -54,10 +54,10 @@ Please note that there may exist different configuration for one strategy.
         * Gradient Boost
         * Linear / Quadratic Discriminant Analysis
         * Gaussian Process
-        * Multi-nominal / Gaussian / Complement Naive Bayes
+        * Multinomial / Gaussian / Complement Naive Bayes
         * AdaBoost
     * MULTI_CLASS
-        * SAME as BINARY excepts Logistic Regression
+        * SAME as BINARY, but without Logistic Regression
     * MULTI_LABEL
         * Random Forest
         * Ridge

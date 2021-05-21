@@ -377,6 +377,7 @@ let translateGeojsonLayer = (layer, summaries) => {
                 let toFormatValue = row[layer.encoding.region.field];
                 return Object.assign({}, geoLookup[toFormatValue], row)
             })
+                .filter(feature => feature?.geometry)
         })
     } else if (layer.encoding?.latitude && layer.encoding?.longitude) {
         layer.data.values.forEach(point => Object.assign(point, {

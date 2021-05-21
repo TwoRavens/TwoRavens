@@ -6,7 +6,7 @@ import * as results from "../modes/results";
 import * as utils from '../utils';
 import {
     getLocationVariables,
-    getNominalVariables,
+    getCategoricalVariables,
     getOrderingVariable,
     getPredictorVariables,
     getTargetVariables,
@@ -102,7 +102,7 @@ export let SPEC_problem = problem => {
         "predictors": predictors,
 
         // data types
-        "categorical": getNominalVariables(problem)
+        "categorical": getCategoricalVariables(problem)
     };
 }
 

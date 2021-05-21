@@ -870,7 +870,7 @@ let pebbleBuilderArcs = (state, context, newPebbles) => {
             .text(label => label.data.name);
 
         d3.select(this).selectAll('path').selectAll('title')
-            .text(d => d.data.name);
+            .text(d => d.data.title ?? d.data.name);
     });
 };
 
@@ -999,7 +999,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .attr('class', 'embedded-plot')
             .data([null]).enter().append('path')
             .attr("class", "area")
-            .attr("fill", common.steelBlue);
+            .attr("fill", common.colors.steelBlue);
 
         // bind all events to the plot
         Object.keys(attrs.pebbleEvents)
@@ -1064,7 +1064,7 @@ let pebbleBuilderPlots = (attrs, context, newPebbles) => {
             .attr("y", d => yScale(maxY - d.y))
             .attr("width", xScale(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
             .attr("height", d => yScale(d.y))
-            .attr("fill", common.steelBlue)
+            .attr("fill", common.colors.steelBlue)
             .attr("transform", "translate(" + (-width / 2) + "," + (-height) + ")");
     });
 };

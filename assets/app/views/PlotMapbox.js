@@ -47,7 +47,6 @@ export default class PlotMapbox {
         window.specification = specification;
         delete specification.selection;
         if (this.map === undefined) {
-            console.log(specification.data?.values?.features)
             let bounds = [
                 specification.data?.values?.features || [],
                 ...(specification.layer || []).map(layer => layer.data.values.features)
@@ -123,6 +122,7 @@ export default class PlotMapbox {
 
 // retrieve the outer layer of points in a flat array. useful for approximating the center
 let getOuter = data => data.flatMap(v => {
+    if (!v?.geometry?.type) return []
     if (v.geometry.type === "Point")
         return [v.geometry.coordinates]
     if (v.geometry.type === "LineString")

@@ -1,6 +1,6 @@
 import m from 'mithril';
 import PlotVegaLite from "./PlotVegaLite";
-import {getNominalVariables} from "../problem";
+import {getCategoricalVariables} from "../problem";
 
 let axisLabels = false;
 
@@ -11,10 +11,10 @@ export default class ModelInterpretation {
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
-        let nominals = getNominalVariables(problem);
+        let categoricals = getCategoricalVariables(problem);
 
         // HEAT MAP
-        if (nominals.includes(predictor) && nominals.includes(target)) {
+        if (categoricals.includes(predictor) && categoricals.includes(target)) {
             // vega-lite emits an invalid canvas gradient when all colors are equal. Fixed in newer version
             if (data.every(point => point[yLabel] === data[0][yLabel])) return 'All probabilities are equal.';
             return m(PlotVegaLite, {
@@ -29,16 +29,16 @@ export default class ModelInterpretation {
                             "encoding": {
                                 "x": {
                                     "field": "predictor",
-                                    "type": "nominal",
+                                    "type": "categorical",
                                     axis: {labels: axisLabels},
                                     title: false
                                 },
-                                "y": {"field": variableLabel, "type": "nominal"},
+                                "y": {"field": variableLabel, "type": "categorical"},
                                 "color": {"field": yLabel, "type": "quantitative", title: 'Probability'},
                                 "tooltip": [
                                     {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                                    {"field": variableLabel, "type": "nominal"},
-                                    {"field": "predictor", "type": "nominal"}
+                                    {"field": variableLabel, "type": "categorical"},
+                                    {"field": "predictor", "type": "categorical"}
                                 ]
                             }
                         },
@@ -48,7 +48,7 @@ export default class ModelInterpretation {
                                 'values': levels[predictor]
                             },
                             'encoding': {
-                                'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
+                                'x': {'field': 'level', 'type': 'categorical', 'title': predictor},
                                 'opacity': {
                                     'field': 'count',
                                     'type': 'quantitative',
@@ -69,7 +69,7 @@ export default class ModelInterpretation {
         }
 
         // BAR CHART
-        if (nominals.includes(predictor)) return m(PlotVegaLite, {
+        if (categoricals.includes(predictor)) return m(PlotVegaLite, {
             // data,
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -81,15 +81,15 @@ export default class ModelInterpretation {
                         "encoding": {
                             "y": {
                                 "field": variableLabel,
-                                "type": "nominal", title: ''
+                                "type": "categorical", title: ''
                             },
                             "x": {"field": yLabel, "type": "quantitative"},
                             "row": {"field": "predictor", "type": "ordinal"},
-                            "color": {"field": variableLabel, "type": "nominal"},
+                            "color": {"field": variableLabel, "type": "categorical"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
-                                {"field": variableLabel, "type": "nominal"},
-                                {"field": "predictor", "type": "nominal"}
+                                {"field": variableLabel, "type": "categorical"},
+                                {"field": "predictor", "type": "categorical"}
                             ]
                         }
                     }
@@ -103,7 +103,7 @@ export default class ModelInterpretation {
 
         let densities = getDensities(summary, predictorMin, predictorMax);
 
-        if (nominals.includes(target)) return m(PlotVegaLite, {
+        if (categoricals.includes(target)) return m(PlotVegaLite, {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Empirical First Differences for ${predictor}.`,
@@ -125,11 +125,11 @@ export default class ModelInterpretation {
                                 title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                            "color": {"field": 'level', "type": "nominal", 'title': target},
-                            'opacity': {"field": 'target', 'type': 'nominal'},
+                            "color": {"field": 'level', "type": "categorical", 'title': target},
+                            'opacity': {"field": 'target', 'type': 'categorical'},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: 'Probability'},
-                                {"field": variableLabel, "type": "nominal"},
+                                {"field": variableLabel, "type": "categorical"},
                                 {"field": "predictor", "type": "quantitative"}
                             ]
                         }
@@ -180,10 +180,10 @@ export default class ModelInterpretation {
                                 title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: target},
-                            'opacity': {"field": 'target', 'type': 'nominal'},
+                            'opacity': {"field": 'target', 'type': 'categorical'},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: target},
-                                {"field": variableLabel, "type": "nominal"},
+                                {"field": variableLabel, "type": "categorical"},
                                 {"field": "predictor", "type": "quantitative"}
                             ]
                         }
@@ -219,12 +219,12 @@ export default class ModelInterpretation {
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
 
-        let nominals = getNominalVariables(problem);
+        let categoricals = getCategoricalVariables(problem);
 
         data = data.filter(point => point[variableLabel] === target);
 
-        // if both predictor and target are nominal, or if just predictor is nominal
-        if (nominals.includes(predictor)) return m(PlotVegaLite, {
+        // if both predictor and target are categorical, or if just predictor is categorical
+        if (categoricals.includes(predictor)) return m(PlotVegaLite, {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Partials for ${predictor}.`,
@@ -234,16 +234,16 @@ export default class ModelInterpretation {
                         "mark": 'point',
                         "encoding": {
                             "x": {
-                                 "field": predictor, "type": "nominal",
+                                 "field": predictor, "type": "categorical",
                                 axis: {labels: axisLabels},
                                 title: false
                             },
-                            "y": {"field": yLabel, "type": "nominal"},
-                            "color": {"field": variableLabel, "type": "nominal"},
+                            "y": {"field": yLabel, "type": "categorical"},
+                            "color": {"field": variableLabel, "type": "categorical"},
                             "tooltip": [
-                                {"field": yLabel, "type": "nominal"},
-                                {"field": variableLabel, "type": "nominal"},
-                                {"field": predictor, "type": "nominal"}
+                                {"field": yLabel, "type": "categorical"},
+                                {"field": variableLabel, "type": "categorical"},
+                                {"field": predictor, "type": "categorical"}
                             ]
                         }
                     },
@@ -253,7 +253,7 @@ export default class ModelInterpretation {
                             'values': levels[predictor]
                         },
                         'encoding': {
-                            'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
+                            'x': {'field': 'level', 'type': 'categorical', 'title': predictor},
                             'opacity': {
                                 'field': 'count',
                                 'type': 'quantitative',
@@ -277,8 +277,8 @@ export default class ModelInterpretation {
         let predictorMax = Math.max(...predictorSupport);
 
         let densities = getDensities(summary, predictorMin, predictorMax);
-        // if target nominal and predictor is continuous
-        if (nominals.includes(target)) {
+        // if target categorical and predictor is continuous
+        if (categoricals.includes(target)) {
             // connect continuous horizontal segments
             let horizontalGroup = 0;
             let horizontalValue = data[0][yLabel];
@@ -314,11 +314,11 @@ export default class ModelInterpretation {
                                     axis: {labels: densities === undefined ? true : axisLabels},
                                     title: densities === undefined ? predictor : false
                                 },
-                                "y": {"field": yLabel, "type": "nominal", title: target, scale: {zero: false}},
-                                "detail": {"field": "horizontalGroup", "type": "nominal"},
+                                "y": {"field": yLabel, "type": "categorical", title: target, scale: {zero: false}},
+                                "detail": {"field": "horizontalGroup", "type": "categorical"},
                                 "tooltip": [
-                                    {"field": yLabel, "type": "nominal"},
-                                    {"field": variableLabel, "type": "nominal"},
+                                    {"field": yLabel, "type": "categorical"},
+                                    {"field": variableLabel, "type": "categorical"},
                                     {"field": predictor, "type": "quantitative"}
                                 ]
                             }
@@ -372,10 +372,10 @@ export default class ModelInterpretation {
                                 title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: target, scale: {zero: false}},
-                            "color": {"field": variableLabel, "type": "nominal"},
+                            "color": {"field": variableLabel, "type": "categorical"},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative"},
-                                {"field": variableLabel, "type": "nominal"},
+                                {"field": variableLabel, "type": "categorical"},
                                 {"field": predictor, "type": "quantitative"}
                             ]
                         }
@@ -407,16 +407,16 @@ export default class ModelInterpretation {
     plotICE(vnode) {
         // target doesn't matter, all are plotted together
         let {problem, data, predictor, target, summary} = vnode.attrs;
-        let nominals = getNominalVariables(problem);
+        let categorical = getCategoricalVariables(problem);
 
-        if (nominals.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
+        if (categorical.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
 
         let predictorSupport = data.map(point => point[predictor]);
         let predictorMin = Math.min(...predictorSupport);
         let predictorMax = Math.max(...predictorSupport);
 
         let densities = getDensities(summary, predictorMin, predictorMax);
-        if (nominals.includes(target)) {
+        if (categorical.includes(target)) {
 
             let d3mIndexOriginal;
             let left;
@@ -468,16 +468,16 @@ export default class ModelInterpretation {
                                     axis: {labels: densities === undefined ? true : axisLabels},
                                     title: densities === undefined ? predictor : false
                                 },
-                                "y": {"field": target, "type": "nominal", title: target, scale: {zero: false}},
+                                "y": {"field": target, "type": "categorical", title: target, scale: {zero: false}},
                                 "size": {"field": 'count', "type": 'quantitative', "scale": {"type": "log", 'range': [2, 10]}},
                                 "detail": {
                                     "field": "edgeId",
-                                    "type": "nominal",
+                                    "type": "categorical",
                                     'legend': false
                                 },
                                 'tooltip': [
                                     {'field': predictor, 'type': 'quantitative'},
-                                    {'field': target, 'type': 'nominal'},
+                                    {'field': target, 'type': 'categorical'},
                                     {'field': 'count', 'type': 'quantitative'}
                                 ]
                             }
@@ -534,7 +534,7 @@ export default class ModelInterpretation {
                                         title: densities === undefined ? predictor : false
                                     },
                                     "y": {"field": target, "type": 'quantitative', title: target, scale: {zero: false}},
-                                    'detail': {"field": 'd3mIndexOriginal', 'type': 'nominal', 'legend': false}
+                                    'detail': {"field": 'd3mIndexOriginal', 'type': 'categorical', 'legend': false}
                                 }
                             },
                             {

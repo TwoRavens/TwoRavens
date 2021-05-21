@@ -36,7 +36,7 @@ import {
     generateProblemID,
     getDescription,
     getGeographicVariables,
-    getNominalVariables,
+    getCategoricalVariables,
     getOrderingTimeUnit,
     getOrdinalVariables,
     getPredictorVariables,
@@ -296,7 +296,7 @@ export let renderProblemNode = (problem, _parentArray) => {
 
         m('div', {
                 style: {
-                    'border-bottom': selectedProblem.problemId === problem.problemId ? `2px solid ${common.selVarColor}` : 'transparent',
+                    'border-bottom': selectedProblem.problemId === problem.problemId ? `2px solid ${common.colors.selVar}` : 'transparent',
                     outline: '0px solid transparent',
                 },
             },
@@ -449,7 +449,7 @@ export let leftpanel = forceData => {
                     }),
                     m(Button, {
                         id: 'btnCreateVariable',
-                        style: {width: '100%', 'margin-top': '10px'},
+                        style: {width: '90%', 'margin-top': '10px', 'margin-left': '5%'},
                         onclick: async () => {
 
                             let problemPipeline = getSelectedProblem().manipulations;
@@ -578,7 +578,7 @@ export let leftpanel = forceData => {
                     m('div', {
                         style: {'margin': '0.5em', 'display': 'inline-block', width: 'auto'},
                     }, m(Popper, {
-                        content: () => tag.title,
+                        content: () => tag.description,
                         popperDuration: 10
                     }, m(Button, {
                         style: Object.assign({width: 'auto'}, tag.group ? {
@@ -661,7 +661,7 @@ export let leftpanel = forceData => {
             onclick: () => app.setFocusedPanel('left'),
             style: {
                 'z-index': 100 + (app.focusedPanel === 'left'),
-                background: app.hexToRgba(common.menuColor, .9),
+                background: app.hexToRgba(common.colors.menu, .9),
                 height: `calc(100% - ${common.heightHeader} - 2*${common.panelMargin} - ${app.peekInlineShown ? app.peekInlineHeight : '0px'} - ${common.heightFooter})`
             }
         }
@@ -1097,16 +1097,16 @@ export let rightpanel = () => {
                             editable: selectedProblem.systemId !== 'solved',
                             hard: false
                         }),
-                        selectedProblem.tags.nominal.length > 0 && m(Flowchart, {
+                        selectedProblem.tags.categorical.length > 0 && m(Flowchart, {
                             attrsAll: {style: {height: 'calc(100% - 87px)', overflow: 'auto'}},
                             labelWidth: '5em',
                             steps: [{
-                                key: 'Nominal',
-                                color: app.hexToRgba(app.colors.nominal, .5),
+                                key: 'Categorical',
+                                color: app.hexToRgba(app.colors.categorical, .5),
                                 content: m('div', {style: {'text-align': 'left', 'white-space': 'normal'}},
                                     m(ListTags, {
-                                        tags: selectedProblem.tags.nominal,
-                                        ondelete: name => remove(selectedProblem.tags.nominal, name)
+                                        tags: selectedProblem.tags.categorical,
+                                        ondelete: name => remove(selectedProblem.tags.categorical, name)
                                     }))
                             }]
                         }),
@@ -1565,13 +1565,13 @@ let variableTagMetadata = selectedProblem => [
         class_: 'item-randomize'
     },
     {
-        name: 'Nominal',
-        nodes: selectedProblem.tags.nominal,
-        toggleNode: variableName => toggleTag(selectedProblem, 'nominal', variableName),
-        color: app.colors.nominal,
+        name: 'Categorical',
+        nodes: getCategoricalVariables(selectedProblem),
+        toggleNode: variableName => toggleTag(selectedProblem, 'categorical', variableName),
+        color: app.colors.categorical,
         opacity: 0.7,
-        description: defaultGroupDescriptions.nominal,
-        class_: 'item-nominal'
+        description: defaultGroupDescriptions.categorical,
+        class_: 'item-categorical'
     },
     {
         name: 'Boundary',
@@ -1639,7 +1639,7 @@ export let mutateNodes = problem => (state, context) => {
         ...problem.groups.map(group => [group.id, new Set(group.nodes)]),
         ['loose', new Set(problem.tags.loose)],
         ['transformed', new Set(problem.tags.transformed)],
-        ['nominal', new Set(getNominalVariables(problem))],
+        ['categorical', new Set(getCategoricalVariables(problem))],
         ['geographic', new Set(getGeographicVariables())],
         ['ordinal', new Set(getOrdinalVariables(selectedProblem))],
         ['boundary', new Set(problem.tags.boundary)],
@@ -1659,7 +1659,7 @@ export let mutateNodes = problem => (state, context) => {
         problem.groups.reduce((out, group) =>
             Object.assign(out, {[group.id]: 4}), {}),
         {
-            nominal: 4,
+            categorical: 4,
             ordinal: 4,
             crossSection: 4,
             boundary: 4,
@@ -1675,24 +1675,24 @@ export let mutateNodes = problem => (state, context) => {
         });
 
     let nodeColors = {
-        nominal: common.taggedColor,
-        ordinal: common.taggedColor,
-        crossSection: common.taggedColor,
-        boundary: common.taggedColor,
-        geographic: common.taggedColor,
-        temporal: common.taggedColor,
-        weights: common.taggedColor,
-        privileged: common.taggedColor,
-        exogenous: common.taggedColor,
-        featurize: common.taggedColor,
-        randomize: common.taggedColor,
-        indexes: common.taggedColor,
-        // matched: common.taggedColor,
-        loose: common.taggedColor,
+        categorical: common.colors.tagged,
+        ordinal: common.colors.tagged,
+        crossSection: common.colors.tagged,
+        boundary: common.colors.tagged,
+        geographic: common.colors.tagged,
+        temporal: common.colors.tagged,
+        weights: common.colors.tagged,
+        privileged: common.colors.tagged,
+        exogenous: common.colors.tagged,
+        featurize: common.colors.tagged,
+        randomize: common.colors.tagged,
+        indexes: common.colors.tagged,
+        // matched: common.colors.tagged,
+        loose: common.colors.tagged,
     };
 
     let strokeColors = {
-        nominal: app.colors.nominal,
+        categorical: app.colors.categorical,
         ordinal: app.colors.ordinal,
         crossSection: app.colors.crossSection,
         boundary: app.colors.boundary,
@@ -1731,6 +1731,10 @@ export let mutateNodes = problem => (state, context) => {
         }));
 };
 
+const syllableRegex = /[^aeiouy]*[aeiouy]+(?:[^aeiouy]*$|[^aeiouy](?=[^aeiouy]))?/gi;
+let truncateText = (text, length) => text.length <= length ? text : (text.match(syllableRegex) ?? [])
+    .reduce((out, syll) => out + (out.length + syll.length <= length ? syll : ''), '')
+
 export let forceDiagramLabels = problem => pebble => [
     {
         id: 'Group',
@@ -1743,7 +1747,8 @@ export let forceDiagramLabels = problem => pebble => [
         children: [
             ...problem.groups.map(group => ({
                 id: String(group.id).replace(/\W/g, '_'),
-                name: group.name,
+                name: truncateText(group.name, 8),
+                title: group.name,
                 attrs: {fill: group.color},
                 onclick: (_, d) => {
                     toggleGroup(problem, group.nodes.includes(d) ? 'Loose' : group.id, d);
@@ -1754,6 +1759,7 @@ export let forceDiagramLabels = problem => pebble => [
             {
                 id: 'Ordering',
                 name: 'Order',
+                title: 'Ordering',
                 attrs: {fill: app.colors.order},
                 onclick: (_, d) => {
                     toggleGroup(problem, 'Ordering', d);
@@ -1763,6 +1769,7 @@ export let forceDiagramLabels = problem => pebble => [
             problem.task === "forecasting" && {
                 id: 'Cross',
                 name: 'Cross',
+                title: 'Cross-Sectional',
                 attrs: {fill: app.colors.crossSection},
                 onclick: (_, d) => {
                     toggleGroup(problem, 'crossSection', d);
@@ -1772,6 +1779,7 @@ export let forceDiagramLabels = problem => pebble => [
             {
                 id: 'Location',
                 name: 'Loc',
+                title: 'Location',
                 attrs: {fill: app.colors.location},
                 onclick: (_, d) => {
                     toggleGroup(problem, 'Location', d);
@@ -1783,26 +1791,28 @@ export let forceDiagramLabels = problem => pebble => [
     {
         id: 'Label',
         name: 'Label',
-        attrs: {fill: app.colors.nominal},
+        attrs: {fill: app.colors.categorical},
         onclick: (e, pebble) => {
             forceDiagramState.setSelectedPebble(pebble);
             app.alertLog("Labels are descriptors for individual variables.");
             m.redraw();
         },
         children: [
-            // if cross-sectional, then it must be nominal
+            // if cross-sectional, then it must be categorical
             !problem.tags.crossSection.includes(pebble) && {
-                id: 'Nominal',
-                name: 'Nominal',
-                attrs: {fill: app.colors.nominal},
+                id: 'Categorical',
+                name: 'Cat',
+                title: 'Categorical',
+                attrs: {fill: app.colors.categorical},
                 onclick: (_, d) => {
-                    toggleTag(problem, 'nominal', d);
+                    toggleTag(problem, 'categorical', d);
                     forceDiagramState.setSelectedPebble(d);
                 }
             },
             {
                 id: 'Ordinal',
                 name: 'Ord',
+                title: 'Ordinal',
                 attrs: {fill: app.colors.ordinal},
                 onclick: (_, d) => {
                     toggleTag(problem, 'ordinal', d);
@@ -1821,6 +1831,7 @@ export let forceDiagramLabels = problem => pebble => [
             problem.modelingMode !== "causal" && problem.task === "forecasting" && {
                 id: 'Exogenous',
                 name: 'Exog',
+                title: 'Exogenous',
                 attrs: {fill: app.colors.exogenous},
                 onclick: (_, d) => {
                     toggleTag(problem, 'exogenous', d);
@@ -1830,6 +1841,7 @@ export let forceDiagramLabels = problem => pebble => [
             problem.modelingMode === "causal" && {
                 id: 'Randomize',
                 name: 'Rand',
+                title: 'Randomize',
                 attrs: {fill: app.colors.randomize},
                 onclick: (_, d) => {
                     toggleTag(problem, 'randomize', d);
@@ -1839,6 +1851,7 @@ export let forceDiagramLabels = problem => pebble => [
             problem.modelingMode === "causal" && {
                 id: 'Featurize',
                 name: 'Feat',
+                title: 'Featurize',
                 attrs: {fill: app.colors.featurize},
                 onclick: (_, d) => {
                     toggleTag(problem, 'featurize', d);
@@ -1982,14 +1995,14 @@ export let toggleTag = (problem, tag, name) => {
 
 
     // LABELS
-    if (tag === 'nominal') {
+    if (tag === 'categorical') {
         // if we are going to add the tag
-        if (!getNominalVariables(problem).includes(name)) {
+        if (!getCategoricalVariables(problem).includes(name)) {
             if (app.variableSummaries[name].numchar === 'character') {
-                app.alertLog(`Cannot interpret "${name}" as non-nominal, because the column is character-based. Use a manipulation to parse the strings.`);
+                app.alertLog(`Cannot interpret "${name}" as non-categorical, because the column is character-based. Use a manipulation to parse the strings.`);
                 return;
             }
-            add(problem.tags.nominal, name);
+            add(problem.tags.categorical, name);
             remove(problem.tags.ordinal, name);
             remove(problem.tags.boundary, name);
             remove(problem.tags.location, name);
@@ -1999,13 +2012,13 @@ export let toggleTag = (problem, tag, name) => {
         else {
             // if the tag is at the dataset level
             if (app.variableSummaries[name].nature === 'nominal') {
-                if (confirm("Do you want to remove the dataset-level nominal annotation?")) {
+                if (confirm("Do you want to remove the dataset-level categorical annotation?")) {
                     app.setVariableSummaryAttr(name, 'nature', 'nominal')
                 }
             } else {
                 remove(problem.tags.crossSection, name);
 
-                remove(problem.tags.nominal, name);
+                remove(problem.tags.categorical, name);
             }
         }
         loadProblemPreprocess(problem)
@@ -2014,8 +2027,8 @@ export let toggleTag = (problem, tag, name) => {
     }
 
     else if (tag === "ordinal") {
-        remove(problem.tags.nominal, name);
-        if (getNominalVariables(problem).includes(name)) {
+        remove(problem.tags.categorical, name);
+        if (getCategoricalVariables(problem).includes(name)) {
             if (confirm("Ordinal variables must be orderable. Would you like to define an ordering?")) {
                 let pipeline = [...app.workspace.raven_config.hardManipulations, problem.manipulations];
                 let step = {
@@ -2065,7 +2078,7 @@ export let toggleTag = (problem, tag, name) => {
             remove(problem.tags.ordering, name);
             remove(problem.tags.weights, name);
             remove(problem.tags.indexes, name);
-            add(problem.tags.nominal, name);
+            add(problem.tags.categorical, name);
         }
         toggle(problem.tags.boundary, name);
     }
@@ -2076,7 +2089,7 @@ export let toggleTag = (problem, tag, name) => {
             return;
         }
         if (!problem.tags.weights.includes(name)) {
-            if (getNominalVariables(problem).includes(name)) toggleTag(problem, 'nominal', name);
+            if (getCategoricalVariables(problem).includes(name)) toggleTag(problem, 'categorical', name);
             remove(problem.tags.crossSection, name);
             remove(problem.tags.boundary, name);
             remove(problem.tags.indexes, name);

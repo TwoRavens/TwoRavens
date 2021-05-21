@@ -233,7 +233,7 @@ The type of this variable (from statistic perspective), below is the table of po
 |  Ordinal  | Have/Represent rank order                                  |
 |  Interval | Has a fixed size of interval between data points           |
 |  Ratio    | Has a true zero point (e.g. mass, length)                  |
-|  Percent  | Namely, \[0.0, 1.0] or \[0, 100]%                            |
+|  Percent  | Namely, \[0.0, 1.0] or \[0, 100]%                          |
 
  * **type**: String
 

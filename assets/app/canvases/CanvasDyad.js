@@ -1,5 +1,5 @@
 import m from 'mithril';
-import {grayColor, panelMargin} from '../../common/common';
+import {colors, panelMargin} from '../../common/common';
 import ButtonRadio from "../../common/views/ButtonRadio";
 import Button from "../../common/views/Button";
 import TextField from '../../common/views/TextField';
@@ -207,7 +207,7 @@ export default class CanvasDyad {
                 }),
                 m('#searchListMonads.monad-full-list', {
                         style: Object.assign({"text-align": "left"},
-                            this.waitForQuery && {'pointer-events': 'none', 'background': grayColor}),
+                            this.waitForQuery && {'pointer-events': 'none', 'background': colors.gray}),
                         onscroll: () => {
                             // don't apply infinite scrolling when monad list is empty
                             if (dataMonad.length === 0) return;

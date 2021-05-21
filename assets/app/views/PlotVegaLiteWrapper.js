@@ -6,7 +6,6 @@ import m from 'mithril';
 import TwoPanel from "../../common/views/TwoPanel";
 import PlotVegaLiteQuery from "./PlotVegaLiteQuery";
 import PlotVegaLiteEditor, {schemes} from "./PlotVegaLiteEditor";
-import * as common from "../../common/common";
 
 export default class PlotVegaLiteWrapper {
 
@@ -32,11 +31,11 @@ export default class PlotVegaLiteWrapper {
 export let preparePanels = state => {
     let {
         mapping, configuration, getData, abstractQuery, summaries, setSummaryAttr,
-        nominals, sampleSize, variablesInitial, initViewport, setInitViewport
+        categoricals, sampleSize, variablesInitial, initViewport, setInitViewport
     } = state;
     let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
-        [variable]: nominals.has(variable)
-            ? 'nominal' : summaries[variable].nature === 'ordinal'
+        [variable]: categoricals.has(variable)
+            ? 'categorical' : summaries[variable].nature === 'ordinal'
                 ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
                 : 'quantitative'
     }), {});
@@ -92,7 +91,7 @@ export let preparePanels = state => {
             configuration,
             variables: Object.keys(summaries),
             summaries, setSummaryAttr,
-            nominals,
+            categoricals,
             abstractQuery
         }),
         plot
@@ -255,9 +254,9 @@ let makeLayer = (layer, varTypes, summaries) => {
             if (!channel.variable) return Object.assign(encodings, {
                 [channel.name]: {value: channel.colorValue}
             })
-            let varType = varTypes[channel.variable] || 'nominal';
+            let varType = varTypes[channel.variable] || 'categorical';
             let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
-            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "nominal" ? 'categorical' : 'sequential-single');
+            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "categorical" ? 'categorical' : 'sequential-single');
             if (schemes[schemeCategory].includes(channel.scheme?.[schemeCategory]))
                 scale.scheme = channel.scheme?.[schemeCategory];
             return Object.assign(encodings, {
@@ -273,14 +272,14 @@ let makeLayer = (layer, varTypes, summaries) => {
         return Object.assign(encodings, {
             [channel.name]: {
                 field: channel.variable,
-                type: varTypes[channel.variable] || 'nominal',
+                type: varTypes[channel.variable] || 'categorical',
                 scale: {zero: layer.zero ?? false, nice: layer.nice ?? false}
             }
         })
     }, {});
 
     let makeTooltipSpec = variable => ({
-        field: variable, type: varTypes[variable] || 'nominal'
+        field: variable, type: varTypes[variable] || 'categorical'
     })
     spec.encoding.tooltip = channels
         .filter(channel => !channel.delete)

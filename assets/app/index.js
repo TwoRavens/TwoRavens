@@ -74,6 +74,7 @@ class Body {
             app.setSelectedMode(mode);
 
         let exploreVariables = (vars ? vars.split('/') : [])
+            .map(decodeURIComponent)
             .filter(variable => variable in app.variableSummaries);
 
         let overflow = app.isExploreMode ? 'auto' : 'hidden';
@@ -85,7 +86,7 @@ class Body {
 
         let backgroundColor = app.swandive ? 'grey'
             : app.isExploreMode ? {"light": '#ffffff', "dark": "#474747"}[common.theme]
-                : common.baseColor;
+                : common.colors.base;
 
         return m('main',
 
@@ -106,7 +107,7 @@ class Body {
                         bottom: common.heightFooter,
                         display: (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
                         'background-color': backgroundColor,
-                        color: common.textColor
+                        color: common.colors.text
                     }
                 },
 
@@ -333,7 +334,7 @@ class Body {
                 title: 'alerts',
                 class: 'btn-sm',
                 onclick: () => app.setShowModalAlerts(true)
-            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.colors.selVar : '#818181'}`})),
 
             [
                 // m(Button, {
@@ -468,9 +469,9 @@ class Body {
                     data: [...app.alerts].reverse().map(alert => [
                         alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
                         m(`div[style=background:${app.hexToRgba({
-                            'log': common.menuColor,
-                            'warn': common.warnColor,
-                            'error': common.errorColor
+                            'log': common.colors.menu,
+                            'warn': common.colors.warn,
+                            'error': common.colors.error
                         }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
                         alert.description
                     ]),

@@ -242,11 +242,11 @@ export default class CanvasDate {
                 onclick: (aggregation) => preferences['measure'] = aggregation,
                 activeSection: preferences['measure'],
                 sections: [
-                    // {value: 'Weekly'},
+                    !IS_EVENTDATA_DOMAIN && {value: 'Weekly'},
                     {value: 'Monthly'},
-                    {value: 'Quarterly'},
+                    !IS_EVENTDATA_DOMAIN && {value: 'Quarterly'},
                     {value: 'Yearly'},
-                ]
+                ].filter(_=>_)
             }))
         ];
 
