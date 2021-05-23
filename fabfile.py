@@ -112,10 +112,11 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
     default_datatsets = [\
         '185_baseball',
         '196_autoMpg',
-        'TR92_pgm_grid_samp',
-        'TR93_pgm_quarterly',
-        'CM_1990_2020',
-        'TR103_germany_state',
+        #'TR92_pgm_grid_samp',
+        #'TR93_pgm_quarterly',
+        #'CM_1990_2020',
+        #'TR103_germany_state',
+        'TR104_Police_Incidents',
         #'185_baseball_MIN_METADATA',
         #'196_autoMpg_MIN_METADATA',
         #'Western_Sahel_Grid-2010_2020',
@@ -126,7 +127,7 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
         #'JIDO_SOHR_Tab_Articles_8569',  # JIDO
         #'LL1_MITLL_synthetic_vora_E_2538',  # JIDO
         #
-        '356_sunspots_monthly',
+        #'356_sunspots_monthly',
         #'TR102_Northern_Ireland',
         #'TR91_Acled_et_2011_2020',
         #'TR20_State_Conflict',
