@@ -1039,7 +1039,10 @@ export let locationUnits = {
     'country': ["ISO-3", "ICEWS", "UN M.49", "cowcode", "gwcode", "gtdcode", "ISO-2"],
     'US_state': ['US_state_name', 'USPS'],
     'DE_state': ['DE_state_name', 'id'],
-    'dallas': ['COD_Organization']
+    'Dallas_City_Limits': ['CITY'],
+    'Dallas_Current_Council_Districts': ['COUNCIL'],
+    'Dallas_Targeted_Area_Action_Grids': ['TAAG_Name'],
+    'Texas_Zip_Codes': ['ZCTA5CE10']
 }
 
 let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'
