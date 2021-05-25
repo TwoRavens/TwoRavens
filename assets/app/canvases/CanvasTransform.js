@@ -130,7 +130,7 @@ class MenuEquation {
 
         if (preferences.transformEquation === '') preferences.usedTerms = usedTermDefaults();
 
-        if (preferences.transformName === '' || preferences.transformName.match(/[ -]/) || preferences.transformEquation === '')
+        if (preferences.transformName === '' || preferences.transformEquation === '') // || preferences.transformName.match(/[ -]/)
             preferences.isValid = false;
 
         return m('div', {style: {margin: '1em', padding: '1em', background: common.colors.menu, border: common.colors.border}},
@@ -138,7 +138,7 @@ class MenuEquation {
                 id: 'textFieldName',
                 placeholder: 'Transformation Name',
                 value: preferences.transformName,
-                class: (!preferences.transformName || preferences.transformName.match(/[ -]/)) && ['is-invalid'],
+                class: !preferences.transformName && ['is-invalid'],  // || preferences.transformName.match(/[ -]/)
                 oninput: (value) => preferences.transformName = value,
                 onblur: (value) => preferences.transformName = value,
                 style: {width: '165px', display: 'inline-block'}
@@ -159,10 +159,10 @@ class MenuEquation {
                 style: {display: 'inline-block', width: 'calc(100% - 190px)'}
             }), m('br'),
 
-            preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
+            // preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
 
             preferences.transformEquation && [
-                !transformError && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
+                transformError && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
             ], m('br'),
 
             m('div', {style},

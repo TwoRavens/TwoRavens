@@ -879,7 +879,7 @@ export let getAbstractPipeline = (problem, all) => {
         categoricalCasts.length > 0 && {
             type: 'transform',
             transforms: categoricalCasts.map(variable => ({
-                equation: `toString(${variable})`,
+                equation: `toString(v("${variable}"))`,
                 name: variable
             }))
         },
@@ -887,7 +887,7 @@ export let getAbstractPipeline = (problem, all) => {
         problem.tags.ordering.length > 1 && {
             type: 'transform',
             transforms: [{
-                equation: "concat(" + problem.tags.ordering.map(variable => `toString(${variable})`).join(", \"-\", ") + ")",
+                equation: "concat(" + problem.tags.ordering.map(variable => `toString(v("${variable}"))`).join(", \"-\", ") + ")",
                 name: problem.orderingName || getOrderingVariable(problem)
             }]
         },

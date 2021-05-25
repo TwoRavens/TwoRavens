@@ -35,8 +35,7 @@ if __name__ == "__main__":
         "Gang Related Offense", "Drug Related Istevencident", "NIBRS Crime Category", "X Coordinate", "Y Cordinate",
         "Zip Code"
     ])
-    incidents = incidents.loc[incidents['Year of Incident'] == 2021]
-    # incidents = incidents.filter(items=[2019, 2020, 2021], )
+    # incidents = incidents.loc[incidents['Year of Incident'] == 2021]
     points = geopandas.points_from_xy(incidents['X Coordinate'], incidents['Y Cordinate'], crs=2276)
     points = GeoDataFrame(geometry=points).to_crs(4326)
     incidents['X Coordinate'] = [p.x for p in points.geometry]

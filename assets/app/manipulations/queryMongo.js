@@ -118,7 +118,8 @@ export let unaryFunctions = new Set([
     'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
     'and', 'not', 'or', // logic
     'trim', 'toLower', 'toUpper', // string
-    'toBool', 'toDouble', 'toInt', 'toString' // type
+    'toBool', 'toDouble', 'toInt', 'toString', // type
+    'v' // for variable names containing spaces, syntax and operators
 ]);
 export let binaryFunctions = new Set([
     'divide', 'log', 'mod', 'pow', 'subtract', // math
@@ -166,6 +167,7 @@ export function buildEquation(text, variables) {
     };
 
     let parse = tree => {
+        if (tree.type === 'Compound') throw 'Ambiguous compound. You may need to disambiguate the variable name by wrapping in v("...").'
         if (tree.type === 'Literal') return tree.value;
 
         // Variables
@@ -174,11 +176,20 @@ export function buildEquation(text, variables) {
                 usedTerms.variables.add(tree.name);
                 return '$' + tree.name;
             }
-            throw 'Invalid variable: ' + tree.name;
+            throw `Invalid variable: ${tree.name}. You may need to disambiguate the variable name by wrapping in v("...").`;
         }
 
         // Functions
         if (tree.type === 'CallExpression') {
+            if (tree.callee.name === 'v') {
+                return parse({
+                    type: 'Identifier',
+                    name: tree.arguments.map(arg => ({
+                        Literal: arg.value,
+                        Identifier: arg.name
+                    }[arg.type])).join(' ')})
+            }
+
             if (unaryFunctions.has(tree.callee.name)) {
                 usedTerms.unaryFunctions.add(tree.callee.name);
                 return {['$' + tree.callee.name]: parse(tree['arguments'][0])};
