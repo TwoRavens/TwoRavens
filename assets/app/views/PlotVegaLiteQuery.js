@@ -5,6 +5,7 @@
 import m from 'mithril';
 import * as queryMongo from '../manipulations/queryMongo';
 import * as app from '../app';
+import * as common from '../../common/common';
 import {alignmentData, locationUnits, mongoURL} from "../app";
 import {geojsonData, setMetadata} from "../eventdata/eventdata";
 import PlotMapbox from "./PlotMapbox";
@@ -56,6 +57,7 @@ export default class PlotVegaLiteQuery {
                     this.datasets[compiled] = undefined;
                     this.isLoading[compiled] = true;
 
+                    // m.request data
                     getData({method: 'aggregate', query: compiled, datasets}).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
@@ -97,8 +99,11 @@ export default class PlotVegaLiteQuery {
 
         let countData = spec => [spec, ...(spec.layer || [])].filter(layer => layer.data?.values).length;
         if ([specificationStripped, ...(specificationStripped.vconcat || []), ...(specificationStripped.hconcat || [])]
-            .every(layer => countData(layer) === 0))
-            return;
+            .every(layer => countData(layer) === 0)) {
+            if (Object.values(this.isLoading).some(_=>_))
+                return common.loader('plotLoader')
+            return
+        }
 
         // draw plot
         return m(mapping ? PlotMapbox : PlotVegaLite, {specification: specificationStripped, initViewport, setInitViewport})
