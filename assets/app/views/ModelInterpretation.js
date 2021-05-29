@@ -48,7 +48,7 @@ export default class ModelInterpretation {
                                 'values': levels[predictor]
                             },
                             'encoding': {
-                                'x': {'field': 'level', 'type': 'categorical', 'title': predictor},
+                                'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
                                 'opacity': {
                                     'field': 'count',
                                     'type': 'quantitative',
@@ -180,7 +180,7 @@ export default class ModelInterpretation {
                                 title: densities === undefined ? predictor : false
                             },
                             "y": {"field": yLabel, "type": "quantitative", title: target},
-                            'opacity': {"field": 'target', 'type': 'categorical'},
+                            'opacity': {"field": 'target', 'type': 'nominal'},
                             "tooltip": [
                                 {"field": yLabel, "type": "quantitative", title: target},
                                 {"field": variableLabel, "type": "nominal"},
@@ -253,7 +253,7 @@ export default class ModelInterpretation {
                             'values': levels[predictor]
                         },
                         'encoding': {
-                            'x': {'field': 'level', 'type': 'categorical', 'title': predictor},
+                            'x': {'field': 'level', 'type': 'nominal', 'title': predictor},
                             'opacity': {
                                 'field': 'count',
                                 'type': 'quantitative',
@@ -534,7 +534,7 @@ export default class ModelInterpretation {
                                         title: densities === undefined ? predictor : false
                                     },
                                     "y": {"field": target, "type": 'quantitative', title: target, scale: {zero: false}},
-                                    'detail': {"field": 'd3mIndexOriginal', 'type': 'categorical', 'legend': false}
+                                    'detail': {"field": 'd3mIndexOriginal', 'type': 'nominal', 'legend': false}
                                 }
                             },
                             {

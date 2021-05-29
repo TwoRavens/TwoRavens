@@ -67,6 +67,7 @@ export let workspace;
 //-------------------------------------------------
 
 let RAVEN_CONFIG_VERSION = 1;
+export let TOGGLER_UI = false;
 
 export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
@@ -277,7 +278,6 @@ export async function updatePeek(pipeline) {
 }
 
 export let downloadFile = async (datasetUrl, contentType) => {
-    console.log(datasetUrl);
     if (!datasetUrl) return;
     let data = {data_pointer: datasetUrl};
     if (contentType) data['content_type'] = contentType;
@@ -413,8 +413,6 @@ export function setSelectedMode(mode) {
                 ...workspace.raven_config.hardManipulations,
                 {type: 'menu', metadata: {type: 'data'}}
             ], workspace.raven_config.variablesInitial)['pipeline']);
-
-            console.log(datasetQuery);
 
             let preprocessPromise = loadPreprocess(datasetQuery)
                 .then(setPreprocess)
@@ -757,7 +755,7 @@ function websocketMessage(e) {
 //-------------------------------------------------
 
 // when set, a problem's Task, Subtask and Metric may not be edited
-export let lockToggle = true;
+export let lockToggle = TOGGLER_UI;
 export let setLockToggle = state => {
     if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour());
     else {
@@ -779,12 +777,12 @@ export let alertLog = (value, shown) => {
 export let alertWarn = (value, shown) => {
     alerts.push({type: 'warn', time: new Date(), description: value});
     showModalAlerts = shown !== false; // Default is 'true'
-    console.trace('warning: ', value);
+    // console.trace('warning: ', value);
 };
 export let alertError = (value, shown) => {
     alerts.push({type: 'error', time: new Date(), description: value});
     showModalAlerts = shown !== false; // Default is 'true'
-    console.trace('error: ', value);
+    // console.trace('error: ', value);
 };
 
 // alerts popup internals
@@ -1889,7 +1887,6 @@ export let inferLocationFormat = variable => {
         body: {alignments: units}
     }).then(setMetadata).then(() => {
         units.some(unit => {
-            console.log('checking', unit);
             let inversion = alignmentData[unit].reduce((inversion, alignment) => {
                 Object.entries(alignment).forEach(([format, value]) => {
                     inversion[format] = inversion[format] || new Set();

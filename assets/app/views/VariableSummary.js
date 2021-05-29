@@ -5,6 +5,7 @@ import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {formatPrecision, italicize} from "../utils";
 import {getCategoricalVariables, getSelectedProblem} from "../problem";
+import {preprocessSampleSize} from "../app";
 
 
 export default class VariableSummary {
@@ -93,6 +94,8 @@ export default class VariableSummary {
 
         return [
             variable?.description && m('center[style=margin:1em]', variable?.description),
+            (variable.validCount + variable.invalidCount) === preprocessSampleSize
+                && italicize(`Summary statistics are based on a sample of ${preprocessSampleSize} records.`),
             m(ButtonRadio, {
                 sections: [
                     {

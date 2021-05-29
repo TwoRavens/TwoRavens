@@ -968,6 +968,7 @@ export function setSelectedProblem(problemId) {
  */
 export function getProblemCopy(problemSource) {
     return Object.assign(common.deepCopy(problemSource), {
+        name: problemSource?.name && (problemSource.name + ' copy'),
         problemId: generateProblemID(),
         provenanceId: problemSource.problemId,
         unedited: true,

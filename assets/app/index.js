@@ -47,6 +47,7 @@ import {
     getSelectedProblem,
 } from "./problem";
 import {ProblemList} from "./views/ProblemList";
+import {italicize} from "./utils";
 
 
 class Body {
@@ -166,7 +167,7 @@ class Body {
                     onclick: () => {
                         app.setSelectedMode('model');
                     }
-                }, selectedProblem.problemId));
+                }, m.trust(selectedProblem?.name || selectedProblem.problemId)));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.isResultsMode && selectedSolutions.length === 1 && selectedSolutions[0]) {
@@ -457,8 +458,8 @@ class Body {
                     app.setShowModalAlerts(false)
                 }
             }, [
-                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
-                m(Button, {
+                m('h4[style=width:3em;display:inline-block;margin-right:.25em]', 'Alerts'),
+                app.alerts.length > 0 && m(Button, {
                     title: 'Clear Alerts',
                     style: {display: 'inline-block', 'margin-right': '0.75em'},
                     onclick: () => app.alerts.length = 0,
@@ -468,7 +469,7 @@ class Body {
                 app.alerts.length > 0 && m(Table, {
                     data: [...app.alerts].reverse().map(alert => [
                         alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
-                        m(`div[style=background:${app.hexToRgba({
+                        m(`div[style=white-space:nowrap;text-align:center;padding:.2em .7em;border-radius:1em;background:${app.hexToRgba({
                             'log': common.colors.menu,
                             'warn': common.colors.warn,
                             'error': common.colors.error

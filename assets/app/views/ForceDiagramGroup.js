@@ -37,7 +37,7 @@ export default class ForceDiagramGroup {
                 contenteditable: true,
                 oninput: v => getOrigGroup(problem, group).description = v.target.innerHTML
             }, m.trust(group.description || '')),
-            m('div',
+            m('div[style=max-height:300px;overflow:auto]',
                 m(ListTags, {
                     tags: [...group.nodes],
                     onclick: setSelectedPebble,
