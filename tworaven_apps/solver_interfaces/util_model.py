@@ -704,14 +704,16 @@ class ModelTwoRavens(Model):
 
         if self.model.problem.is_forecasting:
             # For score computation, we only take the given "forecastingHorizon" into account
-            if score_specification['input']['name'] == 'test':
-                forecast_length = self.model.problem.get('forecastingHorizon', {"value": 10})
-                forecast_length = forecast_length.get('value', 10)
-                predicted = self.model.predict(self.model.get_future_dataframe(forecast_length))
-            elif score_specification['input']['name'] == 'train':
-                predicted = self.model.fitted_values()
-            else:
-                raise ValueError(f"unknown dataset name {score_specification['input']['name']}")
+            # if score_specification['input']['name'] == 'test':
+            #     forecast_length = self.model.problem.get('forecastingHorizon', {"value": 10})
+            #     forecast_length = forecast_length.get('value', 10)
+            #     dataframe = self.model.get_future_dataframe(forecast_length)
+            #     predicted = self.model.predict(dataframe)
+            # elif score_specification['input']['name'] == 'train':
+            # TODO - REENABLE
+            predicted = self.model.fitted_values().head(len(dataframe))
+            # else:
+            #     raise ValueError(f"unknown dataset name {score_specification['input']['name']}")
 
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
@@ -739,7 +741,8 @@ class ModelTwoRavens(Model):
 
         scores = []
         for target in self.targets:
-            results = pandas.DataFrame({'actual': dataframe[target], 'predicted': predicted[target]})
+            results = pandas.DataFrame({'actual': dataframe[target].values, 'predicted': predicted[target].values})
+            print("score results", results)
             results.dropna(inplace=True)
 
             for eachMetric in score_specification['performanceMetrics']:
@@ -815,7 +818,7 @@ class ModelTwoRavens(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predicted.to_csv(output_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+            predicted.to_csv(output_path, index=False)
         finally:
             os.chdir(cwd)
 
