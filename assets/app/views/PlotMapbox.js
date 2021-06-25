@@ -67,7 +67,9 @@ export default class PlotMapbox {
             vega.projection('mapbox', () => {
                 const p = d3.geoTransform({
                     point: function (lon, lat) {
-                        let point = map.project(new mapboxgl.LngLat(lon, lat));
+                        let point = map.project(new mapboxgl.LngLat(
+                            Math.max(-180, Math.min(lon, 180)),
+                            Math.max(-90, Math.min(lat, 90))));
                         this.stream.point(point.x, point.y);
                     }
                 });
