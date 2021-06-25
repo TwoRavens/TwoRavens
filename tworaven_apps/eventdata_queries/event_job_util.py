@@ -1,27 +1,37 @@
-import os
 import csv
+import datetime
 import json
 import logging
-import types
-import subprocess
-import datetime
+import os
 import shlex
-import traceback
+import subprocess
 import time
-from os.path import join
-from django.conf import settings
+import types
 from collections import OrderedDict
+from os.path import join
 
-from django.db import transaction
-from django.db.utils import IntegrityError
+from django.conf import settings
 
 from tworaven_apps.data_prep_utils.duplicate_column_remover import (
     DuplicateColumnRemover,
 )
-from tworaven_apps.utils.view_helper import get_json_error
-from tworaven_apps.utils.mongo_util import infer_type, encode_variable
-from tworaven_apps.utils.basic_response import ok_resp, err_resp
 from tworaven_apps.eventdata_queries import static_vals as evt_static
+from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import (
+    ListFilesInDataset,
+)
+from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import (
+    DataversePublishDataset,
+)
+from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import (
+    GetDataSetFileInfo,
+)
+from tworaven_apps.eventdata_queries.dataverse.routine_dataverse_check import (
+    RoutineDataverseCheck,
+)
+from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import (
+    TemporaryFileMaker,
+)
+from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
 from tworaven_apps.eventdata_queries.models import (
     EventDataSavedQuery,
     ArchiveQueryJob,
@@ -29,34 +39,17 @@ from tworaven_apps.eventdata_queries.models import (
     SEARCH_PARAMETERS,
     SEARCH_KEY_NAME,
     SEARCH_KEY_DESCRIPTION,
-    IN_PROCESS,
-    ERROR,
     COMPLETE,
-    DATA_PARTITIONS,
     MongoDataset,
 )
-from tworaven_apps.eventdata_queries.dataverse.temporary_file_maker import (
-    TemporaryFileMaker,
-)
-from tworaven_apps.eventdata_queries.dataverse.dataverse_publish_dataset import (
-    DataversePublishDataset,
-)
-from tworaven_apps.eventdata_queries.dataverse.dataverse_list_files_dataset import (
-    ListFilesInDataset,
-)
-from tworaven_apps.eventdata_queries.dataverse.get_dataset_file_info import (
-    GetDataSetFileInfo,
-)
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
-from tworaven_apps.eventdata_queries.generate_readme import GenerateReadMe
-from tworaven_apps.eventdata_queries.dataverse.routine_dataverse_check import (
-    RoutineDataverseCheck,
-)
-from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
-
 from tworaven_apps.raven_auth.models import User
+from tworaven_apps.ta2_interfaces.basic_problem_writer import BasicProblemWriter
 from tworaven_apps.user_workspaces.models import UserWorkspace
+from tworaven_apps.utils.basic_response import ok_resp, err_resp
+from tworaven_apps.utils.mongo_util import infer_type, encode_variable
 from tworaven_apps.utils.url_helper import format_file_uri_to_path
+from tworaven_apps.utils.view_helper import get_json_error
 
 LOGGER = logging.getLogger(__name__)
 
@@ -137,7 +130,7 @@ class EventJobUtil(object):
         return ok_resp(final_results)
 
     @staticmethod
-    def get_query_from_object(query_id, user):
+    def get_query_from_object(query_id, user, comment=None):
         """ return query obj"""
         return get_json_error("temp disabled!!")
 
@@ -169,7 +162,7 @@ class EventJobUtil(object):
         print("Uploading query file")
         print("-" * 40)
         # send query_file to dataverse:
-        success_query, query_obj = EventJobUtil.upload_query_result(event_obj)
+        success_query, query_obj = EventJobUtil.upload_query_result(event_obj, user=user.username, comment=comment)
         if not success_query:
             return get_json_error(query_obj)
 
@@ -392,14 +385,14 @@ class EventJobUtil(object):
             return err_resp(res)
 
     @staticmethod
-    def upload_query_result(event_obj):
+    def upload_query_result(event_obj, user=None, comment=None):
         """upload query result to dataverse"""
         collection_name = event_obj.as_dict()["collection_name"]
         query_obj = event_obj.as_dict()["query"]
         query_id = event_obj.as_dict()["id"]
         filename = "%s_%s.txt" % (str(query_id), str(collection_name))
-        obj = MongoRetrieveUtil(settings.EVENTDATA_DB_NAME, collection_name)
-        success, mongo_obj = obj.run_query(query_obj, "aggregate")
+        obj = MongoRetrieveUtil(settings.EVENTDATA_DB_NAME, collection_name, user=user)
+        success, mongo_obj = obj.run_query(query_obj, "aggregate", comment=comment)
 
         if not mongo_obj:
             return err_resp(mongo_obj)
@@ -532,14 +525,14 @@ class EventJobUtil(object):
         }"""
 
     @staticmethod
-    def get_data(database, collection, method, query, distinct=None, host=None):
+    def get_data(database, collection, method, query, distinct=None, host=None, user=None, comment=None):
         """Return data from a Mongo query"""
 
         if method == "distinct" and not distinct:
             return err_resp("the distinct method requires a 'keys' argument")
 
-        retrieve_util = MongoRetrieveUtil(database, collection, host)
-        success, data = retrieve_util.run_query(query, method, distinct)
+        retrieve_util = MongoRetrieveUtil(database, collection, host, user=user)
+        success, data = retrieve_util.run_query(query, method, distinct, comment=comment)
 
         return ok_resp(data) if success else err_resp(data)
 
@@ -553,11 +546,13 @@ class EventJobUtil(object):
         columns=None,
         indexes=None,
         delimiter=None,
+        user=None,
+        comment=None
     ):
         """Key method to load a Datafile into Mongo as a new collection"""
         # print('--> import_dataset --')
 
-        retrieve_util = MongoRetrieveUtil(database, collection)
+        retrieve_util = MongoRetrieveUtil(database, collection, user=user)
         db_info = retrieve_util.get_mongo_db(database)
         if not db_info.success:
             return err_resp(db_info.err_msg)
@@ -734,7 +729,7 @@ class EventJobUtil(object):
             # print('--> mongo err: [%s]' % err)
             # print(traceback.format_exc())
             print(
-                "--> import_dataset: mongoimport disabled. Running row-by-row insertion instead."
+                "--> import_dataset: mongoimport disabled. Running row-by-row insertion."
             )
             db[collection_name].drop()
             with open(data_path, "r") as csv_file:

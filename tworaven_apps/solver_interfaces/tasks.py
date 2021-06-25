@@ -1,7 +1,7 @@
 import time
 import traceback
 
-import tworaven_solver
+from tworaven_solver.solution import Solution
 from tworaven_apps.ta2_interfaces.websocket_message import WebsocketMessage
 from tworavensproject.celery import celery_app
 
@@ -182,6 +182,7 @@ def describe_task(websocket_id, model_id):
         data=result)
     ws_msg.send_message(websocket_id)
 
+
 @celery_app.task(ignore_result=True)
 def score_task(websocket_id, model_id, spec):
 
@@ -248,7 +249,8 @@ def produce_task(websocket_id, model_id, spec):
 @celery_app.task()
 def pipeline_task(search_id, pipeline_specification, train_specification, callback_name, callback_arguments=None):
     try:
-        model = tworaven_solver.fit_pipeline(pipeline_specification, train_specification)
+        model = Solution(pipeline_specification=pipeline_specification, train_specification=train_specification)
+        model.fit()
 
         model_wrapped = ModelTwoRavens(
             model,
@@ -256,7 +258,8 @@ def pipeline_task(search_id, pipeline_specification, train_specification, callba
             predictors=train_specification['problem']['predictors'],
             targets=train_specification['problem']['targets'],
             task=train_specification['problem']['taskType'],
-            search_id=search_id)
+            search_id=search_id,
+            is_forecasting=train_specification['problem'].get('forecasting'))
 
         FOUND_MODEL_CALLBACKS[callback_name](model_wrapped, **callback_arguments)
     except Exception:
@@ -273,7 +276,7 @@ def load_model_helper(websocket_id, model_id):
         logger.info("caught traceback when running describe:")
         logger.info(traceback.format_exc())
 
-        ws_msg = WebsocketMessage.get_fail_message_with_data( \
+        ws_msg = WebsocketMessage.get_fail_message_with_data(
             RECEIVE_DESCRIBE_MSG,
             f'describe failed loading model: could not find model {model_id}',
             data={

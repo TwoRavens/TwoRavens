@@ -438,12 +438,14 @@ def create_evtdata_file(request):
     # Run Mongo query
     #
     success, addquery_obj_err = EventJobUtil.get_data(
-        settings.EVENTDATA_DB_NAME,
-        json_req_obj['collection_name'],
-        json_req_obj['method'],
-        json.loads(json_req_obj['query']),
-        json_req_obj.get('distinct', None),
-        json_req_obj.get('host', None))
+        database=settings.EVENTDATA_DB_NAME,
+        collection=json_req_obj['collection_name'],
+        method=json_req_obj['method'],
+        query=json.loads(json_req_obj['query']),
+        distinct=json_req_obj.get('distinct'),
+        host=json_req_obj.get('host'),
+        user=request.user.username,
+        comment=json_req_obj.get('comment'))
 
 
     # Data retrieval failed
@@ -516,12 +518,14 @@ def api_get_eventdata(request):
         return JsonResponse({"success": False, "message": "invalid input", "errors": form.errors})
 
     success, results_obj_err = EventJobUtil.get_data(
-        settings.EVENTDATA_DB_NAME,
-        json_req_obj['collection_name'],
-        json_req_obj['method'],
-        json.loads(json_req_obj['query']),
-        json_req_obj.get('distinct', None),
-        json_req_obj.get('host', None))
+        database=settings.EVENTDATA_DB_NAME,
+        collection=json_req_obj['collection_name'],
+        method=json_req_obj['method'],
+        query=json.loads(json_req_obj['query']),
+        distinct=json_req_obj.get('distinct'),
+        host=json_req_obj.get('host'),
+        user=request.user.username,
+        comment=json_req_obj.get('comment'))
 
     if not success:
         return JsonResponse(get_json_error(results_obj_err))
@@ -583,6 +587,17 @@ def api_get_metadata(request):
 
 
 @csrf_exempt
+def api_get_current_ops(request):
+    success, json_req_obj = get_request_body_as_json(request)
+
+    if not success:
+        return JsonResponse({"success": False, "error": get_json_error(json_req_obj)})
+
+    util = MongoRetrieveUtil(database_name=settings.EVENTDATA_DB_NAME, user=request.user.username)
+    return JsonResponse(get_json_success('success!', data=util.current_op_summary()))
+
+
+@csrf_exempt
 def api_get_data(request):
     """Retrieve data from MongoDB
     Example input:
@@ -622,10 +637,12 @@ def api_get_data(request):
     LOGGER.info('--- api_get_data: ensure the dataset is present ---')
     #
     EventJobUtil.import_dataset(
-        settings.TWORAVENS_MONGO_DB_NAME,
-        json_req_obj['collection_name'],
-        data_path=json_req_obj.get('datafile', None),
-        reload=json_req_obj.get('reload', None))
+        database=settings.TWORAVENS_MONGO_DB_NAME,
+        collection=json_req_obj['collection_name'],
+        data_path=json_req_obj.get('datafile'),
+        reload=json_req_obj.get('reload'),
+        user=request.user.username,
+        comment=json_req_obj.get('comment'))
 
     # ensure auxiliary datasets are present
     #
@@ -639,18 +656,22 @@ def api_get_data(request):
                 collection_name,
                 data_path=meta['path'],
                 indexes=meta.get('indexes'),
-                reload=json_req_obj.get('reload', None))
+                reload=json_req_obj.get('reload', None),
+                user=request.user.username,
+                comment=json_req_obj.get('comment'))
 
     # apply the manipulations
     #
     LOGGER.info('--- api_get_data: apply any manipulations ---')
     #
     success, results_obj_err = EventJobUtil.get_data(
-        settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
-        json_req_obj['method'],
-        json.loads(json_req_obj['query']),
-        distinct=json_req_obj.get('distinct', None))
+        database=settings.TWORAVENS_MONGO_DB_NAME,
+        collection=settings.MONGO_COLLECTION_PREFIX + json_req_obj['collection_name'],
+        method=json_req_obj['method'],
+        query=json.loads(json_req_obj['query']),
+        distinct=json_req_obj.get('distinct'),
+        user=request.user.username,
+        comment=json_req_obj.get('comment'))
 
     if not success:
         return JsonResponse(get_json_error(results_obj_err))

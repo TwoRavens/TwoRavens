@@ -2,11 +2,15 @@
 import pandas
 from celery.result import allow_join_result
 from scipy.sparse.csr import csr_matrix
+from sklearn.impute._base import SimpleImputer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing._data import StandardScaler
+from sklearn.preprocessing._encoders import OneHotEncoder
 
 from tworaven_apps.solver_interfaces.models import \
     R_SERVICE, KEY_SUCCESS, KEY_MESSAGE, KEY_DATA
 
-from tworaven_solver import Dataset, preprocess
+from tworaven_solver.utilities import Dataset
 from tworaven_apps.solver_interfaces.util_model import ModelSklearn, ModelH2O, ModelLudwig
 import uuid
 import abc
@@ -16,6 +20,57 @@ import multiprocessing
 import os
 
 from time import sleep
+
+import numpy as np
+
+
+def preprocess(dataframe, specification, X=None, y=None):
+
+    X = X if X else specification['problem']['predictors']
+    y = y if y else specification['problem']['targets'][0]
+    nominal = [i for i in specification['problem'].get('categorical', []) if i in X]
+    dataframe[nominal] = dataframe[nominal].astype(str)
+
+    categorical_features = [i for i in set(nominal +
+                                           list(dataframe.select_dtypes(exclude=[np.number, "bool_", "object_"]).columns.values))
+                            if i != y and i in X]
+
+    # print('preprocess X', X)
+    # print('preprocess cate features')
+    # print(categorical_features)
+
+    # keep up to the 20 most frequent levels
+    categories = [dataframe[col].value_counts()[:20].index.tolist() for col in categorical_features]
+
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('onehot', OneHotEncoder(categories=categories, handle_unknown='ignore', sparse=False))
+    ])
+
+    # numerical_features = dataframe.select_dtypes([np.number]).columns.values
+    # print('dtypes', dataframe.dtypes)
+    # print('dtype numeric', numerical_features)
+    numerical_features = [i for i in X if i not in categorical_features
+                          # and i in numerical_features
+                          ]
+    # print('preprocess numerical features')
+    # print(numerical_features)
+    # print(dataframe)
+
+    numerical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+
+    preprocessor = ColumnTransformer(transformers=[
+        ('numeric', numerical_transformer, numerical_features),
+        ('categorical', categorical_transformer, categorical_features)
+    ])
+
+    stimulus = dataframe[X]
+    stimulus = preprocessor.fit_transform(stimulus)
+
+    return stimulus, preprocessor
 
 
 class Search(object):
@@ -554,11 +609,7 @@ class SearchTwoRavens(Search):
             system_params=self.system_params)
 
         signatures = []
-        while True:
-            pipeline_specification = manager.get_pipeline_specification()
-            if not pipeline_specification:
-                break
-
+        for pipeline_specification in manager:
             signatures.append(pipeline_task.s(
                 search_id=self.search_id,
                 train_specification=self.specification,
