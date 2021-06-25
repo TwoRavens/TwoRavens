@@ -456,7 +456,8 @@ export async function buildCsvPath(problem, lastStep, dataPath, collectionName) 
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: 'csv'
+        export: 'csv',
+        comment: 'exporting problem to CSV'
     };
 
     if (dataPath) body.datafile = dataPath;
@@ -482,7 +483,8 @@ export async function buildDatasetPath(problem, lastStep, dataPath, collectionNa
         method: 'aggregate',
         query: JSON.stringify(compiled),
         export: 'dataset',
-        metadata: JSON.stringify(newDatasetSchema)
+        metadata: JSON.stringify(newDatasetSchema),
+        comment: 'exporting problem to D3M dataset'
     };
 
     if (dataPath) body.datafile = dataPath;
@@ -1299,7 +1301,8 @@ let loadSampledDatasetPath = async query => {
         samplingCache.sampledDatasetPathPromise = query.length > 0
             ? getData({
                 method: 'aggregate', query,
-                export: 'csv'
+                export: 'csv',
+                comment: 'exporting sample of data to CSV for preprocess'
             })
             : Promise.resolve(workspace.raven_config.datasetPath)
     }

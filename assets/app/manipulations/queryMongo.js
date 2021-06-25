@@ -47,7 +47,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
     variables = new Set(variables);
 
-    pipeline.forEach(step => {
+    pipeline.filter(_=>_).forEach(step => {
 
         if (step.type === 'transform' && step.transforms.length) compiled.push({
             '$addFields': step.transforms.reduce((out, transformation) => {

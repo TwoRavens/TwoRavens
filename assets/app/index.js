@@ -33,6 +33,7 @@ import ModalVanilla from "../common/views/ModalVanilla";
 import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
+import Popper from '../common/views/Popper';
 import {Datamart, ModalDatamart} from "./datamart/Datamart";
 
 import Icon from '../common/views/Icon';
@@ -48,6 +49,7 @@ import {
 } from "./problem";
 import {ProblemList} from "./views/ProblemList";
 import {italicize} from "./utils";
+import {QueryTracker} from "./views/QueryTracker";
 
 
 class Body {
@@ -288,7 +290,7 @@ class Body {
 
     footer() {
 
-        return m(Footer, [
+        return m(Footer, {style: {'z-index': 100}},[
             m('div.btn-group[style=margin:5px;padding:0px]',
                 m(Button, {id: 'btnTA2',class: 'btn-sm', onclick: _ => hopscotch.startTour(app.initialTour(), 0)}, 'Help Tour ', m(Icon, {name: 'milestone'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
@@ -336,6 +338,13 @@ class Body {
                 class: 'btn-sm',
                 onclick: () => app.setShowModalAlerts(true)
             }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.colors.selVar : '#818181'}`})),
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'alerts',
+                class: 'btn-sm'
+            }, m(Popper, {
+                content: () => m(QueryTracker)
+            }, m(Icon, {name: 'clock'}))),
 
             [
                 // m(Button, {

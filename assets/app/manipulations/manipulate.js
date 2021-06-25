@@ -509,7 +509,8 @@ export class PipelineFlowchart {
                             query: JSON.stringify(queryMongo.buildPipeline(
                                 workspace.raven_config.hardManipulations,
                                 workspace.raven_config.variablesInitial)['pipeline']),
-                            export: 'csv'
+                            export: 'csv',
+                            comment: 'exporting csv of data to send to datamart'
                         });
                         let step = {type: 'augment', id: 'augment ' + pipeline.length, dataPath};
 
@@ -807,7 +808,8 @@ export let loadMenu = async (
 
         promises.push(app.getData(Object.assign({
             method: 'aggregate',
-            query: compiled
+            query: compiled,
+            comment: 'count of the number of observations'
         }, datasetDetails)).then(response => {
             let total = (response[0] || {}).total || 0;
 
@@ -820,7 +822,8 @@ export let loadMenu = async (
     let data;
     promises.push(app.getData({
         method: 'aggregate',
-        query: compiled
+        query: compiled,
+        comment: `preparing data for menu: ${menu.type === 'menu' ? menu.metadata.type : menu.type}`
     })
         .then(menu.type === 'menu' ? queryMongo.menuPostProcess[menu.metadata.type] : _ => _)
         .then(response => data = response));

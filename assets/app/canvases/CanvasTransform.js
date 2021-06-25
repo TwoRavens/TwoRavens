@@ -349,7 +349,7 @@ class MenuBinning {
                 }
             })['pipeline']]);
 
-            preferences.buckets = await getData({method: 'aggregate', query});
+            preferences.buckets = await getData({method: 'aggregate', query, comment: 'bucketing data for transform menu'});
             preferences.variableIndicator = variable;
 
             m.redraw();
@@ -514,7 +514,8 @@ class MenuManual {
 
             preferences.indicatorKeys = (await getData({
                 method: 'aggregate',
-                query: JSON.stringify(pipeline.concat([{$group: {_id: null, distinct: {$addToSet: "$" + preferences.variableIndicator}}}]))
+                query: JSON.stringify(pipeline.concat([{$group: {_id: null, distinct: {$addToSet: "$" + preferences.variableIndicator}}}])),
+                comment: 'loading distinct indicator keys for transform menu'
             }))[0]['distinct'].sort(omniSort);
 
             preferences.userValues = Array(preferences.indicatorKeys.length).fill(undefined);

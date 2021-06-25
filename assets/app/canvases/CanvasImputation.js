@@ -101,7 +101,8 @@ export default class CanvasImputation {
                         return out;
                     }, {_id: 0})
                 }
-            ]))
+            ])),
+            comment: 'preparing data sample for imputation menu'
         }));
 
         this.offset += this.limit;

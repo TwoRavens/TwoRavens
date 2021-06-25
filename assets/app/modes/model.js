@@ -676,11 +676,11 @@ export let rightpanel = () => {
     let sections = [];
 
     let ravenConfig = app.workspace.raven_config;
+    if (!ravenConfig) return;
     let selectedProblem = getSelectedProblem();
+    if (!selectedProblem) return
 
     let isLocked = app.isLocked(selectedProblem);
-
-    if (!ravenConfig) return;
 
     // PROBLEM TAB
     selectedProblem && sections.push({

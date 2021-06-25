@@ -58,7 +58,12 @@ export default class PlotVegaLiteQuery {
                     this.isLoading[compiled] = true;
 
                     // m.request data
-                    getData({method: 'aggregate', query: compiled, datasets}).then(data => {
+                    getData({
+                        method: 'aggregate',
+                        query: compiled,
+                        datasets,
+                        comment: {message: 'preparing custom data visualization layer', specification: layer}
+                    }).then(data => {
                         this.datasets[compiled] = data;
                         this.isLoading[compiled] = false;
                         setTimeout(m.redraw, 10)

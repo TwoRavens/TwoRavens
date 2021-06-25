@@ -991,7 +991,7 @@ export let isProblemValid = problem => {
         valid = false;
     }
 
-    if (getPredictorVariables(problem).length === 0) {
+    if (getPredictorVariables(problem).length === 0 && problem.task !== "forecasting") {
         app.alertError('At least one predictor is required.');
         valid = false;
     }

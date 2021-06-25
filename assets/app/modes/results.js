@@ -1305,7 +1305,8 @@ export class CanvasSolutions {
                 getData: body => app.getData(Object.assign({
                     datafile: datafile, // location of the dataset csv
                     collection_name: collectionName,
-                    datasets
+                    datasets,
+                    comment: 'preparing data for results-mode variable exploration'
                 }, body)),
             }))
     }
@@ -1378,7 +1379,8 @@ export class CanvasSolutions {
             getData: body => app.getData(Object.assign({
                 datafile: datafile, // location of the dataset csv
                 collection_name: collectionName,
-                datasets
+                datasets,
+                comment: 'data preparation for custom data exploration in results-mode'
             }, body)),
             categoricals,
             configuration: mapping ? mappingConfiguration : customConfiguration,
@@ -2755,7 +2757,8 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
             collection_name: collectionName,
             reload: false,
             query: JSON.stringify(compiled),
-            datasets
+            datasets,
+            comment: 'constructing a sample of records with predictions in results-mode'
         })
     } catch (err) {
         console.warn("retrieve data sample error");
@@ -3483,6 +3486,7 @@ let loadPredictorDomains = async problem => {
         ]),
         datafile: problem.results.datasetPaths[resultsPreferences.dataSplit],
         collection_name: `${app.workspace.d3m_config.name}_split_${resultsPreferences.dataSplit}`, // collection/dataset name
+        comment: 'retrieving results-mode variable levels for ICE visualizations'
     }))[0] : {};
 
     // {[variable]: *samples along domain*}
@@ -3559,6 +3563,7 @@ let loadICEDatasetPaths = async problem => {
             // export with this dataset schema
             export: 'dataset',
             metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, splitSchema, problem)),
+            comment: 'exporting a sample of records to be used in ICE plots'
         });
 
         // BUILD ICE DATASETS
