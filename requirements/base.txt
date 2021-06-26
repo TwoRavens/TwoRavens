@@ -103,4 +103,5 @@ Pillow>=7.0.0
 
 # Using Postgres, even in dev
 #
-psycopg2-binary>=2.8.5
+#psycopg2-binary>=2.8.5
+psycopg2-binary>=2.8,<2.9
