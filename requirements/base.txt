@@ -91,6 +91,12 @@ mlbox==0.8.5
 # # incompatible - requires sklearn 0.23, build fails on mac due to pyrfr
 # auto_sklearn==0.6.0
 
+# -----------------------
+# For tworaven_solver
+# -----------------------
+pydateinfer==0.3.0
+
+
 
 # for image problems
 Pillow>=7.0.0
