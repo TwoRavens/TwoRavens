@@ -113,7 +113,7 @@ def make_d3m_configs_from_files_multiuser_test_limited(single_dataset=None, **ex
         '185_baseball',
         '196_autoMpg',
         #'TR92_pgm_grid_samp',
-        #'TR93_pgm_quarterly',
+        'TR93_pgm_quarterly',
         #'CM_1990_2020',
         'TR103_germany_state',
         'TR104_Police_Incidents',
