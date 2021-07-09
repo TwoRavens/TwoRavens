@@ -62,18 +62,6 @@ export class CanvasDataset {
                 this.presetNameToLoad = presetNameOrFalse;
             }
         }
-
-        this.getPresetName = (pName) => {
-
-            console.log('getPresetName');
-            if (pName === this.presetNameToLoad) {
-                return '** Loading **';
-            } else if (app.workspace.d3m_config.name === pName) {
-                return 'Loaded';
-            } else {
-                return 'Load';
-            }
-        }
     }
 
     oninit() {
@@ -228,7 +216,9 @@ export class CanvasDataset {
                         data: data.map(preset => [
                             // preset.id,
                             preset.name,
-                            m(Button, {
+                            m(ButtonLadda, {
+                                    id: 'buttonLoadDataset' + utils.purifyId(preset.name),
+                                    activeLadda: this.presetNameToLoad === preset.name,
                                     // disable the current dataset
                                     disabled: app.workspace.d3m_config.name === preset.name || this.presetLoadInProgress,
                                     // switch datasets
@@ -245,7 +235,7 @@ export class CanvasDataset {
                                     }
                                 },
                                 // Set button text
-                                this.presetNameToLoad === preset.name ? '** Loading **' : (app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load'))
+                                app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load')
                         ])
                     }),
                     limit: 10,
@@ -522,7 +512,7 @@ export class CanvasDataset {
                     'background-color': common.colors.menu,
                 }
             }, reportContent),
-            card('Datasource', datasource),
+            card('Data Source', datasource),
             card('Manipulations', manipulationsMenu),
         );
     }

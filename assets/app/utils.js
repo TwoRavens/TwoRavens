@@ -79,6 +79,9 @@ export function formatPrecision(value, precision = 4) {
     return (digits <= precision || precision === 0) ? numeric : numeric.toPrecision(precision) * 1
 }
 
+// replaces tokens in an arbitrary text that may not be used in an id attribute
+export let purifyId = text => String(text).replace(/[^A-Za-z0-9]/g, "")
+
 // generate a number from text (cheap hash)
 export let generateID = text => Math.abs(Array.from({length: text.length})
     .reduce((hash, _, i) => ((hash << 5) - hash + text.charCodeAt(i)) | 0, 0));
