@@ -31,10 +31,10 @@ export default class PlotVegaLiteWrapper {
 export let preparePanels = state => {
     let {
         mapping, configuration, getData, abstractQuery, summaries, setSummaryAttr,
-        nominals, sampleSize, variablesInitial, initViewport, setInitViewport
+        categoricals, sampleSize, variablesInitial, initViewport, setInitViewport
     } = state;
     let varTypes = Object.keys(summaries).reduce((types, variable) => Object.assign(types, {
-        [variable]: nominals.has(variable)
+        [variable]: categoricals.has(variable)
             ? 'nominal' : summaries[variable].nature === 'ordinal'
                 ? 'quantitative' // using 'ordinal' makes the axis discrete, which breaks sizing
                 : 'quantitative'
@@ -91,7 +91,7 @@ export let preparePanels = state => {
             configuration,
             variables: Object.keys(summaries),
             summaries, setSummaryAttr,
-            nominals,
+            categoricals,
             abstractQuery
         }),
         plot
@@ -113,7 +113,13 @@ let makeSpecification = (configuration, varTypes, summaries) => {
         let layerKeys = new Set(['data', 'encoding', 'mark', 'transform', 'manipulations']);
         Object.keys(baseLayer).forEach(k => delete (layerKeys.has(k) ? specification : baseLayer)[k])
         specification.layer.unshift(baseLayer)
-        specification.resolve = {scale: {color: "independent"}}
+        specification.resolve = {
+            scale: {
+                color: "independent",
+                x: configuration.resolve_x || 'shared',
+                y: configuration.resolve_y || 'shared'
+            }
+        }
     }
 
     let concat = 'vconcat' in configuration ? 'vconcat' : ('hconcat' in configuration) && 'hconcat';
@@ -140,7 +146,7 @@ let makeSpecification = (configuration, varTypes, summaries) => {
 
 let makeLayer = (layer, varTypes, summaries) => {
     let channels = (layer.channels || [])
-        .filter(channel => !channel.delete && (channel.variable || (channel.variables || []).length));
+        .filter(channel => !channel.delete && (channel.variable || channel.variables?.length || channel.colorValue));
     if (channels.length === 0) return;
     let orientation = channels.find(channel => channel.name === 'primary axis')?.orientation || 'x';
     let spec = {};
@@ -245,9 +251,12 @@ let makeLayer = (layer, varTypes, summaries) => {
         }
 
         if (channel.name === "color") {
+            if (!channel.variable) return Object.assign(encodings, {
+                [channel.name]: {value: channel.colorValue}
+            })
             let varType = varTypes[channel.variable] || 'nominal';
             let scale = {zero: layer.zero ?? false, nice: layer.nice ?? false};
-            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "nominal" ? 'categorical' : 'sequential-single');
+            let schemeCategory = channel.schemeCategory || (summaries[channel.variable]?.numchar === "character" ? 'categorical' : 'sequential-single');
             if (schemes[schemeCategory].includes(channel.scheme?.[schemeCategory]))
                 scale.scheme = channel.scheme?.[schemeCategory];
             return Object.assign(encodings, {

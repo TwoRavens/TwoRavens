@@ -60,7 +60,7 @@ import PlotVegaLiteWrapper from "../views/PlotVegaLiteWrapper";
 import {bold, italicize, remove, toggle} from "../utils";
 import {
     getAbstractPipeline,
-    getNominalVariables,
+    getCategoricalVariables,
     getPredictorVariables,
     getSelectedProblem, getTargetVariables,
     setSelectedProblem
@@ -112,76 +112,83 @@ export class ExploreBoxes {
         let exploreBoxIds = Object.keys(preferences.mode === "problems" ? app.workspace.raven_config.problems : summaries);
 
         // boxId could either be a problemId or a variable name
-        return exploreBoxIds.map(boxId => {
-            let selected = preferences.mode === 'problems'
-                ? boxId === selectedProblem.problemId
-                : preferences.variables.includes(boxId);
+        return m(Paginated, {
+            data: exploreBoxIds,
+            makePage: exploreBoxIds => m('',
+                {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'}, exploreBoxIds.map(boxId => {
+                let selected = preferences.mode === 'problems'
+                    ? boxId === selectedProblem.problemId
+                    : preferences.variables.includes(boxId);
 
-            let node = summaries[boxId];
-            let kind = node?.timeUnit ? 'temporal' :
-                node?.locationUnit ? 'geographic' :
-                    null;
+                let node = summaries[boxId];
+                let kind = node?.timeUnit ? 'temporal' :
+                    node?.locationUnit ? 'geographic' :
+                        null;
 
-            let nodeLabel = get_node_label(boxId);
-            if (!nodeLabel)
-                return
+                let nodeLabel = get_node_label(boxId);
+                if (!nodeLabel)
+                    return
 
-            // tile for each variable or problem
-            return m('span#exploreNodeBox', {
-                    onclick: () => {
-                        if (preferences.mode === 'problems') {
-                            setSelectedProblem(boxId);
-                            preferences.variables = [boxId];
-                            return;
-                        }
+                // tile for each variable or problem
+                return m('span#exploreNodeBox', {
+                        onclick: () => {
+                            if (preferences.mode === 'problems') {
+                                setSelectedProblem(boxId);
+                                preferences.variables = [boxId];
+                                return;
+                            }
 
-                        toggle(preferences.variables, boxId);
-                    },
-                    style: {
-                        // border: '1px solid rgba(0, 0, 0, .2)',
-                        'border-radius': '5px',
-                        'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
-                        display: 'flex',
-                        'flex-direction': 'column',
-                        height: '250px',
-                        margin: '.5em',
-                        width: '250px',
-                        'align-items': 'center',
-                        'background-color': selected ? app.hexToRgba(common.selVarColor) : common.baseColor
-                    }
-                },
-                m('#exploreNodePlot', {
-                    oninit() {
-                        this.node = summaries[boxId];
-                    },
-                    oncreate(vnode) {
-                        let plot = (this.node || {}).pdfPlotType === 'continuous' ? densityNode : barsNode;
-                        this.node && plot(this.node, vnode.dom, 110, true);
-                    },
-                    onupdate(vnode) {
-                        let targetName = preferences.mode === 'problems'
-                            ? getTargetVariables(app.workspace.raven_config.problems[boxId])[0]
-                            : boxId;
-                        let node = summaries[targetName];
-                        if (node && node !== this.node) {
-                            let plot = node.pdfPlotType === 'continuous' ? densityNode : barsNode;
-                            plot(node, vnode.dom, 110, true);
-                            this.node = node;
-                        }
-                    },
-                    style: 'height: 65%'
-                }),
-                m('#exploreNodeLabel', {
+                            toggle(preferences.variables, boxId);
+                        },
                         style: {
+                            // border: '1px solid rgba(0, 0, 0, .2)',
+                            'border-radius': '5px',
+                            'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
+                            display: 'flex',
+                            'flex-direction': 'column',
+                            height: '250px',
                             margin: '.5em',
-                            'max-width': '230px',
-                            'overflow-wrap': 'break-word',
-                            overflow: 'auto'
+                            width: '250px',
+                            'align-items': 'center',
+                            'background-color': selected ? app.hexToRgba(common.colors.selVar) : common.colors.base
                         }
                     },
-                    nodeLabel),
-                kind && m('div', m('em', kind))
-            );
+                    m('#exploreNodePlot', {
+                        oninit() {
+                            this.node = summaries[boxId];
+                        },
+                        oncreate(vnode) {
+                            let plot = (this.node || {}).pdfPlotType === 'continuous' ? densityNode : barsNode;
+                            this.node && plot(this.node, vnode.dom, 110, true);
+                        },
+                        onupdate(vnode) {
+                            let targetName = preferences.mode === 'problems'
+                                ? getTargetVariables(app.workspace.raven_config.problems[boxId])[0]
+                                : boxId;
+                            let node = summaries[targetName];
+                            if (node && node !== this.node) {
+                                let plot = node.pdfPlotType === 'continuous' ? densityNode : barsNode;
+                                plot(node, vnode.dom, 110, true);
+                                this.node = node;
+                            }
+                        },
+                        style: 'height: 65%'
+                    }),
+                    m('#exploreNodeLabel', {
+                            style: {
+                                margin: '.5em',
+                                'max-width': '230px',
+                                'overflow-wrap': 'break-word',
+                                overflow: 'auto'
+                            }
+                        },
+                        nodeLabel),
+                    kind && m('div', m('em', kind))
+                );
+            })),
+            limit: 20,
+            page: explorePreferences.variablePage,
+            setPage: index => explorePreferences.variablePage = index
         })
     }
 }
@@ -374,13 +381,13 @@ export class CanvasExplore {
                         'margin-left': 'calc(460px + 1.5em)',
                         'margin-top': '0.5em',
                         position: 'fixed',
-                        background: common.lightGrayColor,
+                        background: common.colors.lightGray,
                         'border-radius': '3px',
                         'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)'
                     }
                 },
                 m('div', {style: {display: 'inline-block'}}, m(Popper, {
-                    content: () => explorePreferences.recordLimit ? `Up to ${explorePreferences.recordLimit} records are sampled from the dataset.` : 'An unlimited number of records are included in the plots.'
+                    content: () => explorePreferences.recordLimit ? `Up to ${explorePreferences.recordLimit} records are sampled from the dataset (after aggregating).` : 'An unlimited number of records are included in the plots.'
                 }, m('label', {style: {margin: '0 1em'}}, bold('Record Limit')))),
                 m(TextField, {
                     id: 'recordLimit',
@@ -391,22 +398,20 @@ export class CanvasExplore {
                 })),
 
             m('br'),
-            !['custom', 'mapping'].includes(explorePreferences.mode) && m('',
-            {style: 'display: flex; flex-direction: row; flex-wrap: wrap; margin-top: 3em'},
-                m(ExploreBoxes, {
+            !['custom', 'mapping'].includes(explorePreferences.mode) && m(ExploreBoxes, {
                     preferences: explorePreferences,
                     summaries: app.variableSummaries,
-                }))
+                })
         ),
             explorePreferences.mode === 'mapping' && m('div', {
                     style: {
-                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
+                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.colors.border
                     }
                 },
                 m(PlotVegaLiteWrapper, {
                     mapping: true,
                     getData: app.getData,
-                    nominals: new Set(getNominalVariables(selectedProblem)),
+                    categoricals: new Set(getCategoricalVariables(selectedProblem)),
                     configuration: mappingConfiguration,
                     abstractQuery: getAbstractPipeline(selectedProblem, true),
                     summaries: app.variableSummaries,
@@ -418,12 +423,12 @@ export class CanvasExplore {
                 })),
             explorePreferences.mode === 'custom' && m('div', {
                     style: {
-                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.borderColor
+                        position: 'absolute', width: '100%', top: '5.5em', bottom: 0, 'border-top': common.colors.border
                     }
                 },
                 m(PlotVegaLiteWrapper, {
                     getData: app.getData,
-                    nominals: new Set(getNominalVariables(selectedProblem)),
+                    categoricals: new Set(getCategoricalVariables(selectedProblem)),
                     configuration: customConfiguration,
                     abstractQuery: getAbstractPipeline(selectedProblem, true),
                     summaries: app.variableSummaries,
@@ -681,9 +686,9 @@ let fillVegaSchema = (schema, data, flip) => {
     // vega treats periods and brackets as indexing into structures unless they are escaped
     // unfortunately, vega still shows the escape characters. Annoying bug, obvious fix, lots of work
     data.varsRenamed = data.vars.map(variable => variable
-        .replace(".", "\\.")
-        .replace("[", "\\[")
-        .replace("]", "\\]"))
+        .replace(".", "\\\\.")
+        .replace("[", "\\\\[")
+        .replace("]", "\\\\]"))
 
     if (data["vars"].length > 1) {
         stringified = stringified.replace(/tworavensY/g, data.varsRenamed[1]);
@@ -739,6 +744,7 @@ let fillVegaSchema = (schema, data, flip) => {
     // VJD: if you enter this console.log into the vega editor https://vega.github.io/editor/#/edited the plot will render
     // console.log(stringified);
 
+    console.log(stringified)
     return JSON.parse(stringified);
 };
 
@@ -759,6 +765,7 @@ export let explorePreferences = {
     recordLimit: defaultRecordLimit,
     schemaName: undefined,
     variables: [],
+    variablePage: 0,
     page: 0,
     pageLength: 5,
     target: undefined
@@ -928,8 +935,8 @@ function getThumbnailStyle(nodeSummaries, schemaName) {
     };
 
     styling.border = isRecommended
-        ? "2px solid " + common.successColor
-        : "2px solid " + common.errorColor;
+        ? "2px solid " + common.colors.success
+        : "2px solid " + common.colors.error;
 
     return styling;
 }
@@ -1000,7 +1007,7 @@ export function densityNode(node, obj, radius, explore) {
         .datum(data2)
         .attr("class", "area")
         .attr("d", area)
-        .attr("fill", common.d3Color);
+        .attr("fill", common.colors.d3);
 }
 
 export function barsNode(node, obj, radius, explore) {
@@ -1083,5 +1090,5 @@ export function barsNode(node, obj, radius, explore) {
         .attr("y", d => y(maxY - d))
         .attr("width", x(minX + 0.5 - 2 * barPadding)) // the "width" is the coordinate of the end of the first bar
         .attr("height", y)
-        .attr("fill", common.d3Color);
+        .attr("fill", common.colors.d3);
 }

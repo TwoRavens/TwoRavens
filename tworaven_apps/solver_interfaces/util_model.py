@@ -12,16 +12,20 @@ import pandas
 from scipy.sparse import csr_matrix
 
 from tworaven_apps.solver_interfaces.models import SAVED_MODELS_PATH, R_SERVICE, get_metric, StatisticalModel
-from tworaven_solver import Dataset
+from tworaven_solver.utilities import Dataset
 from collections import defaultdict
 
 from sklearn import model_selection
 
-from tworaven_solver.model import BaseModelWrapper
+from tworaven_solver.solution import Solution
 
 
 class Model(object):
-    def __init__(self, model, system, predictors, targets, model_id=None, search_id=None, train_specification=None, task=None):
+    def __init__(self,
+                 model, system, predictors, targets,
+                 model_id=None, search_id=None,
+                 train_specification=None, task=None,
+                 is_forecasting=False):
         if model_id is None:
             db_model = StatisticalModel.objects.create()
             model_id = 'oss-' + str(db_model.model_id)
@@ -36,6 +40,7 @@ class Model(object):
         # which dataset model is currently trained on
         self.train_specification = train_specification
         self.task = task
+        self.is_forecasting = is_forecasting
 
     @abc.abstractmethod
     def describe(self):
@@ -105,13 +110,14 @@ class Model(object):
 
         if metadata['system'] == 'TwoRavens':
             return ModelTwoRavens(
-                model=BaseModelWrapper.load(model_folder_path, metadata),
+                model=Solution.load(model_folder_path, metadata),
                 system='TwoRavens',
                 predictors=metadata['predictors'],
                 targets=metadata['targets'],
                 model_id=metadata['model_id'],
                 search_id=metadata['search_id'],
-                task=metadata['task']
+                task=metadata['task'],
+                is_forecasting=metadata.get('forecasting', False)
             )
 
         raise ValueError(f'System type "{metadata["system"]}" is not recognized.')
@@ -684,65 +690,65 @@ class ModelTwoRavens(Model):
         # print(description)
         return {
             "model": self.model.pipeline_specification['model']['strategy'].lower(),
-            "description": str(self.model.model),
+            "description": json.dumps(self.model.describe()),
             **description,
             "pipeline_specification": self.model.pipeline_specification,
-            "problem_specification": self.model.problem_specification,
+            "problem_specification": self.model.problem.spec,
             "model_id": self.model_id,
             "search_id": self.search_id,
             "system": self.system
         }
 
     def score(self, score_specification):
-        # Looks like this function will only be called when encounter a test split
         dataframe = Dataset(score_specification['input']).get_dataframe()
-        prob_flag = False
-        for eachMetric in score_specification['performanceMetrics']:
-            if eachMetric.get('metric', '').startswith('ROC'):
-                prob_flag = True
 
-        if self.task == "FORECASTING":
+        if self.model.problem.is_forecasting:
             # For score computation, we only take the given "forecastingHorizon" into account
-            forecast_length = self.model.problem_specification.get('forecastingHorizon', {"value": 10})
-            forecast_length = forecast_length.get('value', 10)
-
-            predicted = self.model.forecast(dataframe, forecast_length, forecast_mode='test')
+            # if score_specification['input']['name'] == 'test':
+            #     forecast_length = self.model.problem.get('forecastingHorizon', {"value": 10})
+            #     forecast_length = forecast_length.get('value', 10)
+            #     dataframe = self.model.get_future_dataframe(forecast_length)
+            #     predicted = self.model.predict(dataframe)
+            # elif score_specification['input']['name'] == 'train':
+            # TODO - REENABLE
+            predicted = self.model.fitted_values().head(len(dataframe))
+            # else:
+            #     raise ValueError(f"unknown dataset name {score_specification['input']['name']}")
 
         elif self.task in ['CLASSIFICATION', 'REGRESSION']:
             # TODO: respect configuration on holdout vs cross-validation, do refitting, etc.
-            if self.task == 'CLASSIFICATION':
-                for target in self.targets:
-                    dataframe[target] = dataframe[target].astype(str)
+            # if self.task == 'CLASSIFICATION':
+            #     for target in self.targets:
+            #         dataframe[target] = dataframe[target].astype(str)
+
+            # TODO - REENABLE
+            # if any(metric.get('metric', '').startswith('ROC')
+            #        for metric in score_specification['performanceMetrics']):
+            #     #  Compute score if it's a classification problem
+            #     predicted = self.model.predict_proba(dataframe)
+            #     if len(predicted.shape) > 1 and predicted.shape[1] == 2:
+            #         # Binary Classification, keep the probability of greater class only
+            #         predicted = predicted[:, [1]].ravel()
+            # else:
             predicted = self.model.predict(dataframe)
 
-            if prob_flag:
-                #  Compute score if it's a classification problem
-                predicted_prob = self.model.predict_proba(dataframe)
-                if len(predicted_prob.shape) > 1 and predicted_prob.shape[1] == 2:
-                    # Binary Classification, keep the probability of greater class only
-                    predicted_prob = predicted_prob[:, [1]].ravel()
-
-            if self.task == 'CLASSIFICATION':
-                for target in self.targets:
-                    predicted[target] = predicted[target].astype(str)
+            # if self.task == 'CLASSIFICATION':
+            #     for target in self.targets:
+            #         predicted[target] = predicted[target].astype(str)
 
         else:
             raise NotImplementedError
 
         scores = []
         for target in self.targets:
-            results = pandas.DataFrame({'actual': dataframe[target], 'predicted': predicted[target]})
+            results = pandas.DataFrame({'actual': dataframe[target].values, 'predicted': predicted[target].values})
+            print("score results", results)
             results.dropna(inplace=True)
 
             for eachMetric in score_specification['performanceMetrics']:
                 try:
-                    if eachMetric.get('metric', '').startswith('ROC'):
-                        tmp_value = get_metric(eachMetric, self.model.problem_specification)(results['actual'], predicted_prob)
-                    else:
-                        tmp_value = get_metric(eachMetric, self.model.problem_specification)(results['actual'], results['predicted'])
-
                     scores.append({
-                        'value': tmp_value,
+                        'value': get_metric(eachMetric, self.model.problem)(results['actual'], results['predicted']),
                         'metric': eachMetric,
                         'target': target
                     })
@@ -764,25 +770,39 @@ class ModelTwoRavens(Model):
     def produce(self, produce_specification):
         # Looks like produce_specification contains input.name -- [train|test|all]
         configuration = produce_specification.get('configuration', {})
-        predict_type = configuration.get('predict_type', 'RAW')
 
         dataframe = Dataset(produce_specification['input']).get_dataframe()
-        data_type = produce_specification['input'].get('name', 'test')
+        data_name = produce_specification['input'].get('name', 'test')
 
-        if self.task in ['REGRESSION', 'CLASSIFICATION']:
-            dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
-            # self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
-
-        if predict_type == 'RAW':
-            if "FORECASTING" == self.task:
-                predicted = self.model.forecast(dataframe, len(dataframe.index), data_type)
+        if self.model.problem.is_forecasting:
+            # For score computation, we only take the given "forecastingHorizon" into account
+            if data_name == 'test':
+                forecast_length = self.model.problem.get('forecastingHorizon', {"value": 10})
+                forecast_length = forecast_length.get('value', 10)
+                predicted = self.model.predict(self.model.get_future_dataframe(forecast_length))
+            elif data_name == 'train':
+                predicted = self.model.fitted_values()
             else:
-                # This branch seems will never be reached
-                predicted = self.model.predict(dataframe)
+                raise ValueError(f"unknown dataset name {data_name}")
+
+        elif self.task in ['CLASSIFICATION', 'REGRESSION']:
+            # TODO - REENABLE
+            # if configuration.get('predict_type', 'RAW'):
+            #     #  Compute score if it's a classification problem
+            #     predicted = self.model.predict_proba(dataframe)
+            #     if len(predicted.shape) > 1 and predicted.shape[1] == 2:
+            #         # Binary Classification, keep the probability of greater class only
+            #         predicted = predicted[:, [1]].ravel()
+            #     predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
+            # else:
+            predicted = self.model.predict(dataframe)
+
         else:
-            predicted = self.model.predict_proba(dataframe)
-            # TODO: standardize probability column names
-            predicted = pandas.DataFrame(predicted, columns=[f'p_{i}' for i in range(predicted.shape[1])])
+            raise NotImplementedError
+
+        # if self.task in ['REGRESSION', 'CLASSIFICATION']:
+        #     dataframe_train = Dataset(produce_specification['train']).get_dataframe().dropna()
+        #     self.fit(dataframe=dataframe_train, data_specification=produce_specification['train'])
 
         output_directory_path = produce_specification['output']['resource_uri'].replace('file://', '')
         output_path = '/' + os.path.join(
@@ -798,7 +818,7 @@ class ModelTwoRavens(Model):
         cwd = os.getcwd()
         try:
             os.chdir('/')
-            predicted.to_csv(output_path, index=False, quoting=csv.QUOTE_NONNUMERIC)
+            predicted.to_csv(output_path, index=False)
         finally:
             os.chdir(cwd)
 
@@ -826,7 +846,8 @@ class ModelTwoRavens(Model):
                 'predictors': self.predictors,
                 'targets': self.targets,
                 'search_id': self.search_id,
-                'task': self.task
+                'task': self.task,
+                'is_forecasting': self.model.problem.is_forecasting
             }, metadata_file)
 
         self.model.save(model_folder_dir)

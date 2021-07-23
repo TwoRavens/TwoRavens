@@ -26,7 +26,7 @@ import {
     buildEmptyProblem,
     generateProblemID,
     getAbstractPipeline,
-    getNominalVariables,
+    getCategoricalVariables,
     getPredictorVariables,
     getProblemCopy,
     getSelectedProblem, getTargetGroups, getTargetVariables,
@@ -67,6 +67,7 @@ export let workspace;
 //-------------------------------------------------
 
 let RAVEN_CONFIG_VERSION = 1;
+export let TOGGLER_UI = false;
 
 export let TA2DebugMode = false;
 export let debugLog = TA2DebugMode ? console.log : _ => _;
@@ -79,14 +80,14 @@ export let colors = {
     // groups
     predictor: '#14bdcc',
     target: '#79af4f',
-    crossSection: '#fda760', // should be similar to nominal
+    crossSection: '#fda760', // should be similar to categorical
     order: '#2d6ca2',
     location: '#419641',
 
     // labels
     time: '#2d6ca2', // should be similar/same to orderColor
-    nominal: '#ff6600',
-    ordinal: '#ffb700', // should be similar to nominal
+    categorical: '#ff6600',
+    ordinal: '#ffb700', // should be similar to categorical
     weight: '#cb5a94',
     boundary: '#d23e3e', // similar to bounding box color?
     privileged: '#996bcc', // royalty?
@@ -94,6 +95,7 @@ export let colors = {
     // TODO: these two are not original colors
     featurize: '#d23e3e',
     randomize: '#996bcc',
+    geographic: '#419641',
 
     index: '#797478',
     matched: '#330b0b',
@@ -212,7 +214,7 @@ export async function updatePeek(pipeline) {
             skip: peekSkip,
             limit: peekLimit,
             variables,
-            nominal: !isDatasetMode && getNominalVariables(problem)
+            categorical: !isDatasetMode && getCategoricalVariables(problem)
                 .filter(variable => variables.includes(variable))
         }
     };
@@ -276,7 +278,6 @@ export async function updatePeek(pipeline) {
 }
 
 export let downloadFile = async (datasetUrl, contentType) => {
-    console.log(datasetUrl);
     if (!datasetUrl) return;
     let data = {data_pointer: datasetUrl};
     if (contentType) data['content_type'] = contentType;
@@ -373,7 +374,7 @@ export function setSelectedMode(mode) {
 
     if (selectedMode !== mode) {
         // ensures that non-editable problems are not selected
-        if (!isExploreMode && previousMode === 'explore' && selectedProblem?.system === 'auto') {
+        if (!isExploreMode && previousMode === 'explore' && selectedProblem?.system === 'discovered') {
             let copiedProblem = getProblemCopy(selectedProblem);
             workspace.raven_config.problems[copiedProblem.problemId] = copiedProblem;
             setSelectedProblem(copiedProblem.problemId);
@@ -412,8 +413,6 @@ export function setSelectedMode(mode) {
                 ...workspace.raven_config.hardManipulations,
                 {type: 'menu', metadata: {type: 'data'}}
             ], workspace.raven_config.variablesInitial)['pipeline']);
-
-            console.log(datasetQuery);
 
             let preprocessPromise = loadPreprocess(datasetQuery)
                 .then(setPreprocess)
@@ -457,7 +456,8 @@ export async function buildCsvPath(problem, lastStep, dataPath, collectionName) 
     let body = {
         method: 'aggregate',
         query: JSON.stringify(compiled),
-        export: 'csv'
+        export: 'csv',
+        comment: 'exporting problem to CSV'
     };
 
     if (dataPath) body.datafile = dataPath;
@@ -483,7 +483,8 @@ export async function buildDatasetPath(problem, lastStep, dataPath, collectionNa
         method: 'aggregate',
         query: JSON.stringify(compiled),
         export: 'dataset',
-        metadata: JSON.stringify(newDatasetSchema)
+        metadata: JSON.stringify(newDatasetSchema),
+        comment: 'exporting problem to D3M dataset'
     };
 
     if (dataPath) body.datafile = dataPath;
@@ -756,7 +757,7 @@ function websocketMessage(e) {
 //-------------------------------------------------
 
 // when set, a problem's Task, Subtask and Metric may not be edited
-export let lockToggle = true;
+export let lockToggle = TOGGLER_UI;
 export let setLockToggle = state => {
     if (state && selectedProblem.system === 'solved') hopscotch.startTour(lockTour());
     else {
@@ -778,12 +779,12 @@ export let alertLog = (value, shown) => {
 export let alertWarn = (value, shown) => {
     alerts.push({type: 'warn', time: new Date(), description: value});
     showModalAlerts = shown !== false; // Default is 'true'
-    console.trace('warning: ', value);
+    // console.trace('warning: ', value);
 };
 export let alertError = (value, shown) => {
     alerts.push({type: 'error', time: new Date(), description: value});
     showModalAlerts = shown !== false; // Default is 'true'
-    console.trace('error: ', value);
+    // console.trace('error: ', value);
 };
 
 // alerts popup internals
@@ -798,6 +799,9 @@ export let setShowModalTA2Debug = state => showModalTA2Debug = state;
 
 export let showModalDownload = false;
 export let setShowModalDownload = state => showModalDownload = state;
+
+export let showModalProblems = false;
+export let setShowModalProblems = state => showModalProblems = state;
 
 // menu state within datamart component
 export let datamartPreferences = {
@@ -1033,7 +1037,12 @@ export let locationUnits = {
     'latitude': ['decimal'], // ['sexagesimal', 'minutes']
     'longitude': ['decimal'],
     'country': ["ISO-3", "ICEWS", "UN M.49", "cowcode", "gwcode", "gtdcode", "ISO-2"],
-    'US_state': ['US_state_name', 'USPS']
+    'US_state': ['US_state_name', 'USPS'],
+    'DE_state': ['DE_state_name', 'id'],
+    'Dallas_City_Limits': ['CITY'],
+    'Dallas_Current_Council_Districts': ['COUNCIL'],
+    'Dallas_Targeted_Area_Action_Grids': ['TAAG_Name'],
+    'Texas_Zip_Codes': ['ZCTA5CE10']
 }
 
 let standardWrappedSolvers = ['tpot', 'auto_sklearn', 'ludwig', 'h2o', 'TwoRavens']; // 'mlbox', 'caret', 'mljar-supervised'
@@ -1292,7 +1301,8 @@ let loadSampledDatasetPath = async query => {
         samplingCache.sampledDatasetPathPromise = query.length > 0
             ? getData({
                 method: 'aggregate', query,
-                export: 'csv'
+                export: 'csv',
+                comment: 'exporting sample of data to CSV for preprocess'
             })
             : Promise.resolve(workspace.raven_config.datasetPath)
     }
@@ -1537,7 +1547,7 @@ export let loadWorkspace = async (newWorkspace, awaitPreprocess = false) => {
             // only modify the problem if problem is in predict mode
             else if (problem.unedited) {
                 // set default predictors based on first discovered problem
-                let newPredictors = getPredictorVariables(workspace.raven_config.problems['problem 1'])
+                let newPredictors = getPredictorVariables(workspace.raven_config.problems['problem 3'])
                     ?.filter?.(variable => !targets.includes(variable));
                 if (newPredictors?.length > 0) problem.groups.find(group => group.name === "Predictors").nodes = newPredictors;
             }
@@ -1824,8 +1834,10 @@ export let materializeTrainTest = async problem => {
  converts color codes
  */
 export let hexToRgba = (hex, alpha) => {
+    if (alpha === undefined) alpha = 0.5
+    if (!alpha) return '#0000';
     let int = parseInt(hex.replace('#', ''), 16);
-    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha || '0.5'].join(',')})`;
+    return `rgba(${[(int >> 16) & 255, (int >> 8) & 255, int & 255, alpha].join(',')})`;
 };
 
 export let setPreprocess = state => {
@@ -1865,15 +1877,19 @@ export let inferLocationFormat = variable => {
     let unit = variableSummaries[variable].locationUnit;
     if ([undefined, 'latitude', 'longitude'].includes(unit))
         return;
-    if (!variableSummaries[variable].plotValues) return
+    if (!variableSummaries[variable].plotValues || !unit) return
 
-    if ((unit in locationUnits) && !(unit in alignmentData)) {
-        console.log('requesting metadata')
-        m.request({
-            url: mongoURL + 'get-metadata',
-            method: 'POST',
-            body: {alignments: [unit]}
-        }).then(setMetadata).then(() => {
+    let units = [unit];
+    if (!(unit in locationUnits))
+        units = Object.keys(locationUnits)
+            .filter(unit => !['latitude', 'longitude'].includes(unit))
+
+    m.request({
+        url: mongoURL + 'get-metadata',
+        method: 'POST',
+        body: {alignments: units}
+    }).then(setMetadata).then(() => {
+        units.some(unit => {
             let inversion = alignmentData[unit].reduce((inversion, alignment) => {
                 Object.entries(alignment).forEach(([format, value]) => {
                     inversion[format] = inversion[format] || new Set();
@@ -1885,10 +1901,14 @@ export let inferLocationFormat = variable => {
             let sampleNames = Object.keys(variableSummaries[variable].plotValues);
 
             // guess the format based on some plotValues
-            let format = Object.keys(inversion).find(format => sampleNames.every(name => inversion[format].has(name)));
-            setVariableSummaryAttr(variable, 'locationFormat', format);
+            let format = Object.keys(inversion).find(format => sampleNames.length * .8 < sampleNames.reduce((score, name) => inversion[format].has(name) ? score + 1 : score, 0));
+            if (format) {
+                setVariableSummaryAttr(variable, 'locationUnit', unit);
+                setVariableSummaryAttr(variable, 'locationFormat', format);
+                return true
+            }
         })
-    }
+    })
 }
 
 export let setVariableSummaryAttr = (variable, attr, value) => {

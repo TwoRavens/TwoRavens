@@ -1,0 +1,18 @@
+[
+    {"id": "DE-BW", "DE_state_name": "Baden-Wurttemberg"},
+    {"id": "DE-BY", "DE_state_name": "Bayern"},
+    {"id": "DE-BE", "DE_state_name": "Berlin"},
+    {"id": "DE-BB", "DE_state_name": "Brandenburg"},
+    {"id": "DE-HB", "DE_state_name": "Bremen"},
+    {"id": "DE-HH", "DE_state_name": "Hamburg"},
+    {"id": "DE-HE", "DE_state_name": "Hessen"},
+    {"id": "DE-MV", "DE_state_name": "Mecklenburg-Vorpommern"},
+    {"id": "DE-NI", "DE_state_name": "Niedersachsen"},
+    {"id": "DE-NW", "DE_state_name": "Nordrhein-Westfalen"},
+    {"id": "DE-RP", "DE_state_name": "Rheinland-Pfalz"},
+    {"id": "DE-SL", "DE_state_name": "Saarland"},
+    {"id": "DE-ST", "DE_state_name": "Sachsen-Anhalt"},
+    {"id": "DE-SN", "DE_state_name": "Sachsen"},
+    {"id": "DE-SH", "DE_state_name": "Schleswig-Holstein"},
+    {"id": "DE-TH", "DE_state_name": "Thuringen"}
+]

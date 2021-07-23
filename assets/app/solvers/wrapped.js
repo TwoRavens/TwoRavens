@@ -6,7 +6,7 @@ import * as results from "../modes/results";
 import * as utils from '../utils';
 import {
     getLocationVariables,
-    getNominalVariables,
+    getCategoricalVariables,
     getOrderingVariable,
     getPredictorVariables,
     getTargetVariables,
@@ -72,14 +72,15 @@ export let SPEC_problem = problem => {
     return {
         "name": problem.problemId,
         "taskSubtype": app.d3mTaskSubtype[problem.subTask],
-        "taskType": app.d3mTaskType[problem.task],
+        "forecasting": problem.task === "forecasting",
+        "taskType": problem.task === "forecasting" ? "REGRESSION" : app.d3mTaskType[problem.task],
         "timeGranularity": problem.timeGranularity,
         'forecastingHorizon': {
             column: getOrderingVariable(problem),
             value: problem.forecastingHorizon
         },
 
-        'time_format': Object.values(app.variableSummaries)
+        'date_format': Object.values(app.variableSummaries)
             .filter(summary => summary.timeUnit)
             .reduce((out, summary) => Object.assign(out, {[summary.name]: summary.timeUnit}), {}),
         'location_unit': Object.values(app.variableSummaries)
@@ -102,7 +103,7 @@ export let SPEC_problem = problem => {
         "predictors": predictors,
 
         // data types
-        "categorical": getNominalVariables(problem)
+        "categorical": getCategoricalVariables(problem)
     };
 }
 

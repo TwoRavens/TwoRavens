@@ -92,11 +92,11 @@ export default class CanvasSavedQueries {
             preferences['results'].map(result => m('div', {
                     style: {
                         width: '100%',
-                        background: this.result === result.id ? common.menuColor : '#f0f0f0',
+                        background: this.result === result.id ? common.colors.menu : '#f0f0f0',
                         'box-shadow': '#0003 0px 2px 3px',
                         'margin-top': common.panelMargin,
                         'padding': '10px',
-                        'border': common.borderColor
+                        'border': common.colors.border
                     },
                     onclick: () => this.getQuery(preferences, result.id),
                     ondblclick: () => this.result = undefined

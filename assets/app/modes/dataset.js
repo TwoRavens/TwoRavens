@@ -62,18 +62,6 @@ export class CanvasDataset {
                 this.presetNameToLoad = presetNameOrFalse;
             }
         }
-
-        this.getPresetName = (pName) => {
-
-            console.log('getPresetName');
-            if (pName === this.presetNameToLoad) {
-                return '** Loading **';
-            } else if (app.workspace.d3m_config.name === pName) {
-                return 'Loaded';
-            } else {
-                return 'Load';
-            }
-        }
     }
 
     oninit() {
@@ -228,7 +216,9 @@ export class CanvasDataset {
                         data: data.map(preset => [
                             // preset.id,
                             preset.name,
-                            m(Button, {
+                            m(ButtonLadda, {
+                                    id: 'buttonLoadDataset' + utils.purifyId(preset.name),
+                                    activeLadda: this.presetNameToLoad === preset.name,
                                     // disable the current dataset
                                     disabled: app.workspace.d3m_config.name === preset.name || this.presetLoadInProgress,
                                     // switch datasets
@@ -245,7 +235,7 @@ export class CanvasDataset {
                                     }
                                 },
                                 // Set button text
-                                this.presetNameToLoad === preset.name ? '** Loading **' : (app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load'))
+                                app.workspace.d3m_config.name === preset.name ? 'Loaded' : 'Load')
                         ])
                     }),
                     limit: 10,
@@ -441,7 +431,7 @@ export class CanvasDataset {
                     data: Object.entries(app.variableSummaries)
                         .filter(variable => !datasetPreferences.reportSearch
                             || variable[0].toLowerCase().includes(datasetPreferences.reportSearch ?? "")),
-                    makePage: entries => entries.map(([variable, vals]) => m('div', {style: `margin-bottom: 1em; padding: 1em; border: ${common.borderColor}`},
+                    makePage: entries => entries.map(([variable, vals]) => m('div', {style: `margin-bottom: 1em; padding: 1em; border: ${common.colors.border}`},
                         m('h4', variable),
                         m('.row',
                             m('.col[style=min-width:auto !important]',
@@ -519,10 +509,10 @@ export class CanvasDataset {
                     'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
                     margin: '1em',
                     padding: '1em',
-                    'background-color': common.menuColor,
+                    'background-color': common.colors.menu,
                 }
             }, reportContent),
-            card('Datasource', datasource),
+            card('Data Source', datasource),
             card('Manipulations', manipulationsMenu),
         );
     }
@@ -536,7 +526,7 @@ let card = (name, content) => {
                 'box-shadow': '1px 1px 4px rgba(0, 0, 0, 0.4)',
                 margin: '1em',
                 padding: '1em',
-                'background-color': common.menuColor,
+                'background-color': common.colors.menu,
             }
         },
         m('h4[style=margin:.75em]', name),

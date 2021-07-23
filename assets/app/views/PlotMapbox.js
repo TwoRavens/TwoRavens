@@ -31,7 +31,7 @@ export let mapStyles = {
     'outdoors': 'outdoors-v11',
     'satellite': 'satellite-v9'
 }
-let getMapStyle = name => `mapbox://styles/mapbox/${mapStyles[name] || mapStyles.streets}`
+let getMapStyle = name => `mapbox://styles/mapbox/${mapStyles[name] || mapStyles.light}`
 
 export default class PlotMapbox {
 
@@ -42,7 +42,7 @@ export default class PlotMapbox {
 
     onupdate({attrs, dom}) {
         let {specification, initViewport, setInitViewport} = attrs;
-        specification.mapboxStyle = specification.mapboxStyle || {light: 'streets', dark: 'dark'}[common.theme];
+        specification.mapboxStyle = specification.mapboxStyle || {light: 'light', dark: 'dark'}[common.theme];
         let {width, height} = dom.getBoundingClientRect();
         window.specification = specification;
         delete specification.selection;
@@ -67,7 +67,9 @@ export default class PlotMapbox {
             vega.projection('mapbox', () => {
                 const p = d3.geoTransform({
                     point: function (lon, lat) {
-                        let point = map.project(new mapboxgl.LngLat(lon, lat));
+                        let point = map.project(new mapboxgl.LngLat(
+                            Math.max(-180, Math.min(lon, 180)),
+                            Math.max(-90, Math.min(lat, 90))));
                         this.stream.point(point.x, point.y);
                     }
                 });
@@ -122,6 +124,7 @@ export default class PlotMapbox {
 
 // retrieve the outer layer of points in a flat array. useful for approximating the center
 let getOuter = data => data.flatMap(v => {
+    if (!v?.geometry?.type) return []
     if (v.geometry.type === "Point")
         return [v.geometry.coordinates]
     if (v.geometry.type === "LineString")

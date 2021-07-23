@@ -29,7 +29,7 @@ TA2_D3M_SOLVER_ENABLED = strtobool(os.environ.get('TA2_D3M_SOLVER_ENABLED', 'Tru
 TA2_WRAPPED_SOLVERS_ALL = [
     #"auto_sklearn",
     # "caret",
-    # "h2o",
+    "h2o",
     #"ludwig",
     "mlbox",
     "tpot",

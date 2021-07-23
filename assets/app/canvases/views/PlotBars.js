@@ -45,8 +45,8 @@ export default class PlotBars {
             .style("position", "absolute")
             .style("z-index", "10")
             .style("pointer-events", "none")
-            .style("background", common.menuColor)
-            .style("border", common.borderColor)
+            .style("background", common.colors.menu)
+            .style("border", common.colors.border)
             .style("padding", "4px")
             .style("margin-top", '-20px')
             .attr("class", "tooltip");

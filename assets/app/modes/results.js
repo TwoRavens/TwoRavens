@@ -35,7 +35,7 @@ import ModelInterpretation from "../views/ModelInterpretation";
 import {
     getAbstractPipeline,
     getDescription,
-    getNominalVariables,
+    getCategoricalVariables,
     getOrderingTimeUnit,
     getOrderingVariable,
     getPredictorVariables,
@@ -917,7 +917,7 @@ export class CanvasSolutions {
         let interpretationContent = [];
 
         if (resultsPreferences.interpretationMode === 'EFD') {
-            let isCategorical = getNominalVariables(problem).includes(resultsPreferences.target);
+            let isCategorical = getCategoricalVariables(problem).includes(resultsPreferences.target);
             interpretationContent.push(m('div[style=margin: 1em]',
                 utils.italicize("Empirical first differences"), ` is a tool to interpret the influence of variables on the model, from the empirical distribution of the data. ` +
                 `The Y axis refers to the ${isCategorical ? 'probability of each level' : 'expectation'} of the dependent variable as the predictor (x) varies along its domain. ` +
@@ -1014,7 +1014,7 @@ export class CanvasSolutions {
             ];
         }
         if (adapters.length === 1 && resultsPreferences.interpretationMode === 'PDP/ICE') {
-            let isCategorical = getNominalVariables(problem).includes(resultsPreferences.target);
+            let isCategorical = getCategoricalVariables(problem).includes(resultsPreferences.target);
             let sortedPredictors = Object.keys(resultsCache[problem.problemId]?.importanceScores
                 ?.[adapter.getSolutionId()]?.EFD?.[resultsPreferences.target] ?? {});
 
@@ -1079,7 +1079,7 @@ export class CanvasSolutions {
         let pipelineFlowchartPrep = pipeline => {
             let steps = pipeline.steps.map((pipeStep, i) => ({
                 key: 'Step ' + i,
-                color: common.grayColor,
+                color: common.colors.gray,
                 // special coloring is not enabled for now
                 // color: {
                 //     'data': common.grayColor,
@@ -1115,9 +1115,9 @@ export class CanvasSolutions {
             });
 
             return [
-                {color: common.successColor, key: 'Inputs', summary: inputs, content: inputs},
+                {color: common.colors.success, key: 'Inputs', summary: inputs, content: inputs},
                 ...steps,
-                {color: common.successColor, key: 'Outputs', summary: outputs, content: outputs}
+                {color: common.colors.success, key: 'Outputs', summary: outputs, content: outputs}
             ];
         };
 
@@ -1138,7 +1138,7 @@ export class CanvasSolutions {
                 style: {
                     margin: '1em',
                     width: 'calc(100% - 2em)',
-                    border: common.borderColor,
+                    border: common.colors.border,
                     'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                 }
             }),
@@ -1305,7 +1305,8 @@ export class CanvasSolutions {
                 getData: body => app.getData(Object.assign({
                     datafile: datafile, // location of the dataset csv
                     collection_name: collectionName,
-                    datasets
+                    datasets,
+                    comment: 'preparing data for results-mode variable exploration'
                 }, body)),
             }))
     }
@@ -1370,17 +1371,18 @@ export class CanvasSolutions {
             }
         }
 
-        let nominals = new Set(getNominalVariables(problem));
-        if (isClassification) foldedVariables.map(v => nominals.add(v));
+        let categoricals = new Set(getCategoricalVariables(problem));
+        if (isClassification) foldedVariables.map(v => categoricals.add(v));
 
         let {editor, plot} = preparePanels({
             mapping,
             getData: body => app.getData(Object.assign({
                 datafile: datafile, // location of the dataset csv
                 collection_name: collectionName,
-                datasets
+                datasets,
+                comment: 'data preparation for custom data exploration in results-mode'
             }, body)),
-            nominals,
+            categoricals,
             configuration: mapping ? mappingConfiguration : customConfiguration,
             abstractQuery: [
                 ...pipeline,
@@ -2755,7 +2757,8 @@ export let loadDataSample = async (problem, split, indices=undefined) => {
             collection_name: collectionName,
             reload: false,
             query: JSON.stringify(compiled),
-            datasets
+            datasets,
+            comment: 'constructing a sample of records with predictions in results-mode'
         })
     } catch (err) {
         console.warn("retrieve data sample error");
@@ -2855,9 +2858,9 @@ export let loadFittedData = async (problem, adapter, split) => {
         return;
 
     // attempt to parse all data into floats
-    let nominals = getNominalVariables(problem);
+    let categoricals = getCategoricalVariables(problem);
     response.data.forEach(row => getTargetVariables(problem)
-        .filter(target => !nominals.includes(target))
+        .filter(target => !categoricals.includes(target))
         .forEach(target => {
             if (!(target in row)) return;
 
@@ -3006,7 +3009,7 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
                     produceId,
                     targets: getTargetVariables(problem),
                     predictors: getPredictorVariables(problem),
-                    categoricals: [...getNominalVariables(problem)
+                    categoricals: [...getCategoricalVariables(problem)
                         .filter(variable => problem.results.variablesInitial.includes(variable))],
                     datafile: splitPath, // location of the dataset csv
                     collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
@@ -3030,12 +3033,12 @@ export let loadInterpretationEFDData = async (problem, adapter) => {
     if (resultsPreferences.dataSplit !== resultsCache[problem.problemId].id.dataSplit)
         return;
 
-    let nominals = getNominalVariables(problem);
+    let categoricals = getCategoricalVariables(problem);
 
     // melt predictor data once, opposed to on every redraw
     Object.keys(response.data)
         .forEach(predictor => response.data[predictor] = utils.melt(
-            nominals.includes(predictor)
+            categoricals.includes(predictor)
                 ? utils.sample(response.data[predictor], 20, false, true)
                 : response.data[predictor],
             ["predictor"], valueLabel, variableLabel));
@@ -3196,7 +3199,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
                         produceId,
                         targets: getTargetVariables(problem),
                         predictors: getPredictorVariables(problem),
-                        categoricals: getNominalVariables(problem),
+                        categoricals: getCategoricalVariables(problem),
                         datafile: splitPath, // location of the dataset csv
                         collection_name: `${app.workspace.d3m_config.name}_split_${utils.generateID(splitPath)}`, // collection/dataset name
                         query: compiled
@@ -3292,7 +3295,7 @@ let loadImportanceScore = async (problem, adapter, mode) => {
         body: {
             efdData: response.data,
             targets: getTargetVariables(problem),
-            categoricals: getNominalVariables(problem),
+            categoricals: getCategoricalVariables(problem),
             task: problem.task
         }
     });
@@ -3457,7 +3460,7 @@ let loadPredictorDomains = async problem => {
     m.redraw();
 
     let predictors = getPredictorVariables(problem);
-    let categoricals = getNominalVariables(problem).filter(variable => predictors.includes(variable));
+    let categoricals = getCategoricalVariables(problem).filter(variable => predictors.includes(variable));
 
     let compiled = queryMongo.buildPipeline(
         [...resultsQuery],
@@ -3483,6 +3486,7 @@ let loadPredictorDomains = async problem => {
         ]),
         datafile: problem.results.datasetPaths[resultsPreferences.dataSplit],
         collection_name: `${app.workspace.d3m_config.name}_split_${resultsPreferences.dataSplit}`, // collection/dataset name
+        comment: 'retrieving results-mode variable levels for ICE visualizations'
     }))[0] : {};
 
     // {[variable]: *samples along domain*}
@@ -3559,6 +3563,7 @@ let loadICEDatasetPaths = async problem => {
             // export with this dataset schema
             export: 'dataset',
             metadata: JSON.stringify(queryMongo.translateDatasetDoc(compiled, splitSchema, problem)),
+            comment: 'exporting a sample of records to be used in ICE plots'
         });
 
         // BUILD ICE DATASETS

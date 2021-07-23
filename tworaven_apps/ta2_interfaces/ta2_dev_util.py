@@ -59,7 +59,7 @@ TA2_IMAGE_INFO = [
     # '-p 45042:45042'),
 
     (TA2_NYU,
-    'registry.gitlab.com/vida-nyu/d3m/ta2:latest',
+    'registry.gitlab.com/vida-nyu/d3m/alphad3m:latest',
     '-p 45042:45042 -e D3MPORT=45042',),
 ]
 

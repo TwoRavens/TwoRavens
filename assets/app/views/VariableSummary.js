@@ -4,7 +4,8 @@ import PlotVegaLite from "./PlotVegaLite";
 import Table from "../../common/views/Table";
 import ButtonRadio from "../../common/views/ButtonRadio";
 import {formatPrecision, italicize} from "../utils";
-import {getNominalVariables, getSelectedProblem} from "../problem";
+import {getCategoricalVariables, getSelectedProblem} from "../problem";
+import {preprocessSampleSize} from "../app";
 
 
 export default class VariableSummary {
@@ -83,7 +84,7 @@ export default class VariableSummary {
                 specification: continuousSpecification,
                 identifier: 'x'
             });
-            let isCategorical = getNominalVariables(getSelectedProblem()).includes(variable.name);
+            let isCategorical = getCategoricalVariables(getSelectedProblem()).includes(variable.name);
             if (!isCategorical && variable.cdfPlotType === 'bar') plot = m(PlotVegaLite, {
                 data: variable.cdfPlotX.map((_, i) => ({x: variable.cdfPlotX[i], y: variable.cdfPlotY[i]})),
                 specification: barSpecification,
@@ -93,6 +94,8 @@ export default class VariableSummary {
 
         return [
             variable?.description && m('center[style=margin:1em]', variable?.description),
+            (variable.validCount + variable.invalidCount) === preprocessSampleSize
+                && italicize(`Summary statistics are based on a sample of ${preprocessSampleSize} records.`),
             m(ButtonRadio, {
                 sections: [
                     {

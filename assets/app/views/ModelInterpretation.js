@@ -1,6 +1,6 @@
 import m from 'mithril';
 import PlotVegaLite from "./PlotVegaLite";
-import {getNominalVariables} from "../problem";
+import {getCategoricalVariables} from "../problem";
 
 let axisLabels = false;
 
@@ -11,10 +11,10 @@ export default class ModelInterpretation {
 
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
-        let nominals = getNominalVariables(problem);
+        let categoricals = getCategoricalVariables(problem);
 
         // HEAT MAP
-        if (nominals.includes(predictor) && nominals.includes(target)) {
+        if (categoricals.includes(predictor) && categoricals.includes(target)) {
             // vega-lite emits an invalid canvas gradient when all colors are equal. Fixed in newer version
             if (data.every(point => point[yLabel] === data[0][yLabel])) return 'All probabilities are equal.';
             return m(PlotVegaLite, {
@@ -69,7 +69,7 @@ export default class ModelInterpretation {
         }
 
         // BAR CHART
-        if (nominals.includes(predictor)) return m(PlotVegaLite, {
+        if (categoricals.includes(predictor)) return m(PlotVegaLite, {
             // data,
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
@@ -103,7 +103,7 @@ export default class ModelInterpretation {
 
         let densities = getDensities(summary, predictorMin, predictorMax);
 
-        if (nominals.includes(target)) return m(PlotVegaLite, {
+        if (categoricals.includes(target)) return m(PlotVegaLite, {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Empirical First Differences for ${predictor}.`,
@@ -219,12 +219,12 @@ export default class ModelInterpretation {
         // names of variables in melt
         let {yLabel, variableLabel} = vnode.attrs;
 
-        let nominals = getNominalVariables(problem);
+        let categoricals = getCategoricalVariables(problem);
 
         data = data.filter(point => point[variableLabel] === target);
 
-        // if both predictor and target are nominal, or if just predictor is nominal
-        if (nominals.includes(predictor)) return m(PlotVegaLite, {
+        // if both predictor and target are categorical, or if just predictor is categorical
+        if (categoricals.includes(predictor)) return m(PlotVegaLite, {
             specification: {
                 "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
                 "description": `Partials for ${predictor}.`,
@@ -277,8 +277,8 @@ export default class ModelInterpretation {
         let predictorMax = Math.max(...predictorSupport);
 
         let densities = getDensities(summary, predictorMin, predictorMax);
-        // if target nominal and predictor is continuous
-        if (nominals.includes(target)) {
+        // if target categorical and predictor is continuous
+        if (categoricals.includes(target)) {
             // connect continuous horizontal segments
             let horizontalGroup = 0;
             let horizontalValue = data[0][yLabel];
@@ -407,16 +407,16 @@ export default class ModelInterpretation {
     plotICE(vnode) {
         // target doesn't matter, all are plotted together
         let {problem, data, predictor, target, summary} = vnode.attrs;
-        let nominals = getNominalVariables(problem);
+        let categorical = getCategoricalVariables(problem);
 
-        if (nominals.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
+        if (categorical.includes(predictor)) return 'PDP/ICE plots are not meaningful when both the predictor and target is categorical.';
 
         let predictorSupport = data.map(point => point[predictor]);
         let predictorMin = Math.min(...predictorSupport);
         let predictorMax = Math.max(...predictorSupport);
 
         let densities = getDensities(summary, predictorMin, predictorMax);
-        if (nominals.includes(target)) {
+        if (categorical.includes(target)) {
 
             let d3mIndexOriginal;
             let left;

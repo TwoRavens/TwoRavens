@@ -1,6 +1,9 @@
 // handles plotting multiple groups at the same time
 export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = '', groupCount = 1) => {
 
+    let xNameData = data.map(point => point[xName]).filter(v => !isNaN(v));
+    let xNameMin = Math.min(...xNameData);
+    let xNameMax = Math.max(...xNameData)
     return ({
         "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
         "description": "A scatterplot.",
@@ -18,14 +21,8 @@ export let vegaLiteScatter = (data, xName, yName, groupName, countName, title = 
                 "mark": "line",
                 "data": {
                     'values': [
-                        {
-                            [xName]: Math.min(...data.map(point => point[xName]).filter(v => !isNaN(v))),
-                            [yName]: Math.min(...data.map(point => point[yName]).filter(v => !isNaN(v)))
-                        },
-                        {
-                            [xName]: Math.max(...data.map(point => point[xName]).filter(v => !isNaN(v))),
-                            [yName]: Math.max(...data.map(point => point[yName]).filter(v => !isNaN(v)))
-                        }
+                        {[xName]: xNameMin, [yName]: xNameMin},
+                        {[xName]: xNameMax, [yName]: xNameMax}
                     ],
                 },
                 "encoding": {

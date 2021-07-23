@@ -39,37 +39,53 @@ cd ../..;
 fab webpack_prod
 fab run_with_ta2
 
-# Build main TA3
-docker build -t tworavens/ravens-main:yarrow-2020-1217 .
-docker push tworavens/ravens-main:yarrow-2020-1217
+## GitHub container registry
+
+# Build main app/TA3
+docker build -t ghcr.io/tworavens/tworavens/ravens-main:2021-0626-disco-922 .
+docker push ghcr.io/tworavens/tworavens/ravens-main:2021-0626-disco-922 
 
 # Build rook service
-docker build -t tworavens/ravens-r-service:yarrow-2020-1217 -f Dockerfile-flask-r .
-docker push tworavens/ravens-r-service:yarrow-2020-1217;
+docker build -t ghcr.io/tworavens/tworavens/ravens-r-service:2021-0626-disco-922 -f Dockerfile-flask-r .
+docker push ghcr.io/tworavens/tworavens/ravens-r-service:2021-0626-disco-922
 
 # Build nginx service
 cd setup/nginx/;
-docker build -f ./Dockerfile -t tworavens/ravens-nginx:yarrow-2020-1217 .
-docker push tworavens/ravens-nginx:yarrow-2020-1217
+docker build -f ./Dockerfile -t ghcr.io/tworavens/tworavens/ravens-nginx:2021-0626-disco-922 .
+docker push ghcr.io/tworavens/tworavens/ravens-nginx:2021-0626-disco-922
 cd ../../;
 
+## Docker container registry
+
+docker build -t tworavens/ravens-main:yarrow-2021-0626-disco-922 .
+docker push tworavens/ravens-main:yarrow-2021-0626-disco-922
+
+# Build rook service
+docker build -t tworavens/ravens-r-service:yarrow-2021-0626-disco-922 -f Dockerfile-flask-r .
+docker push tworavens/ravens-r-service:yarrow-2021-0626-disco-922;
+
+# Build nginx service
+cd setup/nginx/;
+docker build -f ./Dockerfile -t tworavens/ravens-nginx:yarrow-2021-0626-disco-922 .
+docker push tworavens/ravens-nginx:yarrow-2021-0626-disco-922
+cd ../../;
 
 # ----------------------------
 # Summer: Tag & Push
 # ----------------------------
 # ravens-main
 docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
-docker tag tworavens/ravens-main:yarrow-2020-1217 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
+docker tag tworavens/ravens-main:yarrow-2021-0626-disco-922 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
 docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-main:yarrow
 
 # ravens-r-service
 docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
-docker tag tworavens/ravens-r-service:yarrow-2020-1217 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
+docker tag tworavens/ravens-r-service:yarrow-2021-0626-disco-922 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
 docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-r-service:yarrow
 
 # ravens-nginx
 docker rmi registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
-docker tag tworavens/ravens-nginx:yarrow-2020-1217 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
+docker tag tworavens/ravens-nginx:yarrow-2021-0626-disco-922 registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
 docker push registry.datadrivendiscovery.org/ta3-submissions/ta3-two-ravens/summer2020evaluation/ravens-nginx:yarrow
 
 

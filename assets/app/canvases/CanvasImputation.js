@@ -101,7 +101,8 @@ export default class CanvasImputation {
                         return out;
                     }, {_id: 0})
                 }
-            ]))
+            ])),
+            comment: 'preparing data sample for imputation menu'
         }));
 
         this.offset += this.limit;
@@ -222,7 +223,7 @@ export default class CanvasImputation {
                 }[preferences.imputationMode](this.data, nullValues, replacementValues),
                 style: {
                     margin: '1em auto', width: 'auto',
-                    border: common.borderColor,
+                    border: common.colors.border,
                     'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)'
                 }
             }))
@@ -232,7 +233,7 @@ export default class CanvasImputation {
 
 let replaceMissing = (data, missing, replacement) => data.map(row => Object.keys(row).filter(col => col in missing).reduce((out, col) => {
     out[col] = (missing[col] || []).includes(row[col])
-        ? m(`[style=background-color:${common.successColor};min-width:1em;min-height:1em]`, replacement[col])
+        ? m(`[style=background-color:${common.colors.success};min-width:1em;min-height:1em]`, replacement[col])
         : row[col];
     return out;
 }, {}));
@@ -240,7 +241,7 @@ let replaceMissing = (data, missing, replacement) => data.map(row => Object.keys
 let deleteMissing = (data, missing) => data.map(row => Object.keys(row).some(variable => missing[variable].includes(row[variable]))
     ? Object.keys(row).reduce((out, col) => {
         out[col] = m(`[style=text-decoration:line-through;${row[col] === missing ? 'background-color:' +
-            common.errorColor : ''}]`, row[col]);
+            common.colors.error : ''}]`, row[col]);
         return out;
     }, {})
     : row);

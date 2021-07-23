@@ -28,8 +28,8 @@ import Icon from "../../common/views/Icon";
 import {formatVariableSummary} from '../views/VariableSummary';
 
 import {
-    getGeographicVariables,
-    getNominalVariables,
+    getGeographicVariables, getLocationVariables,
+    getCategoricalVariables,
     getOrdinalVariables,
     getSelectedProblem,
     getTransformVariables,
@@ -97,7 +97,7 @@ export function menu(compoundPipeline) {
                 style: {
                     height: `calc(100% - ${common.heightHeader} - ${common.heightFooter})`,
                     'z-index': 99,
-                    background: common.baseColor
+                    background: common.colors.base
                 }
             }
         }, canvas(compoundPipeline))
@@ -238,14 +238,14 @@ export function varList() {
                 selectedProblem.groups.reduce((out, group) =>
                     Object.assign(out, {[app.hexToRgba(group.color, .2)]: group.nodes}), {}),
                 {
-                    [app.hexToRgba(common.selVarColor, .5)]: selectedVariables,
+                    [app.hexToRgba(common.colors.selVar, .5)]: selectedVariables,
                     [app.hexToRgba(app.colors.order, .2)]: selectedProblem.tags.ordering,
                     [app.hexToRgba(app.colors.location, .2)]: selectedProblem.tags.location
                 }),
             classes: {
                 // keep this order aligned with params in mutateNodes
-                'item-nominal': getNominalVariables(selectedProblem),
-                'item-location': getGeographicVariables(),
+                'item-categorical': getCategoricalVariables(selectedProblem),
+                'item-geographic': getGeographicVariables(),
                 'item-ordinal': getOrdinalVariables(selectedProblem),
                 'item-boundary': selectedProblem.tags.boundary,
                 'item-time': Object.keys(app.variableSummaries)
@@ -484,7 +484,7 @@ export class PipelineFlowchart {
 
                     return {
                         key: 'Step ' + i,
-                        color: currentStepNumber === i ? common.selVarColor : common.grayColor,
+                        color: currentStepNumber === i ? common.colors.selVar : common.colors.gray,
                         content
                     };
                 })
@@ -509,7 +509,8 @@ export class PipelineFlowchart {
                             query: JSON.stringify(queryMongo.buildPipeline(
                                 workspace.raven_config.hardManipulations,
                                 workspace.raven_config.variablesInitial)['pipeline']),
-                            export: 'csv'
+                            export: 'csv',
+                            comment: 'exporting csv of data to send to datamart'
                         });
                         let step = {type: 'augment', id: 'augment ' + pipeline.length, dataPath};
 
@@ -766,7 +767,7 @@ export let setConstraintType = (type, pipeline) => {
         constraintMetadata.buckets = Math.min(Math.max(10, Math.floor(varMeta.validCount / 10)), 100);
 
         if (varMeta.types.includes('string')) {
-            app.alertLog(`A density plot cannot be drawn for the nominal variable ${column}. Switching to discrete.`);
+            app.alertLog(`A density plot cannot be drawn for the categorical variable ${column}. Switching to discrete.`);
             constraintMetadata.type = 'discrete';
         }
 
@@ -807,7 +808,8 @@ export let loadMenu = async (
 
         promises.push(app.getData(Object.assign({
             method: 'aggregate',
-            query: compiled
+            query: compiled,
+            comment: 'count of the number of observations'
         }, datasetDetails)).then(response => {
             let total = (response[0] || {}).total || 0;
 
@@ -820,7 +822,8 @@ export let loadMenu = async (
     let data;
     promises.push(app.getData({
         method: 'aggregate',
-        query: compiled
+        query: compiled,
+        comment: `preparing data for menu: ${menu.type === 'menu' ? menu.metadata.type : menu.type}`
     })
         .then(menu.type === 'menu' ? queryMongo.menuPostProcess[menu.metadata.type] : _ => _)
         .then(response => data = response));
@@ -861,7 +864,7 @@ let loadMenuManipulations = async (pipeline) => {
     m.redraw();
 };
 
-// contains the menu state (which nominal variables are selected, ranges, etc.)
+// contains the menu state (which categorical variables are selected, ranges, etc.)
 export let constraintPreferences = {};
 // window.getConstraintPreferences = () => constraintPreferences;
 export let setConstraintPreferences = preferences => {

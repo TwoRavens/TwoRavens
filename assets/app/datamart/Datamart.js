@@ -32,7 +32,7 @@ let warn = value => m('[style=color:#dc3545;display:inline-block;margin-right:1e
 
 let makeCard = ({key, color, summary, labelWidth}) => m('table', {
         style: {
-            'background': common.menuColor,
+            'background': common.colors.menu,
             // 'border': common.borderColor,
             margin: '1em',
             'box-shadow': '0px 5px 5px rgba(0, 0, 0, .2)',
@@ -48,7 +48,7 @@ let makeCard = ({key, color, summary, labelWidth}) => m('table', {
                 width: labelWidth || 0, // by default, 0 makes div width wrap content
                 'max-width': labelWidth || 0,
                 'word-break': 'break-word',
-                'border-right': common.borderColor
+                'border-right': common.colors.border
             }
         }, utils.bold(key)),
         m('td', {style: {width: 'calc(100% - 2em)'}}, summary))
@@ -170,7 +170,7 @@ let makeDatasetCard = (preferences, result, index, manipulations, endpoint, labe
     return makeCard({
         key: m('', m('', getData(result, 'name') || ''),
             m('p[style=font-weight:normal]', `(#${index + 1})`)),
-        color: preferences.selectedResult === result ? common.selVarColor : common.grayColor,
+        color: preferences.selectedResult === result ? common.colors.selVar : common.colors.gray,
         summary: m('div',
             m('label[style=width:100%]', 'Relevance: ' + getData(result, 'score')),
             buttonPreview,
@@ -351,7 +351,7 @@ export class Datamart {
                         // KEYWORDS
                         m('h4', 'Keywords'),
                         m('div[style=margin:.5em]', 'Show datasets that match keywords, or contain variables with temporal or geospatial attributes.'),
-                        m(`div[style=background:${common.menuColor}]`, {
+                        m(`div[style=background:${common.colors.menu}]`, {
                                 onkeyup: e => {
                                     // auto-searching
                                     clearTimeout(preferences.searchTimeout);
@@ -532,7 +532,7 @@ export class Datamart {
                             }, 'Submit')
                         ],
 
-                        indices.map(index => m(`div[style=background:${common.menuColor}]`, m(JSONSchema, {
+                        indices.map(index => m(`div[style=background:${common.colors.menu}]`, m(JSONSchema, {
                             data: index,
                             schema: datamartDatasetIndexSchema
                         }))),
@@ -853,7 +853,7 @@ export class ModalDatamart {
                             items: [...queryMongo.buildPipeline(
                                 manipulations, app.workspace.raven_config.variablesInitial)['variables']],
                             colors: {
-                                [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]:
+                                [app.hexToRgba(preferences.isAugmenting ? common.colors.gray : common.colors.selVar)]:
                                     [...preferences.leftJoinVariables]
                             },
                             callback: variable => {
@@ -876,7 +876,7 @@ export class ModalDatamart {
                             id: 'rightColumns',
                             items: selectedResult.metadata.columns.map(variable => variable.name),
                             colors: {
-                                [app.hexToRgba(preferences.isAugmenting ? common.grayColor : common.selVarColor)]: [...preferences.rightJoinVariables]
+                                [app.hexToRgba(preferences.isAugmenting ? common.colors.gray : common.colors.selVar)]: [...preferences.rightJoinVariables]
                             },
                             callback: variable => {
                                 if (preferences.isAugmenting) return;

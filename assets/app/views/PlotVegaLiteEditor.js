@@ -23,7 +23,7 @@ export default class PlotVegaLiteEditor {
         this.pendingSecondaryVariable = '';
     }
     view(vnode) {
-        let {configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery} = vnode.attrs;
+        let {configuration, variables, mapping, summaries, setSummaryAttr, categoricals, abstractQuery} = vnode.attrs;
 
         let multi = 'layer' in configuration
             ? 'layer'
@@ -102,7 +102,29 @@ export default class PlotVegaLiteEditor {
                             delete configuration.pendingMapboxStyle;
                             configuration.mapboxStyle = value
                         }
-                    })]
+                    })],
+                    multi && [
+                        "resolve x", m(ButtonRadio, {
+                            id: 'resolveXButtonBar',
+                            onclick: resolve => configuration.resolve_x = resolve,
+                            activeSection: configuration.resolve_x || 'shared',
+                            sections: [
+                                {value: 'shared'},
+                                {value: 'independent'},
+                            ]
+                        })
+                    ],
+                    multi && [
+                        "resolve y", m(ButtonRadio, {
+                            id: 'resolveYButtonBar',
+                            onclick: resolve => configuration.resolve_y = resolve,
+                            activeSection: configuration.resolve_y || 'shared',
+                            sections: [
+                                {value: 'shared'},
+                                {value: 'independent'},
+                            ]
+                        })
+                    ]
                 ]
             })),
             m('div', {
@@ -110,7 +132,7 @@ export default class PlotVegaLiteEditor {
                     margin: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
                 }
-            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery)),
+            }, this.layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, categoricals, abstractQuery, multi && common.colorPalette[0])),
 
             ([
                 {
@@ -131,7 +153,7 @@ export default class PlotVegaLiteEditor {
             ]).map(multiType => [
                 (multi === multiType.key || !multi) && [
                     (configuration[multiType.key] || [])
-                        .map(layer => m('div', {
+                        .map((layer, i) => m('div', {
                                 style: {
                                     margin: '1em',
                                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
@@ -143,7 +165,7 @@ export default class PlotVegaLiteEditor {
                                     if (configuration[multiType.key].length === 0) delete configuration[multiType.key];
                                 }
                             }, m(Icon, {name: 'x'})),
-                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery)
+                            this.layerEditor(layer, variables, mapping, summaries, setSummaryAttr, categoricals, abstractQuery, multi && common.colorPalette[i % common.colorPalette.length + 1])
                         )),
 
                     m('div[style=margin:1em]',
@@ -160,7 +182,7 @@ export default class PlotVegaLiteEditor {
         ];
     }
 
-    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, nominals, abstractQuery) {
+    layerEditor(configuration, variables, mapping, summaries, setSummaryAttr, categoricals, abstractQuery, defaultColor) {
 
         // maps should be interactive by default
         if (mapping && !('interactive' in configuration)) configuration.interactive = true;
@@ -256,6 +278,10 @@ export default class PlotVegaLiteEditor {
                 .forEach(channel => channel.delete = true));
         }
 
+        let colorChannel = configuration.channels.find(channel => channel.name === 'color');
+        if (!colorChannel && defaultColor)
+            configuration.channels.push({name: 'color', colorValue: defaultColor})
+
         if (!('mark' in configuration))
             configuration.mark = 'point';
 
@@ -275,7 +301,7 @@ export default class PlotVegaLiteEditor {
 
         return [
             m(Subpanel, {
-                header: 'Mark', attrsBody: {style: {padding: 0}}
+                header: 'Mark', attrsBody: {style: {padding: 0, overflow: 'auto'}}
             },
             m(Table, {
                 keyed: true,
@@ -309,7 +335,7 @@ export default class PlotVegaLiteEditor {
             m(Subpanel, {
                 header: 'Subset',
                 id: 'exploreSubsetManipulations',
-                defaultShown: false, attrsBody: {style: {padding: 0}}
+                defaultShown: false, attrsBody: {style: {padding: 0, overflow: 'auto'}}
             }, m('[style=margin:1em]', makeSubsetTreeMenu(
                 configuration.manipulations[0],
                 true,
@@ -329,7 +355,7 @@ export default class PlotVegaLiteEditor {
                 // })
             ),
             m(Subpanel, {
-                header: 'Channels', attrsBody: {style: {padding: 0}}
+                header: 'Channels', attrsBody: {style: {padding: 0, overflow: 'auto'}}
             },
             m(Table, {
                 keyed: true,
@@ -337,7 +363,7 @@ export default class PlotVegaLiteEditor {
                 data: [
                     ...configuration.channels
                         .filter(channel => !channel.deleted)
-                        .map(channel => !channel.delete && this.channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals)),
+                        .map(channel => !channel.delete && this.channelEditor(channel, variables, configuration, summaries, setSummaryAttr, categoricals)),
                     unusedChannels.length > 0 && [
                         m(Dropdown, {
                             items: unusedChannels,
@@ -353,7 +379,7 @@ export default class PlotVegaLiteEditor {
         ];
     }
 
-    channelEditor(channel, variables, configuration, summaries, setSummaryAttr, nominals) {
+    channelEditor(channel, variables, configuration, summaries, setSummaryAttr, categoricals) {
 
         let numericAggregators = [
             'none',
@@ -372,7 +398,7 @@ export default class PlotVegaLiteEditor {
             'median',
             'q3'
         ]
-        let nominalAggregators = [
+        let categoricalAggregators = [
             'none',
             'count',
             'valid',
@@ -409,7 +435,7 @@ export default class PlotVegaLiteEditor {
         }
 
         if (channel.name === "color") {
-            let getDefaultSchemeCategory = variable => variable && (nominals.has(variable) ? 'categorical' : 'sequential-single')
+            let getDefaultSchemeCategory = variable => variable && (categoricals.has(variable) ? 'categorical' : 'sequential-single')
             let schemeCategory = channel.schemeCategory || getDefaultSchemeCategory(channel.variable);
 
             channel.scheme = channel.scheme || {};
@@ -420,7 +446,7 @@ export default class PlotVegaLiteEditor {
                     setDeep(channel, ['scheme', value], schemes[value][0])
             };
 
-            let aggregators = nominals.has(channel.variable) ? nominalAggregators : numericAggregators;
+            let aggregators = categoricals.has(channel.variable) ? categoricalAggregators : numericAggregators;
             if (!aggregators.includes(channel.aggregation)) channel.aggregation = aggregators[1];
 
             return [
@@ -439,7 +465,7 @@ export default class PlotVegaLiteEditor {
                             setSchemeCategory(getDefaultSchemeCategory(value));
                     }
                 }),
-                channel.variable && m('',
+                channel.variable ? m('',
                     configuration.mark === "region" && channel.variable && m('',
                         m('label', 'Aggregation:'),
                         m(Dropdown, {
@@ -468,7 +494,36 @@ export default class PlotVegaLiteEditor {
                         onblur: value => channel.scheme[schemeCategory] = value,
                         style: {'margin-left': '1em'}
                     })
-                ),
+                ) : m('label', {
+                    style: {
+                        'background-color': channel.colorValue ?? 'transparent',
+                        'position': 'relative',
+                        'overflow': 'hidden',
+                        'width': '40px',
+                        'height': '40px',
+                        'border': 'solid 2px #ddd',
+                        'border-radius': '40px',
+                    }
+                }, m('input', {
+                        type: 'color', id: 'colorValueInput', value: channel.colorValue,
+                        style: {
+                            'position': 'absolute',
+                            'right': '-8px',
+                            'top': '-8px',
+                            'width': '56px',
+                            'height': '56px',
+                            'border': 'none',
+                        },
+
+                        onchange: function () {
+                            channel.colorValue = this.value
+                            m.redraw()
+                        },
+                        oninput: function () {
+                            channel.colorValue = this.value
+                            m.redraw()
+                        }
+                    })),
                 m('div', {onclick: () => channel.delete = true}, m(Icon, {name: 'x'}))
                 // undefined
             ]
@@ -482,7 +537,7 @@ export default class PlotVegaLiteEditor {
             if (['bar', 'area'].includes(configuration.mark) && channel.aggregation === 'none')
                 channel.aggregation = 'max';
 
-            let aggregators = nominals.has(channel.variable) ? nominalAggregators : numericAggregators;
+            let aggregators = categoricals.has(channel.variable) ? categoricalAggregators : numericAggregators;
             if (!aggregators.includes(channel.aggregation)) channel.aggregation = aggregators[0];
 
             return [
@@ -612,7 +667,7 @@ export default class PlotVegaLiteEditor {
 
         let aggregators;
         if (configuration.mark === "region") {
-            aggregators = nominals.has(channel.variable) ? nominalAggregators : numericAggregators;
+            aggregators = categoricals.has(channel.variable) ? categoricalAggregators : numericAggregators;
             if (!aggregators.includes(channel.aggregation)) channel.aggregation = aggregators[1];
         }
         return [

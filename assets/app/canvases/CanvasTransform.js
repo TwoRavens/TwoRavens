@@ -130,15 +130,15 @@ class MenuEquation {
 
         if (preferences.transformEquation === '') preferences.usedTerms = usedTermDefaults();
 
-        if (preferences.transformName === '' || preferences.transformName.match(/[ -]/) || preferences.transformEquation === '')
+        if (preferences.transformName === '' || preferences.transformEquation === '') // || preferences.transformName.match(/[ -]/)
             preferences.isValid = false;
 
-        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor}},
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.colors.menu, border: common.colors.border}},
             m(TextField, {
                 id: 'textFieldName',
                 placeholder: 'Transformation Name',
                 value: preferences.transformName,
-                class: (!preferences.transformName || preferences.transformName.match(/[ -]/)) && ['is-invalid'],
+                class: !preferences.transformName && ['is-invalid'],  // || preferences.transformName.match(/[ -]/)
                 oninput: (value) => preferences.transformName = value,
                 onblur: (value) => preferences.transformName = value,
                 style: {width: '165px', display: 'inline-block'}
@@ -159,10 +159,10 @@ class MenuEquation {
                 style: {display: 'inline-block', width: 'calc(100% - 190px)'}
             }), m('br'),
 
-            preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
+            // preferences.transformName.match(/[ -]/) && warn('spaces and dashes are not permitted in the variable name'),
 
             preferences.transformEquation && [
-                !transformError && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
+                transformError && m('div#transformError', {style: {width: '100%'}}, warn(transformError))
             ], m('br'),
 
             m('div', {style},
@@ -170,7 +170,7 @@ class MenuEquation {
                 m(PanelList, {
                     id: 'unaryFunctionsList',
                     items: [...queryMongo.unaryFunctions],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.unaryFunctions]},
+                    colors: {[common.colors.selVar]: [...preferences.usedTerms.unaryFunctions]},
                     callback: value => preferences.select(value + '(@)')
                 })),
             m('div', {style},
@@ -178,7 +178,7 @@ class MenuEquation {
                 m(PanelList, {
                     id: 'binaryFunctionsList',
                     items: [...queryMongo.binaryFunctions],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.binaryFunctions]},
+                    colors: {[common.colors.selVar]: [...preferences.usedTerms.binaryFunctions]},
                     callback: value => preferences.select(value + '(@, @)')
                 })),
             m('div', {style},
@@ -186,7 +186,7 @@ class MenuEquation {
                 m(PanelList, {
                     id: 'variadicFunctionsList',
                     items: [...queryMongo.variadicFunctions],
-                    colors: {[common.selVarColor]: [...preferences.usedTerms.variadicFunctions]},
+                    colors: {[common.colors.selVar]: [...preferences.usedTerms.variadicFunctions]},
                     callback: value => preferences.select(value + '(@*)')
                 })),
             m('div', {style},
@@ -195,7 +195,7 @@ class MenuEquation {
                     id: 'unaryOperatorsList',
                     items: Object.keys(queryMongo.unaryOperators).map(key => key + ' ' + queryMongo.unaryOperators[key]),
                     colors: {
-                        [common.selVarColor]: [...preferences.usedTerms.unaryOperators].map(key => key + ' ' + queryMongo.unaryOperators[key])
+                        [common.colors.selVar]: [...preferences.usedTerms.unaryOperators].map(key => key + ' ' + queryMongo.unaryOperators[key])
                     },
                     callback: value => preferences.select(' ' + value.split(' ')[0] + '@', true)
                 })),
@@ -205,7 +205,7 @@ class MenuEquation {
                     id: 'binaryOperatorsList',
                     items: Object.keys(queryMongo.binaryOperators).map(key => key + ' ' + queryMongo.binaryOperators[key]),
                     colors: {
-                        [common.selVarColor]: [...preferences.usedTerms.binaryOperators].map(key => key + ' ' + queryMongo.binaryOperators[key])
+                        [common.colors.selVar]: [...preferences.usedTerms.binaryOperators].map(key => key + ' ' + queryMongo.binaryOperators[key])
                     },
                     callback: value => preferences.select(' ' + value.split(' ')[0] + ' ', true)
                 }))
@@ -232,8 +232,8 @@ class MenuExpansion {
 
         return m(`div#variable${variable}`, {
                 style: {
-                    background: common.menuColor,
-                    border: common.borderColor,
+                    background: common.colors.menu,
+                    border: common.colors.border,
                     margin: '1em',
                     padding: '1em',
                     'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
@@ -274,11 +274,11 @@ class MenuExpansion {
 
         preferences.numberTerms = terms.length;
 
-        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor}},
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.colors.menu, border: common.colors.border}},
             m('div#termPreview', {
                     style: {
-                        background: common.menuColor,
-                        border: common.borderColor,
+                        background: common.colors.menu,
+                        border: common.colors.border,
                         margin: '1em',
                         padding: '1em',
                         'box-shadow': '0px 5px 10px rgba(0, 0, 0, .2)'
@@ -349,7 +349,7 @@ class MenuBinning {
                 }
             })['pipeline']]);
 
-            preferences.buckets = await getData({method: 'aggregate', query});
+            preferences.buckets = await getData({method: 'aggregate', query, comment: 'bucketing data for transform menu'});
             preferences.variableIndicator = variable;
 
             m.redraw();
@@ -412,7 +412,7 @@ class MenuBinning {
             }
         }
 
-        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor, height: '100%'}},
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.colors.menu, border: common.colors.border, height: '100%'}},
             m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
             m(TextField, {
                 id: 'textFieldVariableName',
@@ -488,7 +488,7 @@ class MenuBinning {
             ],
             preferences.buckets && m('[style=height:calc(100% - 265px)]', m(PlotContinuous, {
                 id: 'plotOriginal',
-                data: {[common.d3Color]: preferences.buckets},
+                data: {[common.colors.d3]: preferences.buckets},
                 disableBrushes: true,
                 lines: preferences.partitions
             }))
@@ -501,7 +501,7 @@ class MenuManual {
         let {preferences, pipeline} = attrs;
         setDefault(preferences, 'variableNameError', true); // true if variableName is invalid
         setDefault(preferences, 'variableName', ''); // variable name of label
-        setDefault(preferences, 'variableType', 'Nominal'); // data type of label
+        setDefault(preferences, 'variableType', 'Categorical'); // data type of label
         setDefault(preferences, 'variableDefault', undefined); // default label
 
         setDefault(preferences, 'variableIndicator', undefined); // variable name to match against
@@ -514,7 +514,8 @@ class MenuManual {
 
             preferences.indicatorKeys = (await getData({
                 method: 'aggregate',
-                query: JSON.stringify(pipeline.concat([{$group: {_id: null, distinct: {$addToSet: "$" + preferences.variableIndicator}}}]))
+                query: JSON.stringify(pipeline.concat([{$group: {_id: null, distinct: {$addToSet: "$" + preferences.variableIndicator}}}])),
+                comment: 'loading distinct indicator keys for transform menu'
             }))[0]['distinct'].sort(omniSort);
 
             preferences.userValues = Array(preferences.indicatorKeys.length).fill(undefined);
@@ -533,14 +534,14 @@ class MenuManual {
                 onclick: response => preferences.userValues[i] = response === 'True'
             });
 
-            if (['Nominal', 'Numeric'].includes(preferences.variableType)) return m(TextField, {
+            if (['Categorical', 'Numeric'].includes(preferences.variableType)) return m(TextField, {
                 placeholder: preferences.variableDefault === undefined ? '' : preferences.variableDefault,
                 value: String(preferences.userValues[i] === undefined ? '' : preferences.userValues[i]),
                 oninput: response => preferences.userValues[i] = response
             })
         };
 
-        return m('div', {style: {margin: '1em', padding: '1em', background: common.menuColor, border: common.borderColor}},
+        return m('div', {style: {margin: '1em', padding: '1em', background: common.colors.menu, border: common.colors.border}},
             m('label#labelVariableName[style=width:10em;display:inline-block]', 'Variable Name'),
             m(TextField, {
                 id: 'textFieldVariableName',
@@ -558,7 +559,7 @@ class MenuManual {
             m('[style=display:inline-block]', m(Dropdown, {
                 style: {display: 'inline-block'},
                 id: 'dropdownVariableType',
-                items: ['Boolean', 'Nominal', 'Numeric'],
+                items: ['Boolean', 'Categorical', 'Numeric'],
                 activeItem: preferences.variableType,
                 onclickChild: child => preferences.variableType = child
             })),
@@ -580,7 +581,7 @@ class MenuManual {
                 activeSection: String(!!preferences.variableDefault),
                 onclick: response => preferences.variableDefault = response === 'True'
             }),
-            ['Nominal', 'Numeric'].includes(preferences.variableType) && m(TextField, {
+            ['Categorical', 'Numeric'].includes(preferences.variableType) && m(TextField, {
                 value: String(preferences.variableDefault === undefined ? '' : preferences.variableDefault),
                 style: {display: 'inline-block', width: 'calc(100% - 10em)'},
                 oninput: response => preferences.variableDefault = response

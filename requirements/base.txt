@@ -3,7 +3,7 @@
 #
 #-r ../submodules/raven-metadata-service/requirements/10_preprocess.txt
 
-Django==2.2.14
+Django==2.2.18
 django-model-utils==4.0.0
 django-webpack-loader==0.7.0
 jsonfield==2.0.2
@@ -91,10 +91,17 @@ mlbox==0.8.5
 # # incompatible - requires sklearn 0.23, build fails on mac due to pyrfr
 # auto_sklearn==0.6.0
 
+# -----------------------
+# For tworaven_solver
+# -----------------------
+pydateinfer==0.3.0
+
+
 
 # for image problems
 Pillow>=7.0.0
 
 # Using Postgres, even in dev
 #
-psycopg2-binary>=2.8.5
+#psycopg2-binary>=2.8.5
+psycopg2-binary>=2.8,<2.9

@@ -175,7 +175,9 @@ def view_retrieve_fitted_vs_actuals_data(request):
 
     return JsonResponse(util_results_real_clustered(
         req_info[KEY_DATA_POINTER],
-        metadata=req_info['metadata']))
+        metadata=req_info['metadata'],
+        user=request.user.username,
+        comment=req_info.get('comment')))
 
 
 @csrf_exempt
@@ -198,7 +200,9 @@ def view_retrieve_d3m_confusion_data(request):
 
     return JsonResponse(util_results_confusion_matrix(
         req_info[KEY_DATA_POINTER],
-        metadata=req_info['metadata']))
+        metadata=req_info['metadata'],
+        user=request.user.username,
+        comment=req_info.get('comment')))
 
 
 @csrf_exempt
@@ -221,7 +225,9 @@ def view_retrieve_d3m_efd_data(request):
 
     return JsonResponse(util_results_importance_efd(
         req_info[KEY_DATA_POINTER],
-        metadata=req_info['metadata']))
+        metadata=req_info['metadata'],
+        user=request.user.username,
+        comment=req_info.get('comment')))
 
 
 @csrf_exempt

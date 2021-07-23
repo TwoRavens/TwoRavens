@@ -73,6 +73,10 @@ urlpatterns = [
          views.api_get_data,
          name='api_get_data'),
 
+    path(r'api/get-current-ops',
+         views.api_get_current_ops,
+         name='api_get_current_ops'),
+
     path(r'api/create-evtdata-file',
          views.create_evtdata_file,
          name='create_evtdata_file'),

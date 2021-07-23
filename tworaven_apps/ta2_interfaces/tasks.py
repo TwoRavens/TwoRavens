@@ -4,6 +4,7 @@ capture the results in the db as StoredResponse objects
 """
 import copy
 import uuid
+from datetime import datetime
 from random import random
 
 import math
@@ -58,11 +59,16 @@ from tworaven_apps.ta2_interfaces.ta2_fit_solution_helper import FitSolutionHelp
 from tworaven_apps.ta2_interfaces.ta2_score_solution_helper import ScoreSolutionHelper
 from tworaven_apps.user_workspaces.models import UserWorkspace
 
-from tworaven_solver import approx_seconds, get_date
+from tworaven_solver.transformers.time_series import approx_seconds
 import csv
 from dateutil import parser
 from collections import deque
 
+def get_date(value, date_format=None):
+    try:
+        return datetime.strptime(value, date_format) if date_format else parser.parse(str(value))
+    except (parser._parser.ParserError, ValueError):
+        pass
 
 @celery_app.task(ignore_result=True)
 def stream_and_store_results(raven_json_str, stored_request_id,
@@ -302,9 +308,9 @@ def split_dataset(configuration, workspace):
     #    this is to make it possible to support arbitrarily large datasets
     if problem.get('taskType') == 'FORECASTING' and problem['forecastingHorizon']['column']:
         time_column = problem['forecastingHorizon']['column']
-        time_format = problem.get('time_format', {}).get(time_column)
+        date_format = problem.get('date_format', {}).get(time_column)
 
-        if time_format:
+        if date_format:
             dtypes[time_column] = str
         for cross_section in problem.get('crossSection', []):
             dtypes[cross_section] = str
@@ -324,9 +330,9 @@ def split_dataset(configuration, workspace):
         infer_count = 0
         for dataframe_chunk in data_file_generator:
 
-            if time_format:
+            if date_format:
                 dataframe_chunk[time_column] = dataframe_chunk[time_column].apply(
-                    lambda x: get_date(x, time_format=time_format))
+                    lambda x: get_date(x, date_format=date_format))
             dataframe_chunk = dataframe_chunk.sort_values(by=[time_column])
 
             for _, row in dataframe_chunk.iterrows():
@@ -351,7 +357,7 @@ def split_dataset(configuration, workspace):
                         # at minimum three time points are needed to infer a date offset frequency
                         if len(time_buffer) == 3:
                             infer_count += 1
-                            if time_format:
+                            if date_format:
                                 try:
                                     candidate_frequency = pd.infer_freq(time_buffer)
 
@@ -370,7 +376,7 @@ def split_dataset(configuration, workspace):
 
         # if data has a trio of evenly spaced records
         if candidate_frequencies:
-            if time_format:
+            if date_format:
                 # sort inferred frequency by approximate time durations, select shortest
                 inferred_freq = sorted([(i, approx_seconds(i)) for i in candidate_frequencies], key=lambda x: x[1])[0][0]
                 inferred_freq = pd.tseries.frequencies.to_offset(inferred_freq)
@@ -505,7 +511,7 @@ def split_dataset(configuration, workspace):
 
                 if cross_section_date_limits and inferred_freq:
                     time_column = problem['forecastingHorizon']['column']
-                    time_format = problem.get('time_format', {}).get(time_column)
+                    date_format = problem.get('date_format', {}).get(time_column)
 
                     cross_section_max_count = int(max_count / len(cross_section_date_limits))
                     horizon = min(cross_section_max_count, horizon)
@@ -513,8 +519,8 @@ def split_dataset(configuration, workspace):
                     def in_test(row):
                         section = tuple(row[col] for col in problem.get('crossSection', []))
                         date = row[time_column]
-                        if time_format:
-                            date = get_date(date, time_format)
+                        if date_format:
+                            date = get_date(date, date_format)
 
                         if not date:
                             return False
@@ -525,8 +531,8 @@ def split_dataset(configuration, workspace):
                     def in_train(row):
                         section = tuple(row[col] for col in problem.get('crossSection', []))
                         date = row[time_column]
-                        if time_format:
-                            date = get_date(date, time_format)
+                        if date_format:
+                            date = get_date(date, date_format)
                         if not date:
                             return False
                         max_date = cross_section_date_limits[section] - inferred_freq * horizon

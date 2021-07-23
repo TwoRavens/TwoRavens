@@ -1,35 +1,34 @@
 """
 Used to query a mongo database using a direct connection
 """
-import bson
 import json
 import logging
-import requests
-from dateutil import parser
 from datetime import datetime
-from pprint import pprint
 from urllib.parse import quote_plus
-from bson.objectid import ObjectId
+
+import requests
 from bson.int64 import Int64
+from bson.objectid import ObjectId
+from dateutil import parser
+from django.conf import settings
 from pymongo import MongoClient
 from pymongo.errors import \
     (ConfigurationError, ConnectionFailure, InvalidName,
      OperationFailure, PyMongoError,
      ServerSelectionTimeoutError)
-from django.conf import settings
-from tworaven_apps.utils.basic_err_check import BasicErrCheck
-from tworaven_apps.utils.random_info import get_timestamp_string_readable
-from tworaven_apps.utils.basic_response import (ok_resp,
-                                                err_resp,
-                                                err_resp_with_data)
+
 from tworaven_apps.eventdata_queries.models import METHOD_CHOICES
-from tworaven_apps.utils.mongo_util import encode_variable, decode_variable
 from tworaven_apps.eventdata_queries.static_vals import \
-    (KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES,)
+    (KEY_INCLUDE_EVENTDATA_COLLECTION_NAMES, )
+from tworaven_apps.utils.basic_err_check import BasicErrCheck
+from tworaven_apps.utils.basic_response import (ok_resp,
+                                                err_resp)
+from tworaven_apps.utils.mongo_util import encode_variable, decode_variable
+from tworaven_apps.utils.random_info import get_timestamp_string_readable
+
 LOGGER = logging.getLogger(__name__)
 
-
-QUERY_THRESHOLD_SIZE = 1 * (1024 * 1024 * 1024) # 1GB
+QUERY_THRESHOLD_SIZE = 1 * (1024 * 1024 * 1024)  # 1GB
 
 ERR_NO_DB_SPECIFIED = 'No database name specified.'
 ERR_NO_QUERY_SPECIFIED = 'No query specified.'
@@ -44,7 +43,7 @@ class MongoRetrieveUtil(BasicErrCheck):
     """
     Used for querying mongo
     """
-    def __init__(self, database_name, collection_name=None, host='TwoRavens'):
+    def __init__(self, database_name, collection_name=None, host='TwoRavens', user=None):
         """
         dbname: name of the mongo database
         query: query to run
@@ -53,6 +52,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         self.database_name = database_name
         self.collection_name = collection_name
         self.host = host
+        self.user = user
 
         self.mongo_client = None
 
@@ -72,7 +72,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         if util.has_error():
             return err_resp(util.get_error_message())
 
-        mongo_client = util.get_mongo_client().result_obj # assuming ok b/c no error
+        mongo_client = util.get_mongo_client().result_obj  # assuming ok b/c no error
 
         server_info = mongo_client.server_info()
 
@@ -84,7 +84,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         #
         [server_info.pop(k)
          for k in list(server_info.keys())
-         if not k in mongo_attrs_to_share]
+         if k not in mongo_attrs_to_share]
 
         server_info['timestamp'] = get_timestamp_string_readable(time_only=False)
 
@@ -98,7 +98,7 @@ class MongoRetrieveUtil(BasicErrCheck):
 
     def basic_check(self):
         """Run some basic checks"""
-        #if not self.collection_name:
+        # if not self.collection_name:
         #    self.add_err_msg('No collection name specified.')
         #    return
 
@@ -106,7 +106,40 @@ class MongoRetrieveUtil(BasicErrCheck):
         if not cli.success:
             self.add_err_msg(cli.err_msg)
 
-    def run_query(self, query, method, distinct=None):
+    def current_op_summary(self):
+        """
+        returns a summary of current ops for current user
+        :return:
+        """
+        db_info = self.get_mongo_db(self.database_name)
+        if not db_info.success:
+            LOGGER.error(db_info.err_msg)
+            return err_resp(db_info.err_msg)
+        current_ops = db_info.result_obj.current_op()
+
+        print(json.dumps(current_ops, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>"))
+
+        summaries = []
+        for op in current_ops.get('inprog', []):
+            comment = op.get('command', {}).get('comment')
+            if not comment:
+                continue
+
+            comment = json.loads(comment)
+            if self.user != comment['user']:
+                continue
+
+            summaries.append({
+                "comment": comment['message'],
+                "active": op['active'],
+                "currentOpTime": op['currentOpTime'],
+                "secs_running": op['secs_running'],
+                "microsecs_running": op['microsecs_running'],
+            })
+
+        return summaries
+
+    def run_query(self, query, method, distinct=None, comment=None):
         """Run the query.
         """
         if self.has_error():
@@ -119,47 +152,47 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         # replace extended query operators like $oid, $date and $numberLong with objects
         # change column names to avoid $, ., /
-        def reformat(query):
+        def reformat(query_):
             # ---------------------------
-            if issubclass(type(query), list):
+            if issubclass(type(query_), list):
                 # mutate query in-place
-                query_temp = [encode(value) for value in query]
-                query.clear()
-                query.extend(query_temp)
-                for stage in query:
+                query_temp = [encode(value) for value in query_]
+                query_.clear()
+                query_.extend(query_temp)
+                for stage in query_:
                     reformat(stage)
                 return
 
-            if issubclass(type(query), dict):
+            if issubclass(type(query_), dict):
                 # mutate query in-place
-                query_temp = {encode_variable(key): encode(query[key]) for key in query}
-                query.clear()
-                query.update(query_temp)
+                query_temp = {encode_variable(key): encode(query_[key]) for key in query_}
+                query_.clear()
+                query_.update(query_temp)
 
-                for key in query:
-                    if issubclass(type(query[key]), list):
-                        reformat(query[key])
+                for key in query_:
+                    if issubclass(type(query_[key]), list):
+                        reformat(query_[key])
                         continue
-                    if not issubclass(type(query[key]), dict):
+                    if not issubclass(type(query_[key]), dict):
                         continue
 
                     # Convert strict oid tags into ObjectIds to allow id comparisons
-                    if '$oid' in query[key]:
-                        query[key] = ObjectId(query[key]['$oid'])
+                    if '$oid' in query_[key]:
+                        query_[key] = ObjectId(query_[key]['$oid'])
                     # Convert date strings to datetime objects
-                    elif '$date' in query[key]:
-                        if isinstance(query[key]['$date'], dict) \
-                            and self.host == 'UTDallas':
-                            query[key]['$date'] = '$date(%s)' % (query[key]['$date'],) # attempt to work with this: https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
-                        if type(query[key]['$date']) is dict \
-                            and '$numberLong' in query[key]['$date']:
-                            query[key] = datetime.fromtimestamp(Int64(query[key]['$numberLong']))
+                    elif '$date' in query_[key]:
+                        if isinstance(query_[key]['$date'], dict) and self.host == 'UTDallas':
+                            # attempt to work with this:
+                            # https://github.com/Sayeedsalam/spec-event-data-server/blob/920c6b83f121587cfeedbb34516a1b8213ec6092/app_v2.py#L125
+                            query_[key]['$date'] = '$date(%s)' % (query_[key]['$date'],)
+                        if type(query_[key]['$date']) is dict and '$numberLong' in query_[key]['$date']:
+                            query_[key] = datetime.fromtimestamp(int(Int64(query_[key]['$numberLong'])))
                         else:
-                            query[key] = parser.parse(query[key]['$date'])
-                    elif '$numberLong' in query[key]:
-                        query[key] = Int64(query[key]['$numberLong'])
+                            query_[key] = parser.parse(query_[key]['$date'])
+                    elif '$numberLong' in query_[key]:
+                        query_[key] = Int64(query_[key]['$numberLong'])
                     else:
-                        reformat(query[key])
+                        reformat(query_[key])
 
         try:
             reformat(query)
@@ -176,7 +209,8 @@ class MongoRetrieveUtil(BasicErrCheck):
             return err_resp(self.get_error_message())
 
         if self.host == 'UTDallas':
-            url = settings.EVENTDATA_PRODUCTION_SERVER_ADDRESS + settings.EVENTDATA_SERVER_API_KEY + '&datasource=' + self.collection_name
+            url = settings.EVENTDATA_PRODUCTION_SERVER_ADDRESS + settings.EVENTDATA_SERVER_API_KEY \
+                  + '&datasource=' + self.collection_name
 
             if method == 'count':
                 query = json.dumps([{'$match': query}, {'$count': "total"}])
@@ -200,7 +234,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         # ----------------------
         # choose the collection
         # ----------------------
-        if not self.collection_name in mongo_db.collection_names():
+        if self.collection_name not in mongo_db.collection_names():
             user_msg = ('The collection "%s" was not found'
                         ' in database: "%s"'
                         '\nAvailable collections: %s') % \
@@ -211,32 +245,35 @@ class MongoRetrieveUtil(BasicErrCheck):
             self.add_err_msg(user_msg)
             return err_resp(user_msg)
 
+        comment = json.dumps({'user': self.user, 'message': comment})
         try:
             if method == 'find':
-                cursor = mongo_db[self.collection_name].find(query)
-            if method == 'aggregate':
-                cursor = mongo_db[self.collection_name].aggregate(query, allowDiskUse=True)
-            if method == 'count':
+                cursor = mongo_db[self.collection_name].find(query, comment=comment)
+            elif method == 'aggregate':
+                cursor = mongo_db[self.collection_name].aggregate(query, allowDiskUse=True, comment=comment)
+            elif method == 'count':
                 # Return value immediately
-                return ok_resp(mongo_db[self.collection_name].count(query))
+                return ok_resp(mongo_db[self.collection_name].count(query, comment=comment))
+            else:
+                raise ValueError(f'unexpected Mongo method: {method}')
 
             if distinct:
                 cursor = cursor.distinct(distinct)
 
             # serialize dates manually
-            def serialized(data):
+            def serialize_fragment(data):
                 if type(data) is datetime:
                     return str(data)[:10]
                 if issubclass(type(data), dict):
-                    return {decode_variable(key): serialized(data[key]) for key in data}
+                    return {decode_variable(key): serialize_fragment(data[key]) for key in data}
                 if issubclass(type(data), list):
-                    return [serialized(element) for element in data]
+                    return [serialize_fragment(element) for element in data]
                 else:
                     return data
 
             def serialize(data):
                 for line in data:
-                    yield serialized(line)
+                    yield serialize_fragment(line)
 
             return ok_resp(serialize(cursor))
 
@@ -245,8 +282,8 @@ class MongoRetrieveUtil(BasicErrCheck):
         except Exception as err_obj:
             return err_resp(str(err_obj))
 
-
-    def get_mongo_url(self):
+    @staticmethod
+    def get_mongo_url():
         """Using the Django settings,
         retrieve/construct the mongo connection string"""
 
@@ -280,8 +317,6 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         return mongo_url
 
-
-
     def get_mongo_db(self, db_name, existing_only=False):
         """Return a Mongo db client for a specific database
         existing_only -  if True, only return an existing database
@@ -294,7 +329,7 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         client_info = self.get_mongo_client()
         if not client_info.success:
-            return err_resp(client_info.err_msg) # a big redundant/easier to read
+            return err_resp(client_info.err_msg)  # a big redundant/easier to read
 
         # Mongo client
         mongo_client = client_info.result_obj
@@ -302,7 +337,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         # Flag to only return existing databases
         #
         if existing_only:
-            if not db_name in mongo_client.database_names():
+            if db_name not in mongo_client.database_names():
                 user_msg = ('The database "%s" was not found'
                             ' on the Mongo server.'
                             '\nAvailable databases: %s') % \
@@ -321,7 +356,6 @@ class MongoRetrieveUtil(BasicErrCheck):
 
         return ok_resp(db)
 
-
     def get_mongo_client(self, conn_timeout_ms=1000):
         """
         Return a mongo client; initiate one if needed
@@ -339,10 +373,10 @@ class MongoRetrieveUtil(BasicErrCheck):
         # Connect!
         #
         try:
-            self.mongo_client = MongoClient(\
-                    mongo_url,
-                    serverSelectionTimeoutMS=conn_timeout_ms)
-            self.mongo_client.server_info() # to prompt connection errors
+            self.mongo_client = MongoClient(
+                mongo_url,
+                serverSelectionTimeoutMS=conn_timeout_ms)
+            self.mongo_client.server_info()  # to prompt connection errors
         except ConfigurationError as err_obj:
             #
             return err_resp(self.get_conn_error_msg(err_obj))
@@ -358,10 +392,9 @@ class MongoRetrieveUtil(BasicErrCheck):
         except PyMongoError as err_obj:
             #
             return err_resp(self.get_conn_error_msg(err_obj))
-        #print(self.mongo_client.database_names())
+        # print(self.mongo_client.database_names())
 
         return ok_resp(self.mongo_client)
-
 
     def get_conn_error_msg(self, err_obj):
         """Format and log a server connection error"""
@@ -370,6 +403,7 @@ class MongoRetrieveUtil(BasicErrCheck):
         LOGGER.error(user_msg)
         self.add_err_msg(user_msg)
         return user_msg
+
 
 """
 export EVENTDATA_MONGO_PASSWORD=some-pass

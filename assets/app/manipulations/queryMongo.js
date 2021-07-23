@@ -4,7 +4,7 @@ import {alignmentData} from "../app";
 import * as common from "../../common/common";
 import {
     getGeographicVariables,
-    getNominalVariables,
+    getCategoricalVariables,
     getOrderingVariable,
     getPredictorVariables,
     getTargetVariables
@@ -47,7 +47,7 @@ export function buildPipeline(pipeline, variables = new Set()) {
 
     variables = new Set(variables);
 
-    pipeline.forEach(step => {
+    pipeline.filter(_=>_).forEach(step => {
 
         if (step.type === 'transform' && step.transforms.length) compiled.push({
             '$addFields': step.transforms.reduce((out, transformation) => {
@@ -118,7 +118,8 @@ export let unaryFunctions = new Set([
     'abs', 'ceil', 'exp', 'floor', 'ln', 'log10', 'sqrt', 'trunc', // math
     'and', 'not', 'or', // logic
     'trim', 'toLower', 'toUpper', // string
-    'toBool', 'toDouble', 'toInt', 'toString' // type
+    'toBool', 'toDouble', 'toInt', 'toString', // type
+    'v' // for variable names containing spaces, syntax and operators
 ]);
 export let binaryFunctions = new Set([
     'divide', 'log', 'mod', 'pow', 'subtract', // math
@@ -166,6 +167,7 @@ export function buildEquation(text, variables) {
     };
 
     let parse = tree => {
+        if (tree.type === 'Compound') throw 'Ambiguous compound. You may need to disambiguate the variable name by wrapping in v("...").'
         if (tree.type === 'Literal') return tree.value;
 
         // Variables
@@ -174,11 +176,20 @@ export function buildEquation(text, variables) {
                 usedTerms.variables.add(tree.name);
                 return '$' + tree.name;
             }
-            throw 'Invalid variable: ' + tree.name;
+            throw `Invalid variable: ${tree.name}. You may need to disambiguate the variable name by wrapping in v("...").`;
         }
 
         // Functions
         if (tree.type === 'CallExpression') {
+            if (tree.callee.name === 'v') {
+                return parse({
+                    type: 'Identifier',
+                    name: tree.arguments.map(arg => ({
+                        Literal: arg.value,
+                        Identifier: arg.name
+                    }[arg.type])).join(' ')})
+            }
+
             if (unaryFunctions.has(tree.callee.name)) {
                 usedTerms.unaryFunctions.add(tree.callee.name);
                 return {['$' + tree.callee.name]: parse(tree['arguments'][0])};
@@ -682,14 +693,18 @@ export function buildAggregation(unitMeasures, accumulations) {
             'continuous': (data) => {
                 columnsNonDyad.push(data['column']);
 
-                unit[data['column']] = {
-                    $toInt: {
-                        $divide: [
-                            {$subtract: ['$' + data['column'], data['min']]},
-                            (data['max'] - data['min']) / data['measure']
-                        ]
-                    }
-                };
+                let standardized = {
+                    $divide: [
+                        {$subtract: ['$' + data['column'], data['min']]},
+                        (data['max'] - data['min']) / data['measure']
+                    ]
+                }
+                // FIXME mongodb 3.6: remove once mongo updates
+                if (IS_EVENTDATA_DOMAIN) {
+                    unit[data['column']] = {$subtract: [standardized, {$mod: [standardized, 1]}]}
+                } else {
+                    unit[data['column']] = {$toInt: standardized};
+                }
 
                 postTransforms[data['column']] = {
                     $add: [
@@ -987,10 +1002,10 @@ export function buildMenu(step) {
         if (metadata.limit) subset.push({$limit: metadata.limit});
         if (metadata.sample) subset.push({$sample: {size: metadata.sample}});
 
-        if (!metadata.variables && metadata.nominal && metadata.nominal.length > 0) return {pipeline: [
+        if (!metadata.variables && metadata.categorical && metadata.categorical.length > 0) return {pipeline: [
             ...subset,
             {
-                $addFields: metadata.nominal.reduce((out, entry) => {
+                $addFields: metadata.categorical.reduce((out, entry) => {
                     out[entry] = {'$toString': '$' + entry};
                     return out;
                 }, {})
@@ -1002,7 +1017,7 @@ export function buildMenu(step) {
             ...subset,
             {
                 $project: (metadata.variables || []).reduce((out, entry) => {
-                    out[entry] = (metadata.nominal || []).includes(entry) ? {'$toString': '$' + entry} : 1;
+                    out[entry] = (metadata.categorical || []).includes(entry) ? {'$toString': '$' + entry} : 1;
                     return out;
                 }, {_id: 0})
             }
@@ -1080,7 +1095,7 @@ export function buildMenu(step) {
         let targets = getTargetVariables(problem);
         let temporalName = getOrderingVariable(problem);
         let crossSections = problem.tags.crossSection;
-        let nominals = getNominalVariables(problem);
+        let categoricals = getCategoricalVariables(problem);
 
         let pipeline = [];
 
@@ -1161,28 +1176,28 @@ export function buildMenu(step) {
             let allVariables = [...targets, ...predictors]
                 .filter(variable => !structuralVariables.includes(variable));
             let continuousVariables = allVariables
-                .filter(variable => !nominals.includes(variable));
+                .filter(variable => !categoricals.includes(variable));
 
-            // initial group into treatments x nominal levels
+            // initial group into treatments x categorical levels
             pipeline.push({
                 $group: continuousVariables.reduce((group, variableName) => Object.assign(group, {
                     [variableName]: {$sum: `$${variableName}`}
                 }), {
                     // internal row count for computing mean through multiple groupings
                     _tr_row_count: {$sum: 1},
-                    _id: [...structuralVariables, ...nominals].reduce((group, variableName) => Object.assign(group, {
+                    _id: [...structuralVariables, ...categoricals].reduce((group, variableName) => Object.assign(group, {
                         [variableName]: 1
                     }), {})
                 })
             });
-            let remainingNominals = [...nominals];
-            let collapsedNominals = [];
-            while (remainingNominals.length > 0) {
-                let nominalName = remainingNominals.shift();
-                collapsedNominals.push(nominalName);
+            let remainingCategoricals = [...categoricals];
+            let collapsedCategoricals = [];
+            while (remainingCategoricals.length > 0) {
+                let categoricalName = remainingCategoricals.shift();
+                collapsedCategoricals.push(categoricalName);
 
                 pipeline.push({
-                    // WARN: nominalName must be set last. Temporal is sorted, then cross sections, then nominals
+                    // WARN: categoricalName must be set last. Temporal is sorted, then cross sections, then categoricals
                     $sort: Object.assign(
                         {
                             [`_id\\.${temporalName}`]: 1
@@ -1191,30 +1206,30 @@ export function buildMenu(step) {
                             [`_id\\.${variableName}`]: 1
                         }), {}),
                         {
-                            [`_id\\.${nominalName}`]: 1
+                            [`_id\\.${categoricalName}`]: 1
                         })
                 }, {
                     $group: Object.assign(
                         continuousVariables.reduce((reducer, accumName) => Object.assign(reducer, {
                             [accumName]: {$sum: `$${accumName}`}
                         })),
-                        // all other unaggregated nominals in the _id are identical constants
-                        collapsedNominals.reduce((reducer, accumName) => Object.assign(reducer, {
+                        // all other unaggregated categoricals in the _id are identical constants
+                        collapsedCategoricals.reduce((reducer, accumName) => Object.assign(reducer, {
                             [accumName]: {$first: 1}
                         })),
                         {_tr_row_count: {$sum: '$_tr_row_count'}},
                         {
-                            [nominalName]: {$push: `$_id\\.${nominalName}`},
-                            _id: [...structuralVariables, ...remainingNominals]
+                            [categoricalName]: {$push: `$_id\\.${categoricalName}`},
+                            _id: [...structuralVariables, ...remainingCategoricals]
                                 .reduce((group, variableName) => Object.assign(group, {
                                     [variableName]: `_id\\.${variableName}`
                                 }), {})
                         })
                 }, {
                     $addFields: {
-                        [nominalName]: {
+                        [categoricalName]: {
                             $reduce: {
-                                input: `$${nominalName}`,
+                                input: `$${categoricalName}`,
                                 initialValue: {
                                     mode: undefined,
                                     previous: undefined,
@@ -1253,7 +1268,7 @@ export function buildMenu(step) {
                     $addFields: continuousVariables.reduce((fields, variableName) => Object.assign(fields, {
                         [variableName]: {$divide: [`$${variableName}`, '$_tr_row_count}']}
                     }), {
-                        [nominalName]: `$${nominalName}\\.mode`
+                        [categoricalName]: `$${categoricalName}\\.mode`
                     })
                 })
             }
@@ -1268,9 +1283,9 @@ export function buildMenu(step) {
 
         // alternate implementation that just takes first categorical observation
         // {
-        //     $group: [temporalName, ...crossSections, ...nominals].reduce((group, variable) => Object.assign(group,
+        //     $group: [temporalName, ...crossSections, ...categoricals].reduce((group, variable) => Object.assign(group,
         //         {
-        //             [variable]: {[nominals.includes(variable) ? '$first' : '$avg']: `$${variable}`}
+        //             [variable]: {[categoricals.includes(variable) ? '$first' : '$avg']: `$${variable}`}
         //         }),
         //         {
         //             _id: crossSections.reduce((id, crossSection) => Object.assign(id,

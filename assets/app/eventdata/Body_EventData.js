@@ -241,7 +241,7 @@ export default class Body_EventData {
                 title: 'alerts',
                 class: 'btn-sm',
                 onclick: () => app.setShowModalAlerts(true)
-            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.colors.selVar : '#818181'}`})),
 
             m("#recordBar", {style: {display: "inline-block", float: 'right'}}, [
 
@@ -566,7 +566,7 @@ export default class Body_EventData {
                                 m(PanelList, {
                                     id: 'variablesList',
                                     items: matchedVariables,
-                                    colors: {[common.selVarColor]: eventdata.selectedVariables},
+                                    colors: {[common.colors.selVar]: eventdata.selectedVariables},
                                     callback: eventdata.toggleSelectedVariable,
                                     popup: popoverContentVariable,
                                     popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
@@ -579,7 +579,7 @@ export default class Body_EventData {
                                 m(PanelList, {
                                     id: 'variablesConstructedList',
                                     items: matchedConstructedVariables,
-                                    colors: {[common.selVarColor]: eventdata.selectedConstructedVariables},
+                                    colors: {[common.colors.selVar]: eventdata.selectedConstructedVariables},
                                     callback: eventdata.toggleSelectedConstructedVariable
                                 }))
                         ]
@@ -597,7 +597,7 @@ export default class Body_EventData {
                                     contents: m(PanelList, {
                                         id: 'subsetsList' + key,
                                         items: subsetLists[key],
-                                        colors: {[common.selVarColor]: eventdata.selectedCanvas === 'Custom' ? ['Custom'] : [eventdata.selectedSubsetName]},
+                                        colors: {[common.colors.selVar]: eventdata.selectedCanvas === 'Custom' ? ['Custom'] : [eventdata.selectedSubsetName]},
                                         callback: (subset) => (subset === 'Custom' ? eventdata.setSelectedCanvas : eventdata.setSelectedSubsetName)(subset),
                                         popup: popoverContentSubset,
                                         popupOptions: {placement: 'right', modifiers: {preventOverflow: {escapeWithReference: true}}},
@@ -640,7 +640,7 @@ export default class Body_EventData {
                             items: Object.keys(eventdata.genericMetadata[eventdata.selectedDataset]['subsets'])
                                 .filter(subset => eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][subset].measureType === 'unit'),
                             id: 'UMList',
-                            colors: {[common.selVarColor]: eventdata.selectedCanvas !== 'Results' ? [eventdata.selectedSubsetName] : []},
+                            colors: {[common.colors.selVar]: eventdata.selectedCanvas !== 'Results' ? [eventdata.selectedSubsetName] : []},
                             callback: eventdata.setSelectedSubsetName
                         })
                     },
@@ -650,7 +650,7 @@ export default class Body_EventData {
                             items: Object.keys(eventdata.genericMetadata[eventdata.selectedDataset]['subsets'])
                                 .filter(subset => eventdata.genericMetadata[eventdata.selectedDataset]['subsets'][subset].measureType === 'accumulator'),
                             id: 'EMList',
-                            colors: {[common.selVarColor]: eventdata.selectedCanvas !== 'Results' ? [eventdata.selectedSubsetName] : []},
+                            colors: {[common.colors.selVar]: eventdata.selectedCanvas !== 'Results' ? [eventdata.selectedSubsetName] : []},
                             callback: eventdata.setSelectedSubsetName
                         })
                     },
@@ -660,8 +660,8 @@ export default class Body_EventData {
                             id: 'resultsList',
                             items: allPlots,
                             colors: {
-                                [common.grayColor]: eventdata.tableData ? [] : allPlots,
-                                [common.selVarColor]: eventdata.selectedCanvas === 'Results' ? [eventdata.selectedResult] : []
+                                [common.colors.gray]: eventdata.tableData ? [] : allPlots,
+                                [common.colors.selVar]: eventdata.selectedCanvas === 'Results' ? [eventdata.selectedResult] : []
                             },
                             callback: (result) => {
                                 if (!eventdata.tableData) {
@@ -907,9 +907,9 @@ export default class Body_EventData {
                     data: [...app.alerts].reverse().map(alert => [
                         alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
                         m(`div[style=background:${app.hexToRgba({
-                            'log': common.menuColor,
-                            'warn': common.warnColor,
-                            'error': common.errorColor
+                            'log': common.colors.menu,
+                            'warn': common.colors.warn,
+                            'error': common.colors.error
                         }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
                         alert.description
                     ]),

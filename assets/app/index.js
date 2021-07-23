@@ -33,6 +33,7 @@ import ModalVanilla from "../common/views/ModalVanilla";
 import Peek from '../common/views/Peek';
 import Table from '../common/views/Table';
 import TextField from '../common/views/TextField';
+import Popper from '../common/views/Popper';
 import {Datamart, ModalDatamart} from "./datamart/Datamart";
 
 import Icon from '../common/views/Icon';
@@ -42,7 +43,13 @@ import ModalWorkspace from "./views/ModalWorkspace";
 import Body_EventData from './eventdata/Body_EventData';
 import Body_Dataset from "./views/Body_Dataset";
 import Body_Deploy from "./views/Body_Deploy";
-import {getAbstractPipeline, getSelectedProblem} from "./problem";
+import {
+    getAbstractPipeline,
+    getSelectedProblem,
+} from "./problem";
+import {ProblemList} from "./views/ProblemList";
+import {italicize} from "./utils";
+import {QueryTracker} from "./views/QueryTracker";
 
 
 class Body {
@@ -70,6 +77,7 @@ class Body {
             app.setSelectedMode(mode);
 
         let exploreVariables = (vars ? vars.split('/') : [])
+            .map(decodeURIComponent)
             .filter(variable => variable in app.variableSummaries);
 
         let overflow = app.isExploreMode ? 'auto' : 'hidden';
@@ -81,7 +89,7 @@ class Body {
 
         let backgroundColor = app.swandive ? 'grey'
             : app.isExploreMode ? {"light": '#ffffff', "dark": "#474747"}[common.theme]
-                : common.baseColor;
+                : common.colors.base;
 
         return m('main',
 
@@ -102,7 +110,7 @@ class Body {
                         bottom: common.heightFooter,
                         display: (app.rightTab === 'Manipulate' && manipulate.constraintMenu) ? 'none' : 'block',
                         'background-color': backgroundColor,
-                        color: common.textColor
+                        color: common.colors.text
                     }
                 },
 
@@ -161,7 +169,7 @@ class Body {
                     onclick: () => {
                         app.setSelectedMode('model');
                     }
-                }, selectedProblem.problemId));
+                }, m.trust(selectedProblem?.name || selectedProblem.problemId)));
 
             let selectedSolutions = results.getSelectedSolutions(selectedProblem);
             if (app.isResultsMode && selectedSolutions.length === 1 && selectedSolutions[0]) {
@@ -282,7 +290,7 @@ class Body {
 
     footer() {
 
-        return m(Footer, [
+        return m(Footer, {style: {'z-index': 100}},[
             m('div.btn-group[style=margin:5px;padding:0px]',
                 m(Button, {id: 'btnTA2',class: 'btn-sm', onclick: _ => hopscotch.startTour(app.initialTour(), 0)}, 'Help Tour ', m(Icon, {name: 'milestone'})),
                 m(Button, {id: 'btnTA2', class: 'btn-sm', onclick: _ => app.helpmaterials('video')}, 'Video ', m(Icon, {name: 'file-media'})),
@@ -329,7 +337,14 @@ class Body {
                 title: 'alerts',
                 class: 'btn-sm',
                 onclick: () => app.setShowModalAlerts(true)
-            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.selVarColor : '#818181'}`})),
+            }, m(Icon, {name: 'bell', style: `color: ${app.alerts.length > 0 && app.alerts[0].time > app.alertsLastViewed ? common.colors.selVar : '#818181'}`})),
+            m(Button, {
+                style: {'margin': '8px'},
+                title: 'alerts',
+                class: 'btn-sm'
+            }, m(Popper, {
+                content: () => m(QueryTracker)
+            }, m(Icon, {name: 'clock'}))),
 
             [
                 // m(Button, {
@@ -386,7 +401,7 @@ class Body {
      * Start: Construct potential modal boxes for the page.
      */
     constructModals() {
-        return [
+        let modals = [
             m(Modal),
             this.modalSaveCurrentWorkspace(),
             app.showModalWorkspace && m(ModalWorkspace, {
@@ -452,8 +467,8 @@ class Body {
                     app.setShowModalAlerts(false)
                 }
             }, [
-                m('h4[style=width:3em;display:inline-block]', 'Alerts'),
-                m(Button, {
+                m('h4[style=width:3em;display:inline-block;margin-right:.25em]', 'Alerts'),
+                app.alerts.length > 0 && m(Button, {
                     title: 'Clear Alerts',
                     style: {display: 'inline-block', 'margin-right': '0.75em'},
                     onclick: () => app.alerts.length = 0,
@@ -463,10 +478,10 @@ class Body {
                 app.alerts.length > 0 && m(Table, {
                     data: [...app.alerts].reverse().map(alert => [
                         alert.time > app.alertsLastViewed && m(Icon, {name: 'primitive-dot'}),
-                        m(`div[style=background:${app.hexToRgba({
-                            'log': common.menuColor,
-                            'warn': common.warnColor,
-                            'error': common.errorColor
+                        m(`div[style=white-space:nowrap;text-align:center;padding:.2em .7em;border-radius:1em;background:${app.hexToRgba({
+                            'log': common.colors.menu,
+                            'warn': common.colors.warn,
+                            'error': common.colors.error
                         }[alert.type], .5)}]`, alert.time.toLocaleTimeString().replace(/([\d]+:[\d]{2})(:[\d]{2})(.*)/, "$1$3")),
                         alert.description
                     ]),
@@ -650,6 +665,14 @@ class Body {
                     m(TextField, {value: JSON.stringify(getSelectedProblem().solutions.d3m)}))
             )
         ]
+
+        if (app.showModalProblems) modals.push(m(ModalVanilla, {
+            id: 'problemsModal',
+            setDisplay: app.setShowModalProblems
+        }, m(ProblemList, {
+            problems: workspace.raven_config.problems
+        })))
+        return modals;
     }
 
     /*

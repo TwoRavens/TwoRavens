@@ -198,6 +198,12 @@ Note: The TwoRavens application requires python 3.6+
 
 - The "/ravens_volume" location on your local machine will be used by a TA2 system running within a docker container
 
+- On MacOS Big Sur, the root directory is locked. Create and/or edit `/etc/synthetic.conf` to include this link:
+    ```
+    ravens_volume	[location of TwoRavens repo]/TwoRavens/ravens_volume 
+    ```
+    Be careful to separate with a tab.
+
 
 # 2. Run Redis/Celery
 

@@ -4,13 +4,10 @@ from tworaven_apps.eventdata_queries.event_job_util import EventJobUtil
 from tworaven_apps.eventdata_queries.mongo_retrieve_util import MongoRetrieveUtil
 from tworaven_apps.utils.static_keys import KEY_SUCCESS, KEY_DATA
 
-# import pyperclip
-# import json
-import random
 import pandas as pd
 
 
-def util_results_real_clustered(data_pointer, metadata):
+def util_results_real_clustered(data_pointer, metadata, user=None, comment=None):
 
     # ensure auxiliary datasets are present
     #
@@ -21,13 +18,15 @@ def util_results_real_clustered(data_pointer, metadata):
                 collection_name,
                 data_path=meta['path'],
                 indexes=meta.get('indexes'),
-                reload=metadata.get('reload', None))
+                reload=metadata.get('reload'),
+                user=user, comment=comment)
 
     GRID_SIZE = 100
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
-        metadata['datafile'])
+        metadata['datafile'],
+        user=user, comment=comment)
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
@@ -36,13 +35,15 @@ def util_results_real_clustered(data_pointer, metadata):
 
     mongo_util_base = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'],
+        user=user)
     if mongo_util_base.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_base.get_error_message()}
 
     mongo_util_fitted = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'],
+        user=user)
     if mongo_util_fitted.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: mongo_util_fitted.get_error_message()}
 
@@ -54,7 +55,8 @@ def util_results_real_clustered(data_pointer, metadata):
             settings.TWORAVENS_MONGO_DB_NAME,
             results_collection_name,
             data_pointer,
-            indexes=['d3mIndex'])
+            indexes=['d3mIndex'],
+            user=user, comment=comment)
 
         if not status.success:
             return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}
@@ -88,7 +90,7 @@ def util_results_real_clustered(data_pointer, metadata):
                 **{f'min_{target}': {"$min": f"${target}"} for target in metadata['targets']},
                 **{f'max_{target}': {"$max": f"${target}"} for target in metadata['targets']}
             }}
-        ], method='aggregate'))
+        ], method='aggregate', comment=comment))
 
         if not response[0]:
             return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
@@ -157,7 +159,7 @@ def util_results_real_clustered(data_pointer, metadata):
             }
         ]
 
-        response = list(mongo_util_base.run_query(query, method='aggregate'))
+        response = list(mongo_util_base.run_query(query, method='aggregate', comment=comment))
 
     finally:
         pass
@@ -168,14 +170,15 @@ def util_results_real_clustered(data_pointer, metadata):
     return {KEY_SUCCESS: response[0], KEY_DATA: next(response[1]) if response[0] else response[1]}
 
 
-def util_results_confusion_matrix(data_pointer, metadata):
+def util_results_confusion_matrix(data_pointer, metadata, user=None, comment=None):
     """Get the content from the file and format a JSON snippet
     that includes statistical summaries.
     """
     response = EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
-        metadata['datafile'])
+        metadata['datafile'],
+        user=user, comment=comment)
 
     # ensure auxiliary datasets are present
     #
@@ -186,7 +189,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
                 collection_name,
                 data_path=meta['path'],
                 indexes=meta.get('indexes'),
-                reload=metadata.get('reload', None))
+                reload=metadata.get('reload'),
+                user=user, comment=comment)
 
     if not response.success:
         return {KEY_SUCCESS: False, KEY_DATA: response.err_msg}
@@ -195,7 +199,8 @@ def util_results_confusion_matrix(data_pointer, metadata):
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'],
+        user=user)
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
@@ -263,12 +268,13 @@ def util_results_confusion_matrix(data_pointer, metadata):
         settings.TWORAVENS_MONGO_DB_NAME,
         results_collection_name,
         data_pointer,
-        indexes=['d3mIndex'])
+        indexes=['d3mIndex'],
+        user=user, comment=comment)
 
     if not status.success:
         return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}
 
-    response = list(util.run_query(query, method='aggregate'))
+    response = list(util.run_query(query, method='aggregate', comment=comment))
     if not response[0]:
         return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
     data = next(response[1])
@@ -297,7 +303,7 @@ def util_results_confusion_matrix(data_pointer, metadata):
     ]
 
     try:
-        response = list(util.run_query(query, method='aggregate'))
+        response = list(util.run_query(query, method='aggregate', comment=comment))
         if not response[0]:
             return {KEY_SUCCESS: response[0], KEY_DATA: response[1]}
         classes = next(response[1])
@@ -319,20 +325,22 @@ def util_results_confusion_matrix(data_pointer, metadata):
     }
 
 
-def util_results_importance_efd(data_pointer, metadata):
+def util_results_importance_efd(data_pointer, metadata, user=None, comment=None):
     LIMIT_UNIQUE_LEVELS = 20
 
     # make sure the base dataset is loaded
     EventJobUtil.import_dataset(
         settings.TWORAVENS_MONGO_DB_NAME,
         metadata['collection_name'],
-        data_path=metadata['datafile'])
+        data_path=metadata['datafile'],
+        user=user, comment=comment)
 
     results_collection_name = metadata['collection_name'] + '_produce_' + mongofy_collection_name(metadata['produceId'])
 
     util = MongoRetrieveUtil(
         settings.TWORAVENS_MONGO_DB_NAME,
-        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'])
+        settings.MONGO_COLLECTION_PREFIX + metadata['collection_name'],
+        user=user)
     if util.has_error():
         return {KEY_SUCCESS: False, KEY_DATA: util.get_error_message()}
 
@@ -346,7 +354,7 @@ def util_results_importance_efd(data_pointer, metadata):
             {"$group": {"_id": f"${variable}", "count": {'$sum': 1}}},
             {'$sort': {'count': -1, '_id': 1}},
             {"$limit": LIMIT_UNIQUE_LEVELS}
-        ], 'aggregate')
+        ], 'aggregate', comment=comment)
 
         if not response[0]:
             return {KEY_SUCCESS: False, KEY_DATA: response[1]}
@@ -476,12 +484,12 @@ def util_results_importance_efd(data_pointer, metadata):
         status = EventJobUtil.import_dataset(
             settings.TWORAVENS_MONGO_DB_NAME,
             results_collection_name,
-            data_pointer)
+            data_pointer, user=user, comment=comment)
 
         if not status.success:
             return {KEY_SUCCESS: False, KEY_DATA: status.err_msg}
 
-        response = list(util.run_query(query, method='aggregate'))
+        response = list(util.run_query(query, method='aggregate', comment=comment))
 
         if not response[0]:
             return {

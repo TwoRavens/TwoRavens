@@ -4,8 +4,9 @@
     --tag-crossSection: #fff;
     --tag-order: #fff;
     --tag-location: #fff;
+    --tag-geographic: #fff;
     --tag-time: #fff;
-    --tag-nominal: #fff;
+    --tag-categorical: #fff;
     --tag-ordinal: #fff;
     --tag-weight: #fff;
     --tag-boundary: #fff;
@@ -442,9 +443,9 @@ tr.item-lineout{
     text-decoration:line-through;
 }
 
-.item-nominal {
+.item-categorical {
     border-style: solid;
-    border-color: var(--tag-nominal);
+    border-color: var(--tag-categorical);
 }
 .item-cross-section {
     border-style: solid;
@@ -458,9 +459,9 @@ tr.item-lineout{
     border-style: solid;
     border-color: var(--tag-boundary);
 }
-.item-location {
+.item-geographic {
     border-style: solid;
-    border-color: var(--tag-location);
+    border-color: var(--tag-geographic);
 }
 .item-time {
     border-style: solid;

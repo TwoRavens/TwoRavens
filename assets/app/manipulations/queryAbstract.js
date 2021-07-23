@@ -199,14 +199,14 @@ function makeAbstractBranch(step, preferences, metadata, name) {
             values.push({
                 'Boolean': !!menuPreferences.userValues[i],
                 'Numeric': parseFloat(menuPreferences.userValues[i]),
-                'Nominal': menuPreferences.userValues[i]
+                'Categorical': menuPreferences.userValues[i]
             }[menuPreferences.variableType])
         });
 
         menuPreferences.variableDefault = {
             'Boolean': !!menuPreferences.variableDefault,
             'Numeric': parseFloat(menuPreferences.variableDefault),
-            'Nominal': menuPreferences.variableDefault
+            'Categorical': menuPreferences.variableDefault
         }[menuPreferences.variableType];
 
         return {
