@@ -119,7 +119,8 @@ function canvas(compoundPipeline) {
 
     let {pipeline, variables} = queryMongo.buildPipeline(compoundPipeline, app.workspace.raven_config.variablesInitial);
 
-    if (constraintMenu.type === 'augment') return m(datamart.CanvasDatamart, {
+    let dmPrefs = app.datamartPreferences;
+    if (constraintMenu.type === 'augment' && dmPrefs.results?.[dmPrefs.sourceMode]) return m(datamart.CanvasDatamart, {
         preferences: app.datamartPreferences,
         dataPath: constraintMenu.step.dataPath,
         manipulations: app.workspace.raven_config?.hardManipulations,

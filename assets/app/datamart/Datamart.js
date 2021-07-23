@@ -212,14 +212,11 @@ export class CanvasDatamart {
     }
 }
 
-export class Datamart {
-
+class DatamartSearch {
     view(vnode) {
         let {
             preferences,
-            manipulations,
             dataPath,   // where to load data from, to augment with
-            labelWidth, // width of titles on left side of cards
             endpoint,   // Django app url
         } = vnode.attrs;
 
@@ -228,7 +225,6 @@ export class Datamart {
             query,    // https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API
             results,  // list of matched metadata
             indices,  // data to be attached to the upload
-            getData
         } = preferences;
 
         // clear out cached results if the dataPath has changed since the previous search
@@ -274,321 +270,368 @@ export class Datamart {
             }
         };
 
-        return m('div', {
+        let searchMenu = [
+            // error messages
+            preferences.error[preferences.sourceMode] && m('div#errorMessage', {
                 style: {
-                    width: '100%',
-                    height: '100%',
-                    position: 'relative'
+                    background: 'rgba(0,0,0,.05)',
+                    'border-radius': '.5em',
+                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                    margin: '10px 0',
+                    padding: '1em'
                 }
-            },
-            m(TwoPanel, {
-                left: [
-                    // error messages
-                    preferences.error[preferences.sourceMode] && m('div#errorMessage', {
-                        style: {
-                            background: 'rgba(0,0,0,.05)',
-                            'border-radius': '.5em',
-                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                            margin: '10px 0',
-                            padding: '1em'
-                        }
-                    }, [
-                        m('div', {
-                            style: {display: 'inline-block'},
-                            onclick: () => delete preferences.error[preferences.sourceMode]
-                        }, m(Icon, {name: 'x'})),
-                        m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
-                            warn('Error:'), preferences.error[preferences.sourceMode])
-                    ]),
+            }, [
+                m('div', {
+                    style: {display: 'inline-block'},
+                    onclick: () => delete preferences.error[preferences.sourceMode]
+                }, m(Icon, {name: 'x'})),
+                m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
+                    warn('Error:'), preferences.error[preferences.sourceMode])
+            ]),
 
-                    // success message
-                    preferences.success[preferences.sourceMode] && m('div#successMessage', {
-                        style: {
-                            background: 'rgba(0,0,0,.05)',
-                            'border-radius': '.5em',
-                            'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
-                            margin: '10px 0',
-                            padding: '1em'
-                        }
-                    }, [
-                        m('div#successMessage', {
-                            style: {display: 'inline-block'},
-                            onclick: () => delete preferences.success[preferences.sourceMode]
-                        }, m(Icon, {name: 'x'})),
-                        m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
-                            preferences.success[preferences.sourceMode])
-                    ]),
+            // success message
+            preferences.success[preferences.sourceMode] && m('div#successMessage', {
+                style: {
+                    background: 'rgba(0,0,0,.05)',
+                    'border-radius': '.5em',
+                    'box-shadow': '0px 5px 10px rgba(0, 0, 0, .1)',
+                    margin: '10px 0',
+                    padding: '1em'
+                }
+            }, [
+                m('div#successMessage', {
+                    style: {display: 'inline-block'},
+                    onclick: () => delete preferences.success[preferences.sourceMode]
+                }, m(Icon, {name: 'x'})),
+                m('div', {style: {'margin-left': '1em', display: 'inline-block'}},
+                    preferences.success[preferences.sourceMode])
+            ]),
 
-                    // turn on/off the search and index menus
-                    preferences.datamartMode === 'Search' && [
+            // turn on/off the search and index menus
+            preferences.datamartMode === 'Search' && [
 
-                        (hints || []).length > 0 && [
-                            m('h4', 'Suggested Keywords'),
-                            m('div[style=margin:.5em]', 'Click on a keyword to add it to the list of keywords in the query.'),
-                            m(Table, {
-                                data: hints.map(row => ({
-                                    Domain: row.domain,
-                                    Keywords: m(ListTags, {
-                                        tags: row.keywords
-                                            .filter(key => !(preferences.query.keywords || []).includes(key))
-                                            .map(key => m('div', {
-                                                onclick: () => {
-                                                    if (!('keywords' in preferences.query)) preferences.query.keywords = [];
-                                                    if (preferences.query.keywords.includes(key)) preferences.query.keywords.splice(key, 1)
-                                                    else preferences.query.keywords.push(key)
+                (hints || []).length > 0 && [
+                    m('h4', 'Suggested Keywords'),
+                    m('div[style=margin:.5em]', 'Click on a keyword to add it to the list of keywords in the query.'),
+                    m(Table, {
+                        data: hints.map(row => ({
+                            Domain: row.domain,
+                            Keywords: m(ListTags, {
+                                tags: row.keywords
+                                    .filter(key => !(preferences.query.keywords || []).includes(key))
+                                    .map(key => m('div', {
+                                        onclick: () => {
+                                            if (!('keywords' in preferences.query)) preferences.query.keywords = [];
+                                            if (preferences.query.keywords.includes(key)) preferences.query.keywords.splice(key, 1)
+                                            else preferences.query.keywords.push(key)
 
-                                                    // auto-searching
-                                                    clearTimeout(preferences.searchTimeout);
-                                                    if (!preferences.includeDataset && preferences.sourceMode === "ISI")
-                                                        preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500)
-                                                }
-                                            }, key))
-                                    })
-                                }))
+                                            // auto-searching
+                                            clearTimeout(preferences.searchTimeout);
+                                            if (!preferences.includeDataset && preferences.sourceMode === "ISI")
+                                                preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500)
+                                        }
+                                    }, key))
                             })
-                        ],
+                        }))
+                    })
+                ],
 
-                        // KEYWORDS
-                        m('h4', 'Keywords'),
-                        m('div[style=margin:.5em]', 'Show datasets that match keywords, or contain variables with temporal or geospatial attributes.'),
-                        m(`div[style=background:${common.colors.menu}]`, {
-                                onkeyup: e => {
-                                    // auto-searching
-                                    clearTimeout(preferences.searchTimeout);
-                                    if (e.code === 'Enter')
-                                        search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery);
-                                    else if (!preferences.includeDataset && e.code !== 'Tab' && preferences.sourceMode === "ISI") {
-                                        preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500);
-                                    }
-                                }
-                            },
-                            m(Table, {
-                                attrsCells: {valign: "top"},
-                                data: [
-                                    ...query.keywords.map((keyword, i) => [
-                                        m(TextField, {
-                                            value: keyword,
-                                            oninput: val => query.keywords[i] = val,
-                                            onblur: val => {
-                                                query.keywords[i] = val;
-                                                if (val.length === 0) {
-                                                    query.keywords.splice(i, 1)
-                                                }
-                                            }
-                                        }),
-                                        m('div', {
-                                            onclick: () => query.keywords.splice(i, 1)
-                                        }, m(Icon, {name: 'x', style: {margin: '1em 1em 1em 0em'}}))
-                                    ]),
-                                    [m(TextField, {value: '', oninput: val => query.keywords.push(val)}), undefined]
-                                ]
-                            })
-                        ),
-
-                        m(ButtonRadio, {
-                            id: 'dataSourceButtonBar',
-                            onclick: state => {
-                                preferences.sourceMode = state;
-                                preferences.selectedResult = undefined;
-                            },
-                            activeSection: preferences.sourceMode,
-                            sections: [{value: 'NYU'}, {value: 'ISI'}],
-                            attrsAll: {style: {margin: '1em', width: 'auto'}},
-                            attrsButtons: {style: {width: 'auto'}}
-                        }),
-
-                        m('div', {style: {float: 'right'}},
-                            preferences.sourceMode === "ISI" && m('div', {
-                                    style: {margin: '1.5em', display: 'inline-block'},
-                                    onclick: () => preferences.includeQuery = !preferences.includeQuery
-                                },
-                                m('label[style=margin:.25em;font-weight:bold]', 'Use query in search '),
-                                m(Checkbox, {
-                                    checked: preferences.includeQuery
-                                })),
-                            preferences.sourceMode === "ISI" && m('div', {
-                                    style: {margin: '1.5em', display: 'inline-block'},
-                                    onclick: () => preferences.includeDataset = !preferences.includeDataset
-                                },
-                                m('label[style=margin:.25em;font-weight:bold]',
-                                    m(Popper, {
-                                        content: () => m('div[style=max-width:22em]',
-                                            'Check to show datasets that are considered joinable with the current dataset, ',
-                                            m('pre[style=display:inline]', app.workspace.d3m_config.name), '.')
-                                    }, 'Use dataset in search ')),
-                                m(Checkbox, {
-                                    checked: preferences.includeDataset
-                                })),
-                            /*
-                             * Start: Datamart Search Call
-                             */
-                            m(Button, {
-                                    style: {float: 'right', margin: '1em'},
-                                    disabled: preferences.isSearching[preferences.sourceMode],
-                                    onclick: () => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery)
-                                },
-                                'Search')), // Datamart Search Call
-
-                    ],
-                    preferences.datamartMode === 'Index' && [
-                        m('div', {style: {margin: '1em'}}, 'Indexing is for adding your own datasets to datamart. You may provide a ', utils.bold('link'), ' to a file, or ', utils.bold('scrape'), ' datasets from a website.'), // You may upload a file or extract data from a link.
-                        m(ButtonRadio, {
-                            id: 'datamartIndexMode',
-                            onclick: state => preferences.datamartIndexMode = state,
-                            activeSection: preferences.datamartIndexMode,
-                            sections: [
-                                // {value: 'File'},
-                                {value: 'Link'},
-                                {value: 'Scrape'}
-                            ]
-                        }),
-                        preferences.datamartIndexMode === 'File' && [
-                            m('label.btn.btn-default.btn-file', {style: {margin: '1em', display: 'inline-block'}}, [
-                                m('input', {
-                                    hidden: true,
-                                    type: 'file',
-                                    style: {display: 'none'},
-                                    onchange: async e => {
-
-                                        // preserve state after async is awaited
-                                        let sourceMode = preferences.sourceMode;
-
-                                        let file = e.target.files[0];
-
-                                        let data = new FormData();
-                                        data.append("source_file", file);
-
-                                        // initial upload
-                                        let response = await m.request({
-                                            method: "POST",
-                                            url: endpoint + "upload",
-                                            body: data
-                                        });
-
-                                        if (!response.success) {
-                                            preferences.error[sourceMode] = response.message;
-                                            return;
+                // KEYWORDS
+                m('h4', 'Keywords'),
+                m('div[style=margin:.5em]', 'Search for datasets that match the following keywords.'),
+                m(`div[style=background:${common.colors.menu}]`, {
+                        onkeyup: e => {
+                            // auto-searching
+                            clearTimeout(preferences.searchTimeout);
+                            if (e.code === 'Enter')
+                                search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery);
+                            else if (!preferences.includeDataset && e.code !== 'Tab' && preferences.sourceMode === "ISI") {
+                                preferences.searchTimeout = setTimeout(() => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery), 500);
+                            }
+                        }
+                    },
+                    m(Table, {
+                        attrsCells: {valign: "top"},
+                        data: [
+                            ...query.keywords.map((keyword, i) => [
+                                m(TextField, {
+                                    value: keyword,
+                                    oninput: val => query.keywords[i] = val,
+                                    onblur: val => {
+                                        query.keywords[i] = val;
+                                        if (val.length === 0) {
+                                            query.keywords.splice(i, 1)
                                         }
                                     }
-                                })
-                            ], 'Browse')
-                        ],
+                                }),
+                                m('div', {
+                                    onclick: () => query.keywords.splice(i, 1)
+                                }, m(Icon, {name: 'x', style: {margin: '1em 1em 1em 0em'}}))
+                            ]),
+                            [m(TextField, {value: '', oninput: val => query.keywords.push(val)}), undefined]
+                        ]
+                    })
+                ),
 
-                        preferences.datamartIndexMode === 'Link' && [
-                            m(TextField, {
-                                style: {margin: '1em', width: 'calc(100% - 15em)', display: 'inline-block'},
-                                id: 'datamartLinkTextField',
-                                value: preferences.indexLink,
-                                placeholder: 'Url to file',
-                                oninput: value => preferences.indexLink = value,
-                                onblur: value => preferences.indexLink = value
-                            }),
-                            m('div', {
-                                style: {
-                                    margin: '1em',
-                                    'margin-left': '0px',
-                                    display: 'inline-block'
-                                }
-                            }, m(Dropdown, {
-                                id: 'fileTypeDropdown',
-                                items: ['csv', 'excel'],
-                                activeItem: preferences.indexFileType,
-                                onclickChild: value => preferences.indexFileType = value
-                            })),
-                            m(Button, {
-                                style: {
-                                    float: 'right',
-                                    margin: '1em',
-                                    'margin-left': '0px',
-                                    'max-width': '10em',
-                                    display: 'inline-block'
-                                },
-                                onclick: () => handleIndex({
-                                    materialization_arguments: {
-                                        url: preferences.indexLink,
-                                        file_type: preferences.indexFileType
-                                    }
-                                })
-                            }, 'Submit')
-                        ],
+                m(ButtonRadio, {
+                    id: 'dataSourceButtonBar',
+                    onclick: state => {
+                        preferences.sourceMode = state;
+                        preferences.selectedResult = undefined;
+                    },
+                    activeSection: preferences.sourceMode,
+                    sections: [{value: 'NYU'}, {value: 'ISI'}],
+                    attrsAll: {style: {margin: '1em', width: 'auto'}},
+                    attrsButtons: {style: {width: 'auto'}}
+                }),
 
-                        preferences.datamartIndexMode === 'Scrape' && [
-                            m(TextField, {
-                                style: {margin: '1em', width: 'calc(100% - 10em)', display: 'inline-block'},
-                                id: 'datamartScrapeTextField',
-                                value: preferences.indexScrape,
-                                placeholder: 'Url to webpage with tables',
-                                oninput: value => preferences.indexScrape = value,
-                                onblur: value => preferences.indexScrape = value
-                            }),
-                            m(Button, {
-                                style: {float: 'right', margin: '1em', 'max-width': '10em', display: 'inline-block'},
-                                onclick: () => handleIndex({
-                                    materialization_arguments: {
-                                        url: preferences.indexScrape,
-                                        file_type: 'html'
-                                    }
-                                })
-                            }, 'Submit')
-                        ],
+                m('div', {style: {float: 'right'}},
+                    preferences.sourceMode === "ISI" && m('div', {
+                        style: {margin: '1.5em', display: 'inline-block'},
+                        onclick: () => preferences.includeQuery = !preferences.includeQuery
+                    },
+                    m('label[style=margin:.25em;font-weight:bold]', 'Use query in search '),
+                    m(Checkbox, {
+                        checked: preferences.includeQuery
+                    })),
+                    preferences.sourceMode === "ISI" && m('div', {
+                        style: {margin: '1.5em', display: 'inline-block'},
+                        onclick: () => preferences.includeDataset = !preferences.includeDataset
+                    },
+                    m('label[style=margin:.25em;font-weight:bold]',
+                        m(Popper, {
+                            content: () => m('div[style=max-width:22em]',
+                                'Check to show datasets that are considered joinable with the current dataset, ',
+                                m('pre[style=display:inline]', app.workspace.d3m_config.name), '.')
+                        }, 'Use dataset in search ')),
+                    m(Checkbox, {
+                        checked: preferences.includeDataset
+                    })),
+                    /*
+                     * Start: Datamart Search Call
+                     */
+                    m(Button, {
+                            style: {float: 'right', margin: '1em'},
+                            disabled: preferences.isSearching[preferences.sourceMode],
+                            onclick: () => search(preferences, endpoint, dataPath, preferences.includeDataset, preferences.includeQuery)
+                        },
+                        'Search')), // Datamart Search Call
 
-                        indices.map(index => m(`div[style=background:${common.colors.menu}]`, m(JSONSchema, {
-                            data: index,
-                            schema: datamartDatasetIndexSchema
-                        }))),
+            ],
+            preferences.datamartMode === 'Index' && [
+                m('div', {style: {margin: '1em'}}, 'Indexing is for adding your own datasets to datamart. You may provide a ', utils.bold('link'), ' to a file, or ', utils.bold('scrape'), ' datasets from a website.'), // You may upload a file or extract data from a link.
+                m(ButtonRadio, {
+                    id: 'datamartIndexMode',
+                    onclick: state => preferences.datamartIndexMode = state,
+                    activeSection: preferences.datamartIndexMode,
+                    sections: [
+                        // {value: 'File'},
+                        {value: 'Link'},
+                        {value: 'Scrape'}
+                    ]
+                }),
+                preferences.datamartIndexMode === 'File' && [
+                    m('label.btn.btn-default.btn-file', {style: {margin: '1em', display: 'inline-block'}}, [
+                        m('input', {
+                            hidden: true,
+                            type: 'file',
+                            style: {display: 'none'},
+                            onchange: async e => {
 
-                        indices.length > 0 && m(Button, {
-                            onclick: async () => {
                                 // preserve state after async is awaited
                                 let sourceMode = preferences.sourceMode;
 
-                                let responses = [];
-                                let promises = indices.map((index, i) => m.request(endpoint + 'index', {
-                                    method: 'POST',
-                                    body: {
-                                        index: JSON.stringify(index),
-                                        source: sourceMode
-                                    }
-                                }).then(response => responses[i] = response));
+                                let file = e.target.files[0];
 
-                                await Promise.all(promises);
+                                let data = new FormData();
+                                data.append("source_file", file);
 
-                                preferences.success[sourceMode] = 'Index ' + responses
-                                    .reduce((out, response, i) => response.success ? [...out, i] : out, []).join(', ') + ' successful.';
+                                // initial upload
+                                let response = await m.request({
+                                    method: "POST",
+                                    url: endpoint + "upload",
+                                    body: data
+                                });
 
-                                preferences.indices = indices.filter((index, i) => !responses[i].success);
-
-                                if (preferences.indices.length) {
-                                    console.log("#debug responses");
-                                    console.log(responses);
-                                    preferences.error[sourceMode] = 'Some datasets failed uploading to datamart. The failed datasets are listed below.';
-                                    delete preferences.success[sourceMode]
-                                } else
-                                    preferences.success[sourceMode] = `Dataset${responses.length === 1 ? '' : 's'} successfully indexed.`
-
-                                m.redraw()
+                                if (!response.success) {
+                                    preferences.error[sourceMode] = response.message;
+                                    return;
+                                }
                             }
-                        }, 'Submit')
-                    ]
+                        })
+                    ], 'Browse')
                 ],
-                right: [
 
-                    preferences.isSearching[preferences.sourceMode] && common.loader('DatamartSearching'),
+                preferences.datamartIndexMode === 'Link' && [
+                    m(TextField, {
+                        style: {margin: '1em', width: 'calc(100% - 15em)', display: 'inline-block'},
+                        id: 'datamartLinkTextField',
+                        value: preferences.indexLink,
+                        placeholder: 'Url to file',
+                        oninput: value => preferences.indexLink = value,
+                        onblur: value => preferences.indexLink = value
+                    }),
+                    m('div', {
+                        style: {
+                            margin: '1em',
+                            'margin-left': '0px',
+                            display: 'inline-block'
+                        }
+                    }, m(Dropdown, {
+                        id: 'fileTypeDropdown',
+                        items: ['csv', 'excel'],
+                        activeItem: preferences.indexFileType,
+                        onclickChild: value => preferences.indexFileType = value
+                    })),
+                    m(Button, {
+                        style: {
+                            float: 'right',
+                            margin: '1em',
+                            'margin-left': '0px',
+                            'max-width': '10em',
+                            display: 'inline-block'
+                        },
+                        onclick: () => handleIndex({
+                            materialization_arguments: {
+                                url: preferences.indexLink,
+                                file_type: preferences.indexFileType
+                            }
+                        })
+                    }, 'Submit')
+                ],
 
-                    m('div#datamartResults', results[preferences.sourceMode]
-                        .sort((a, b) => getData(b, 'score') - getData(a, 'score'))
-                        .map((result, i) => makeDatasetCard(preferences, result, i, manipulations, endpoint, labelWidth))
-                    )
-                ]
-            }),
-            // m(ButtonRadio, {
-            //     id: 'datamartButtonBar',
-            //     onclick: state => preferences.datamartMode = state,
-            //     activeSection: preferences.datamartMode,
-            //     sections: [{value: 'Search'}, {value: 'Index'}]
-            // }),
+                preferences.datamartIndexMode === 'Scrape' && [
+                    m(TextField, {
+                        style: {margin: '1em', width: 'calc(100% - 10em)', display: 'inline-block'},
+                        id: 'datamartScrapeTextField',
+                        value: preferences.indexScrape,
+                        placeholder: 'Url to webpage with tables',
+                        oninput: value => preferences.indexScrape = value,
+                        onblur: value => preferences.indexScrape = value
+                    }),
+                    m(Button, {
+                        style: {float: 'right', margin: '1em', 'max-width': '10em', display: 'inline-block'},
+                        onclick: () => handleIndex({
+                            materialization_arguments: {
+                                url: preferences.indexScrape,
+                                file_type: 'html'
+                            }
+                        })
+                    }, 'Submit')
+                ],
 
-        )
+                indices.map(index => m(`div[style=background:${common.colors.menu}]`, m(JSONSchema, {
+                    data: index,
+                    schema: datamartDatasetIndexSchema
+                }))),
+
+                indices.length > 0 && m(Button, {
+                    onclick: async () => {
+                        // preserve state after async is awaited
+                        let sourceMode = preferences.sourceMode;
+
+                        let responses = [];
+                        let promises = indices.map((index, i) => m.request(endpoint + 'index', {
+                            method: 'POST',
+                            body: {
+                                index: JSON.stringify(index),
+                                source: sourceMode
+                            }
+                        }).then(response => responses[i] = response));
+
+                        await Promise.all(promises);
+
+                        preferences.success[sourceMode] = 'Index ' + responses
+                            .reduce((out, response, i) => response.success ? [...out, i] : out, []).join(', ') + ' successful.';
+
+                        preferences.indices = indices.filter((index, i) => !responses[i].success);
+
+                        if (preferences.indices.length) {
+                            console.log("#debug responses");
+                            console.log(responses);
+                            preferences.error[sourceMode] = 'Some datasets failed uploading to datamart. The failed datasets are listed below.';
+                            delete preferences.success[sourceMode]
+                        } else
+                            preferences.success[sourceMode] = `Dataset${responses.length === 1 ? '' : 's'} successfully indexed.`
+
+                        m.redraw()
+                    }
+                }, 'Submit')
+            ]
+        ];
+        return searchMenu;
+    }
+}
+
+export class Datamart {
+
+    view(vnode) {
+        let {
+            preferences,
+            manipulations,
+            dataPath,   // where to load data from, to augment with
+            labelWidth, // width of titles on left side of cards
+            endpoint,   // Django app url
+        } = vnode.attrs;
+
+        let {
+            results,  // list of matched metadata
+            getData
+        } = preferences;
+
+        // clear out cached results if the dataPath has changed since the previous search
+        if (dataPath !== preferences.cachedDataPath) {
+            Object.keys(results).forEach(source => results[source].length = 0);
+            preferences.cached = {};
+            preferences.success = {};
+            preferences.error = {};
+        }
+
+        // ISI doesn't support augmenting without a dataset
+        if (preferences.sourceMode === 'ISI') preferences.includeDataset = true;
+
+        if (preferences.isAugmenting) return m('div',
+            m('h5', 'The system is performing an augmentation.'),
+            common.loader('DatamartAugmenting')
+        );
+
+        return [
+            preferences.isSearching[preferences.sourceMode] && common.loader('DatamartSearching'),
+
+            m('div#datamartResults', results[preferences.sourceMode]
+                .sort((a, b) => getData(b, 'score') - getData(a, 'score'))
+                .map((result, i) => makeDatasetCard(preferences, result, i, manipulations, endpoint, labelWidth))
+            )
+        ]
+
+
+        // return m('div', {
+        //         style: {
+        //             width: '100%',
+        //             height: '100%',
+        //             position: 'relative'
+        //         }
+        //     },
+        //     m(TwoPanel, {
+        //         left: searchMenu,
+        //         right: [
+        //
+        //             preferences.isSearching[preferences.sourceMode] && common.loader('DatamartSearching'),
+        //
+        //             m('div#datamartResults', results[preferences.sourceMode]
+        //                 .sort((a, b) => getData(b, 'score') - getData(a, 'score'))
+        //                 .map((result, i) => makeDatasetCard(preferences, result, i, manipulations, endpoint, labelWidth))
+        //             )
+        //         ]
+        //     }),
+        //     // m(ButtonRadio, {
+        //     //     id: 'datamartButtonBar',
+        //     //     onclick: state => preferences.datamartMode = state,
+        //     //     activeSection: preferences.datamartMode,
+        //     //     sections: [{value: 'Search'}, {value: 'Index'}]
+        //     // }),
+        //
+        // )
     }
 }
 
@@ -1035,8 +1078,7 @@ export let setDatamartDefaults = preferences => {
 
         if (preferences.sourceMode === "NYU") {
             console.log(response);
-            let datamart_url = response.data.datamart_url.replace('https://auctus.vida-nyu', 'https://auctus.vida-nyu.org')
-            window.open(datamart_url, 'NYU_Datamart').focus();
+            window.open(response.data.datamart_url, 'NYU_Datamart').focus();
             return
         }
 
