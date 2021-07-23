@@ -1035,8 +1035,7 @@ export let setDatamartDefaults = preferences => {
 
         if (preferences.sourceMode === "NYU") {
             console.log(response);
-            let datamart_url = response.data.datamart_url.replace('https://auctus.vida-nyu', 'https://auctus.vida-nyu.org')
-            window.open(datamart_url, 'NYU_Datamart').focus();
+            window.open(response.data.datamart_url, 'NYU_Datamart').focus();
             return
         }
 
